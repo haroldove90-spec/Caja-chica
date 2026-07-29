@@ -1,0 +1,100 @@
+export type RoleType = 'home' | 'custodio' | 'contador' | 'admin';
+
+export type EstadoGasto = 'borrador' | 'aprobado' | 'rechazado';
+export type EstadoCaja = 'Abierta' | 'Pendiente' | 'Cerrada';
+export type EstadoReembolso = 'pendiente' | 'aprobado' | 'rechazado';
+
+export interface Gasto {
+  id: string;
+  cajaId: string;
+  nroOrden: string;
+  fecha: string;
+  proveedor: string;
+  concepto: string;
+  importe: number;
+  solicitante: string;
+  giroId: string;
+  facturado: boolean;
+  evidenciaUrl?: string;
+  evidenciaType?: 'image' | 'pdf';
+  evidenciaNombre?: string;
+  estado: EstadoGasto;
+  notaRechazo?: string;
+  reembolsoId?: string;
+}
+
+export interface ReembolsoRequest {
+  id: string;
+  nroReembolso: string;
+  cajaId: string;
+  fechaSolicitud: string;
+  totalGastos: number;
+  cantGastos: number;
+  observaciones?: string;
+  estado: EstadoReembolso;
+  fechaAprobacion?: string;
+  aprobadoPor?: string;
+  firmaElectronica?: string;
+}
+
+export interface Abono {
+  id: string;
+  cajaId: string;
+  fecha: string;
+  monto: number;
+  concepto: string;
+  registradoPor: string;
+  comprobante?: string;
+}
+
+export interface CajaChica {
+  id: string;
+  nombre: string;
+  responsable: string;
+  fondoBase: number;
+  saldoActual: number;
+  estado: EstadoCaja;
+  ubicacion: string;
+}
+
+export interface Giro {
+  id: string;
+  nombre: string;
+  codigo: string;
+  color: string;
+  activo: boolean;
+}
+
+export interface Proveedor {
+  id: string;
+  nombre: string;
+  rfc: string;
+  categoria: string;
+}
+
+export interface Empleado {
+  id: string;
+  nombre: string;
+  puesto: string;
+  departamento: string;
+  activo: boolean;
+}
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: 'custodio' | 'contador' | 'admin';
+  cajaId?: string;
+  activo: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  fecha: string;
+  usuario: string;
+  rol: string;
+  accion: string;
+  modulo: string;
+  detalles: string;
+}
