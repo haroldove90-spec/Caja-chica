@@ -9,7 +9,9 @@ import {
   Proveedor,
   Empleado,
   Usuario,
-  AuditLog
+  AuditLog,
+  RegistroGasolina,
+  ComprobanteGastos
 } from '../types';
 import {
   INITIAL_CAJAS,
@@ -20,7 +22,9 @@ import {
   INITIAL_GASTOS,
   INITIAL_REEMBOLSOS,
   INITIAL_ABONOS,
-  INITIAL_AUDIT_LOGS
+  INITIAL_AUDIT_LOGS,
+  INITIAL_GASOLINA,
+  INITIAL_COMPROBANTES
 } from '../data/initialData';
 
 interface AppContextType {
@@ -40,6 +44,8 @@ interface AppContextType {
   reembolsos: ReembolsoRequest[];
   abonos: Abono[];
   auditLogs: AuditLog[];
+  gasolinaRecords: RegistroGasolina[];
+  comprobantesGastos: ComprobanteGastos[];
 
   // Active Caja Helper
   activeCaja: CajaChica | undefined;
@@ -79,16 +85,29 @@ interface AppContextType {
   updateUsuario: (usr: Usuario) => void;
   deleteUsuario: (id: string) => void;
 
+  addRegistroGasolina: (rec: Omit<RegistroGasolina, 'id'>) => void;
+  deleteRegistroGasolina: (id: string) => void;
+
+  addComprobanteGastos: (comp: Omit<ComprobanteGastos, 'id'>) => void;
+  deleteComprobanteGastos: (id: string) => void;
+
   resetData: () => void;
 
   // Evidencia Modal Preview
   previewEvidencia: { url: string; type?: 'image' | 'pdf'; title?: string } | null;
   setPreviewEvidencia: (data: { url: string; type?: 'image' | 'pdf'; title?: string } | null) => void;
 
-  // Printable PDF Modal
+  // Printable PDF Modals
   pdfModalData: { reembolso?: ReembolsoRequest; caja?: CajaChica; gastos?: Gasto[] } | null;
   setPdfModalData: (data: { reembolso?: ReembolsoRequest; caja?: CajaChica; gastos?: Gasto[] } | null) => void;
+
+  pdfGasolinaModalData: { record?: RegistroGasolina; list?: RegistroGasolina[]; vehiculo?: string } | null;
+  setPdfGasolinaModalData: (data: { record?: RegistroGasolina; list?: RegistroGasolina[]; vehiculo?: string } | null) => void;
+
+  pdfComprobanteModalData: ComprobanteGastos | null;
+  setPdfComprobanteModalData: (data: ComprobanteGastos | null) => void;
 }
+
 
 const STORAGE_KEY = 'control_caja_app_v1';
 
@@ -145,9 +164,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
   });
 
+  const [gasolinaRecords, setGasolinaRecords] = useState<RegistroGasolina[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_gasolinaRecords`);
+    return saved ? JSON.parse(saved) : INITIAL_GASOLINA;
+  });
+
+  const [comprobantesGastos, setComprobantesGastos] = useState<ComprobanteGastos[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_comprobantesGastos`);
+    return saved ? JSON.parse(saved) : INITIAL_COMPROBANTES;
+  });
+
   // Modal preview state
   const [previewEvidencia, setPreviewEvidencia] = useState<{ url: string; type?: 'image' | 'pdf'; title?: string } | null>(null);
   const [pdfModalData, setPdfModalData] = useState<{ reembolso?: ReembolsoRequest; caja?: CajaChica; gastos?: Gasto[] } | null>(null);
+  const [pdfGasolinaModalData, setPdfGasolinaModalData] = useState<{ record?: RegistroGasolina; list?: RegistroGasolina[]; vehiculo?: string } | null>(null);
+  const [pdfComprobanteModalData, setPdfComprobanteModalData] = useState<ComprobanteGastos | null>(null);
 
   // Sync with LocalStorage
   useEffect(() => {
@@ -185,6 +216,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_auditLogs`, JSON.stringify(auditLogs));
   }, [auditLogs]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_gasolinaRecords`, JSON.stringify(gasolinaRecords));
+  }, [gasolinaRecords]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_comprobantesGastos`, JSON.stringify(comprobantesGastos));
+  }, [comprobantesGastos]);
 
   const setRole = (newRole: RoleType) => {
     setRoleState(newRole);
@@ -455,6 +494,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUsuarios(prev => prev.filter(u => u.id !== id));
   };
 
+  const addRegistroGasolina = (recData: Omit<RegistroGasolina, 'id'>) => {
+    const newRec: RegistroGasolina = {
+      ...recData,
+      id: `gas-${Date.now().toString().slice(-4)}`
+    };
+    setGasolinaRecords(prev => [newRec, ...prev]);
+    logAudit('CREAR_GASOLINA', 'Control de Gasolina', `Registró $${newRec.importe.toFixed(2)} para ${newRec.vehiculo} (KM: ${newRec.km})`);
+  };
+
+  const deleteRegistroGasolina = (id: string) => {
+    const target = gasolinaRecords.find(g => g.id === id);
+    setGasolinaRecords(prev => prev.filter(g => g.id !== id));
+    if (target) {
+      logAudit('ELIMINAR_GASOLINA', 'Control de Gasolina', `Eliminó registro de gasolina ${target.vehiculo} del ${target.fecha}`);
+    }
+  };
+
+  const addComprobanteGastos = (compData: Omit<ComprobanteGastos, 'id'>) => {
+    const newComp: ComprobanteGastos = {
+      ...compData,
+      id: `cmp-${Date.now().toString().slice(-4)}`
+    };
+    setComprobantesGastos(prev => [newComp, ...prev]);
+    logAudit('CREAR_COMPROBANTE', 'Comprobante de Gastos', `Generó comprobante ${newComp.folio} por $${newComp.importe.toFixed(2)}`);
+  };
+
+  const deleteComprobanteGastos = (id: string) => {
+    const target = comprobantesGastos.find(c => c.id === id);
+    setComprobantesGastos(prev => prev.filter(c => c.id !== id));
+    if (target) {
+      logAudit('ELIMINAR_COMPROBANTE', 'Comprobante de Gastos', `Eliminó comprobante ${target.folio}`);
+    }
+  };
+
   const resetData = () => {
     localStorage.clear();
     setCajas(INITIAL_CAJAS);
@@ -466,6 +539,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setReembolsos(INITIAL_REEMBOLSOS);
     setAbonos(INITIAL_ABONOS);
     setAuditLogs(INITIAL_AUDIT_LOGS);
+    setGasolinaRecords(INITIAL_GASOLINA);
+    setComprobantesGastos(INITIAL_COMPROBANTES);
     setRoleState('home');
   };
 
@@ -487,6 +562,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         reembolsos,
         abonos,
         auditLogs,
+        gasolinaRecords,
+        comprobantesGastos,
         activeCaja,
         activeCajaGastos,
         activeCajaGastosAcumulados,
@@ -514,16 +591,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addUsuario,
         updateUsuario,
         deleteUsuario,
+        addRegistroGasolina,
+        deleteRegistroGasolina,
+        addComprobanteGastos,
+        deleteComprobanteGastos,
         resetData,
         previewEvidencia,
         setPreviewEvidencia,
         pdfModalData,
-        setPdfModalData
+        setPdfModalData,
+        pdfGasolinaModalData,
+        setPdfGasolinaModalData,
+        pdfComprobanteModalData,
+        setPdfComprobanteModalData
       }}
     >
       {children}
     </AppContext.Provider>
   );
+
 };
 
 export const useApp = () => {

@@ -1,4 +1,96 @@
-import { CajaChica, Giro, Proveedor, Empleado, Usuario, Gasto, ReembolsoRequest, Abono, AuditLog } from '../types';
+import { CajaChica, Giro, Proveedor, Empleado, Usuario, Gasto, ReembolsoRequest, Abono, AuditLog, RegistroGasolina, ComprobanteGastos } from '../types';
+
+// Sample placeholder receipt image base64 or clean generated canvas preview
+export const SAMPLE_TICKET_URL = 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80';
+
+export const INITIAL_GASOLINA: RegistroGasolina[] = [
+
+  {
+    id: 'gas-101',
+    cajaId: 'caja-1',
+    fecha: '2026-07-28',
+    vehiculo: 'CAMIONETA PARTNER',
+    formaPago: 'EFECTIVO',
+    descripcionUso: 'Surtido de prendas y entregas a clientes en zona norte',
+    nivelAntes: '1/4',
+    nivelDespues: 'F',
+    km: 142850,
+    importe: 850.00,
+    registradoPor: 'Lic. Sofía Rodríguez',
+    evidenciaUrl: SAMPLE_TICKET_URL,
+    evidenciaType: 'image'
+  },
+  {
+    id: 'gas-102',
+    cajaId: 'caja-1',
+    fecha: '2026-07-25',
+    vehiculo: 'CAMIONETA PARTNER',
+    formaPago: 'TARJETA DE CAJA',
+    descripcionUso: 'Ruta de cobro y traslado de material publicitario Taller',
+    nivelAntes: 'E',
+    nivelDespues: '3/4',
+    km: 142410,
+    importe: 720.00,
+    registradoPor: 'Alejandro Torres',
+    evidenciaUrl: SAMPLE_TICKET_URL,
+    evidenciaType: 'image'
+  },
+  {
+    id: 'gas-103',
+    cajaId: 'caja-1',
+    fecha: '2026-07-20',
+    vehiculo: 'CAMIONETA PARTNER',
+    formaPago: 'TRANSFERENCIA',
+    descripcionUso: 'Mantenimiento preventivo y carga de combustible en Pemex 4812',
+    nivelAntes: '1/4',
+    nivelDespues: '1/2',
+    km: 141980,
+    importe: 500.00,
+    registradoPor: 'Lic. Sofía Rodríguez',
+    evidenciaUrl: SAMPLE_TICKET_URL,
+    evidenciaType: 'image'
+  }
+];
+
+export const INITIAL_COMPROBANTES: ComprobanteGastos[] = [
+  {
+    id: 'cmp-101',
+    cajaId: 'caja-1',
+    folio: 'CG-2026-001',
+    fecha: '2026-07-28',
+    importe: 1250.00,
+    importeLetra: 'UN MIL DOSCIENTOS CINCUENTA PESOS 00/100 M.N.',
+    concepto: 'Pago de viáticos, alimentos y casetas por viaje de entregas express',
+    solicitadoA: 'Ing. Carlos Mendoza',
+    items: [
+      { noCuenta: '602-01', nombre: 'Alimentos y Comida en Ruta', importe: 450.00 },
+      { noCuenta: '602-05', nombre: 'Peajes y Casetas de Autopista', importe: 380.00 },
+      { noCuenta: '602-09', nombre: 'Estacionamiento y Valet', importe: 420.00 }
+    ],
+    autorizadoPor: 'CP. Alberto Vargas',
+    recibidoPor: 'Ing. Carlos Mendoza',
+    evidenciaUrl: SAMPLE_TICKET_URL,
+    evidenciaType: 'image'
+  },
+  {
+    id: 'cmp-102',
+    cajaId: 'caja-1',
+    folio: 'CG-2026-002',
+    fecha: '2026-07-26',
+    importe: 890.00,
+    importeLetra: 'OCHO CIENTOS NOVENTA PESOS 00/100 M.N.',
+    concepto: 'Compra urgente de papelería y consumibles de impresión',
+    solicitadoA: 'Beatriz Hernández',
+    items: [
+      { noCuenta: '501-12', nombre: 'Papelería General y Cartuchos', importe: 650.00 },
+      { noCuenta: '501-15', nombre: 'Encuadernación de Manuales', importe: 240.00 }
+    ],
+    autorizadoPor: 'Lic. Sofía Rodríguez',
+    recibidoPor: 'Beatriz Hernández',
+    evidenciaUrl: SAMPLE_TICKET_URL,
+    evidenciaType: 'image'
+  }
+];
 
 export const INITIAL_CAJAS: CajaChica[] = [
   {
@@ -62,10 +154,8 @@ export const INITIAL_USUARIOS: Usuario[] = [
   { id: 'usr-3', nombre: 'Admin General', email: 'admin@empresa.com', rol: 'admin', activo: true }
 ];
 
-// Sample placeholder receipt image base64 or clean generated canvas preview
-export const SAMPLE_TICKET_URL = 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80';
-
 export const INITIAL_GASTOS: Gasto[] = [
+
   {
     id: 'gst-101',
     cajaId: 'caja-1',

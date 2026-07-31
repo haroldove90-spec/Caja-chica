@@ -10,7 +10,9 @@ import {
   Tags,
   Users,
   ArrowLeft,
-  ChevronDown
+  ChevronDown,
+  Fuel,
+  FileBadge
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -30,8 +32,11 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         return [
           { id: 'movimientos', label: 'Consulta de Fondo', icon: Wallet },
           { id: 'gastos', label: 'Registro de Gastos', icon: Receipt },
+          { id: 'gasolina', label: 'Control de Gasolina', icon: Fuel },
+          { id: 'comprobantes', label: 'Comprobante Gastos', icon: FileBadge },
           { id: 'cierre', label: 'Cierre y Reembolso', icon: Lock }
         ];
+
       case 'contador':
         return [
           { id: 'auditoria', label: 'Auditoría', icon: FileCheck2 },

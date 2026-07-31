@@ -98,3 +98,43 @@ export interface AuditLog {
   modulo: string;
   detalles: string;
 }
+
+export type NivelTanque = 'E' | '1/4' | '1/2' | '3/4' | 'F';
+
+export interface RegistroGasolina {
+  id: string;
+  cajaId: string;
+  fecha: string;
+  vehiculo: string;
+  formaPago: string;
+  descripcionUso: string;
+  nivelAntes: NivelTanque;
+  nivelDespues: NivelTanque;
+  km: number;
+  importe: number;
+  registradoPor: string;
+  evidenciaUrl?: string;
+  evidenciaType?: 'image' | 'pdf';
+}
+
+export interface ComprobanteGastosItem {
+  noCuenta: string;
+  nombre: string;
+  importe: number;
+}
+
+export interface ComprobanteGastos {
+  id: string;
+  cajaId: string;
+  folio: string;
+  fecha: string;
+  importe: number;
+  importeLetra: string;
+  concepto: string;
+  solicitadoA: string;
+  items: ComprobanteGastosItem[];
+  autorizadoPor: string;
+  recibidoPor: string;
+  evidenciaUrl?: string;
+  evidenciaType?: 'image' | 'pdf';
+}

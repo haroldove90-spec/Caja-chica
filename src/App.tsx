@@ -6,6 +6,8 @@ import { Navigation } from './components/Navigation';
 // Custodio Components
 import { CustodioMovimientos } from './components/CustodioMovimientos';
 import { CustodioGastos } from './components/CustodioGastos';
+import { CustodioGasolina } from './components/CustodioGasolina';
+import { CustodioComprobantes } from './components/CustodioComprobantes';
 import { CustodioCierre } from './components/CustodioCierre';
 
 // Contador Components
@@ -21,6 +23,8 @@ import { AdminUsuarios } from './components/AdminUsuarios';
 // Shared Modals
 import { EvidenceModal } from './components/EvidenceModal';
 import { PDFReportModal } from './components/PDFReportModal';
+import { PDFGasolinaReportModal } from './components/PDFGasolinaReportModal';
+import { PDFComprobanteReportModal } from './components/PDFComprobanteReportModal';
 
 function MainAppContent() {
   const { role, activeModule } = useApp();
@@ -35,6 +39,8 @@ function MainAppContent() {
     switch (role) {
       case 'custodio':
         if (activeModule === 'gastos') return <CustodioGastos />;
+        if (activeModule === 'gasolina') return <CustodioGasolina />;
+        if (activeModule === 'comprobantes') return <CustodioComprobantes />;
         if (activeModule === 'cierre') return <CustodioCierre />;
         return <CustodioMovimientos />;
 
@@ -58,9 +64,12 @@ function MainAppContent() {
       {renderModuleView()}
       <EvidenceModal />
       <PDFReportModal />
+      <PDFGasolinaReportModal />
+      <PDFComprobanteReportModal />
     </Navigation>
   );
 }
+
 
 export default function App() {
   return (

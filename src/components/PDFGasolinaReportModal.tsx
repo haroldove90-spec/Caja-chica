@@ -1,0 +1,158 @@
+import React from 'react';
+import { X, Printer, Download, Car, Fuel, Image as ImageIcon } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { FuelGaugeSVG } from './FuelGaugeSVG';
+
+export const PDFGasolinaReportModal: React.FC = () => {
+  const { pdfGasolinaModalData, setPdfGasolinaModalData } = useApp();
+
+  if (!pdfGasolinaModalData) return null;
+
+  const { list = [], record, vehiculo = 'CAMIONETA PARTNER' } = pdfGasolinaModalData;
+
+  const recordsToPrint = record ? [record] : list;
+  const totalImporte = recordsToPrint.reduce((acc, r) => acc + r.importe, 0);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+        {/* Printable Actions Bar */}
+        <div className="flex items-center justify-between pb-4 border-b border-zinc-200 print:hidden">
+          <div className="flex items-center gap-2">
+            <Fuel className="w-5 h-5 text-zinc-800" />
+            <h3 className="text-sm font-bold text-zinc-900">Vista Previa - Formato Oficial Control de Combustible</h3>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrint}
+              className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Imprimir / Guardar en PDF</span>
+            </button>
+
+            <button
+              onClick={() => setPdfGasolinaModalData(null)}
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* OFFICIAL PRINT SHEET CONTAINER (MATCHING ATTACHMENT 1) */}
+        <div className="p-6 sm:p-8 border-2 border-[#1d5fa6] rounded-lg bg-white text-zinc-900 text-xs font-sans space-y-6 shadow-sm">
+          {/* Header Layout with Logos & Title */}
+          <div className="grid grid-cols-12 items-center border-b-2 border-[#1d5fa6] pb-4 gap-2">
+            {/* Left Brand Logo: Coteyuc */}
+            <div className="col-span-3 text-left space-y-0.5">
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-6 rounded-full border-2 border-[#1d5fa6] flex items-center justify-center text-[#1d5fa6] font-black text-xs">
+                  C
+                </div>
+                <span className="font-black text-base tracking-tight text-[#1d5fa6]">coteyuc</span>
+              </div>
+              <span className="text-[8px] font-bold text-zinc-500 block uppercase tracking-wider">
+                CORPORATIVO TEXTIL DE YUCATÁN
+              </span>
+            </div>
+
+            {/* Center Header Title */}
+            <div className="col-span-6 text-center">
+              <h1 className="text-lg font-black tracking-tight text-zinc-900 uppercase">
+                CONTROL DE COMBUSTIBLE
+              </h1>
+              <h2 className="text-sm font-bold text-[#1d5fa6] uppercase mt-0.5">
+                {vehiculo}
+              </h2>
+            </div>
+
+            {/* Right Brand Logo: Proyecta Digital */}
+            <div className="col-span-3 text-right">
+              <span className="text-lg font-black text-rose-600 italic tracking-tight">Proyecta</span>
+              <span className="text-[9px] font-bold text-zinc-800 block uppercase tracking-widest">
+                DIGITAL
+              </span>
+            </div>
+          </div>
+
+          {/* Table matching Attachment 1 Format */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-center border-collapse border border-[#1d5fa6]">
+              <thead>
+                <tr className="bg-[#1d5fa6] text-white text-[10px] font-bold uppercase tracking-wider border-b border-[#1d5fa6]">
+                  <th className="p-2.5 border-r border-white/20 w-24">FECHA</th>
+                  <th className="p-2.5 border-r border-white/20 w-28">FORMA DE PAGO</th>
+                  <th className="p-2.5 border-r border-white/20 text-left">DESCRIPCIÓN DE USO</th>
+                  <th className="p-2.5 border-r border-white/20 w-24">ANTES</th>
+                  <th className="p-2.5 border-r border-white/20 w-24">DESPUES</th>
+                  <th className="p-2.5 border-r border-white/20 w-20">KM</th>
+                  <th className="p-2.5 w-24 text-right">IMPORTE</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 text-[11px] font-medium">
+                {recordsToPrint.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-zinc-400 italic">No hay cargas de combustible registradas.</td>
+                  </tr>
+                ) : (
+                  recordsToPrint.map((r, i) => (
+                    <tr key={r.id || i} className="hover:bg-zinc-50">
+                      <td className="p-2.5 border-r border-zinc-200 font-semibold text-zinc-800">{r.fecha}</td>
+                      <td className="p-2.5 border-r border-zinc-200 text-xs font-bold text-zinc-700">{r.formaPago}</td>
+                      <td className="p-2.5 border-r border-zinc-200 text-left text-zinc-700">{r.descripcionUso}</td>
+                      <td className="p-2 border-r border-zinc-200">
+                        <FuelGaugeSVG level={r.nivelAntes} size={42} />
+                      </td>
+                      <td className="p-2 border-r border-zinc-200">
+                        <FuelGaugeSVG level={r.nivelDespues} size={42} />
+                      </td>
+                      <td className="p-2.5 border-r border-zinc-200 font-mono font-bold text-zinc-800">
+                        {r.km.toLocaleString()}
+                      </td>
+                      <td className="p-2.5 text-right font-bold text-zinc-900">
+                        ${r.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+
+                {/* Fill empty template rows if needed for realistic format layout */}
+                {Array.from({ length: Math.max(0, 8 - recordsToPrint.length) }).map((_, idx) => (
+                  <tr key={`empty-${idx}`} className="h-10">
+                    <td className="border-r border-zinc-200"></td>
+                    <td className="border-r border-zinc-200"></td>
+                    <td className="border-r border-zinc-200"></td>
+                    <td className="border-r border-zinc-200"></td>
+                    <td className="border-r border-zinc-200"></td>
+                    <td className="border-r border-zinc-200"></td>
+                    <td></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-zinc-100 font-black border-t-2 border-[#1d5fa6] text-xs">
+                  <td colSpan={6} className="p-2.5 text-right uppercase border-r border-zinc-300">TOTAL REGISTRADO:</td>
+                  <td className="p-2.5 text-right text-[#1d5fa6]">
+                    ${totalImporte.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Footer Note */}
+          <div className="flex items-center justify-between pt-4 border-t border-zinc-200 text-[10px] text-zinc-400">
+            <span>Bitácora Digital de Control de Flotilla y Combustibles</span>
+            <span>Fecha de Emisión: {new Date().toISOString().substring(0, 10)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
