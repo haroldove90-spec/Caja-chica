@@ -117,237 +117,240 @@ export const ClienteCombustible: React.FC = () => {
         )}
       </div>
 
-      {/* Main Grid: Form + Photo Capture */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Form Column */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Fuel className="w-4 h-4 text-[#024182]" />
-              <h2 className="text-sm font-semibold text-zinc-900">Registrar Carga de Combustible</h2>
+      {/* Main Form: Grid Inputs + Photo Capture + Submit Action */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Form Column */}
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Fuel className="w-4 h-4 text-[#024182]" />
+                <h2 className="text-sm font-semibold text-zinc-900">Registrar Carga de Combustible</h2>
+              </div>
+              <span className="text-[11px] font-mono text-zinc-500">
+                Cliente: {clienteProfile.nombre}
+              </span>
             </div>
-            <span className="text-[11px] font-mono text-zinc-500">
-              Cliente: {clienteProfile.nombre}
-            </span>
-          </div>
 
-          <form onSubmit={handleSubmit} className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Vehículo */}
+            <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Vehículo */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                      Vehículo / Marca *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={vehiculo}
+                      onChange={(e) => setVehiculo(e.target.value)}
+                      placeholder="Ej. Nissan NP300 2023"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Placas */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                      Placas / ID Vehículo
+                    </label>
+                    <input
+                      type="text"
+                      value={placas}
+                      onChange={(e) => setPlacas(e.target.value)}
+                      placeholder="Ej. VS-4580-B"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-900 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Tipo de Combustible */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                      Tipo Combustible *
+                    </label>
+                    <select
+                      value={tipoCombustible}
+                      onChange={(e) => setTipoCombustible(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white"
+                    >
+                      <option value="Magna">Magna (Verde)</option>
+                      <option value="Premium">Premium (Roja)</option>
+                      <option value="Diesel">Diesel (Negro)</option>
+                    </select>
+                  </div>
+
+                  {/* Litros */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                      Litros Cargados
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={litros}
+                      onChange={(e) => setLitros(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="Ej. 40"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-900 focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Importe Total $ */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                      Importe Total ($) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={importe}
+                      onChange={(e) => setImporte(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="0.00"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 font-mono focus:outline-none focus:border-zinc-900 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Estación de Servicio */}
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Vehículo / Marca *
+                    Estación de Servicio / Gasolinera
                   </label>
                   <input
                     type="text"
-                    required
-                    value={vehiculo}
-                    onChange={(e) => setVehiculo(e.target.value)}
-                    placeholder="Ej. Nissan NP300 2023"
+                    value={estacion}
+                    onChange={(e) => setEstacion(e.target.value)}
+                    placeholder="Ej. Pemex Servicio Tabasco Est. 4521"
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white"
                   />
                 </div>
 
-                {/* Placas */}
+                {/* Observaciones */}
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Placas / ID Vehículo
+                    Observaciones / Motivo del viaje
                   </label>
-                  <input
-                    type="text"
-                    value={placas}
-                    onChange={(e) => setPlacas(e.target.value)}
-                    placeholder="Ej. VS-4580-B"
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-900 focus:bg-white"
+                  <textarea
+                    rows={2}
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    placeholder="Ej. Carga de combustible para traslado a proyecto sur..."
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white resize-none"
                   />
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Tipo de Combustible */}
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Tipo Combustible *
-                  </label>
-                  <select
-                    value={tipoCombustible}
-                    onChange={(e) => setTipoCombustible(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white"
-                  >
-                    <option value="Magna">Magna (Verde)</option>
-                    <option value="Premium">Premium (Roja)</option>
-                    <option value="Diesel">Diesel (Negro)</option>
-                  </select>
-                </div>
-
-                {/* Litros */}
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Litros Cargados
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={litros}
-                    onChange={(e) => setLitros(e.target.value ? Number(e.target.value) : '')}
-                    placeholder="Ej. 40"
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-zinc-900 focus:bg-white"
-                  />
-                </div>
-
-                {/* Importe Total $ */}
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Importe Total ($) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={importe}
-                    onChange={(e) => setImporte(e.target.value ? Number(e.target.value) : '')}
-                    placeholder="0.00"
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 font-mono focus:outline-none focus:border-zinc-900 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Estación de Servicio */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Estación de Servicio / Gasolinera
-                </label>
-                <input
-                  type="text"
-                  value={estacion}
-                  onChange={(e) => setEstacion(e.target.value)}
-                  placeholder="Ej. Pemex Servicio Tabasco Est. 4521"
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white"
-                />
-              </div>
-
-              {/* Observaciones */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Observaciones / Motivo del viaje
-                </label>
-                <textarea
-                  rows={2}
-                  value={observaciones}
-                  onChange={(e) => setObservaciones(e.target.value)}
-                  placeholder="Ej. Carga de combustible para traslado a proyecto sur..."
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 focus:bg-white resize-none"
-                />
-              </div>
             </div>
-
-            <div className="pt-4 border-t border-zinc-100 flex justify-end">
-              <button
-                type="submit"
-                className="flex items-center gap-2 bg-[#024182] hover:bg-[#013266] text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer"
-              >
-                <Send className="w-4 h-4" />
-                <span>Enviar Comprobante al Custodio</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Camera / Photo Capture Column */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 shadow-xs p-5 flex flex-col">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
-            <div className="flex items-center gap-2">
-              <Camera className="w-4 h-4 text-[#024182]" />
-              <h2 className="text-sm font-semibold text-zinc-900">Foto del Ticket de Combustible</h2>
-            </div>
-            <span className="text-[10px] text-zinc-400 font-medium">Requerido</span>
           </div>
 
-          <p className="text-xs text-zinc-500 mb-4">
-            Utilice la cámara de su dispositivo móvil o suba una foto clara del ticket de compra.
-          </p>
+          {/* Camera / Photo Capture Column */}
+          <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 shadow-xs p-5 flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-4">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-[#024182]" />
+                <h2 className="text-sm font-semibold text-zinc-900">Foto del Ticket de Combustible</h2>
+              </div>
+              <span className="text-[10px] text-zinc-400 font-medium">Requerido</span>
+            </div>
 
-          {/* Hidden HTML Camera & File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleFileChange}
-            className="hidden"
-            id="mobile-ticket-camera-input"
-          />
+            <p className="text-xs text-zinc-500 mb-4">
+              Utilice la cámara de su dispositivo móvil o suba una foto clara del ticket de compra.
+            </p>
 
-          {/* Photo Preview / Upload Area */}
-          <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-zinc-300 rounded-2xl bg-zinc-50 p-4 relative min-h-[220px]">
-            {evidenciaUrl ? (
-              <div className="relative w-full h-full flex flex-col items-center justify-center">
-                <img
-                  src={evidenciaUrl}
-                  alt="Ticket de combustible"
-                  className="max-h-[200px] w-auto object-contain rounded-xl shadow-md border border-zinc-200 cursor-pointer"
-                  onClick={() => setPreviewEvidencia({ url: evidenciaUrl, type: 'image', title: 'Ticket de Combustible Capturado' })}
-                />
-                <button
-                  type="button"
-                  onClick={handleClearPhoto}
-                  className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition-colors"
-                  title="Eliminar foto"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-                <div className="mt-3 flex items-center gap-2">
+            {/* Hidden HTML Camera & File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+              id="mobile-ticket-camera-input"
+            />
+
+            {/* Photo Preview / Upload Area */}
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-zinc-300 rounded-2xl bg-zinc-50 p-4 relative min-h-[220px]">
+              {evidenciaUrl ? (
+                <div className="relative w-full h-full flex flex-col items-center justify-center">
+                  <img
+                    src={evidenciaUrl}
+                    alt="Ticket de combustible"
+                    className="max-h-[200px] w-auto object-contain rounded-xl shadow-md border border-zinc-200 cursor-pointer"
+                    onClick={() => setPreviewEvidencia({ url: evidenciaUrl, type: 'image', title: 'Ticket de Combustible Capturado' })}
+                  />
                   <button
                     type="button"
-                    onClick={() => setPreviewEvidencia({ url: evidenciaUrl, type: 'image', title: 'Ticket de Combustible Capturado' })}
-                    className="text-xs font-semibold text-[#024182] hover:underline flex items-center gap-1"
+                    onClick={handleClearPhoto}
+                    className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition-colors"
+                    title="Eliminar foto"
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Ver imagen ampliada / Zoom</span>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewEvidencia({ url: evidenciaUrl, type: 'image', title: 'Ticket de Combustible Capturado' })}
+                      className="text-xs font-semibold text-[#024182] hover:underline flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Ver imagen ampliada / Zoom</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-3 py-6">
+                  <div className="w-14 h-14 rounded-full bg-blue-50 text-[#024182] flex items-center justify-center mx-auto border border-blue-100">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-zinc-800">Capturar Ticket con Cámara</p>
+                    <p className="text-[11px] text-zinc-400 max-w-[200px] mx-auto">
+                      Toque para abrir la cámara móvil o seleccionar foto
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 bg-zinc-900 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>Tomar Foto / Subir Imagen</span>
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center space-y-3 py-6">
-                <div className="w-14 h-14 rounded-full bg-blue-50 text-[#024182] flex items-center justify-center mx-auto border border-blue-100">
-                  <Camera className="w-7 h-7" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-zinc-800">Capturar Ticket con Cámara</p>
-                  <p className="text-[11px] text-zinc-400 max-w-[200px] mx-auto">
-                    Toque para abrir la cámara móvil o seleccionar foto
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 bg-zinc-900 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer shadow-xs"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Tomar Foto / Subir Imagen</span>
-                </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="text-xs font-semibold text-[#024182] hover:text-[#013266] flex items-center gap-1.5"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>{evidenciaUrl ? 'Cambiar Foto de Ticket' : 'Abrir Cámara Dispositivo'}</span>
-            </button>
-            {evidenciaNombre && (
-              <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[140px]">
-                {evidenciaNombre}
-              </span>
-            )}
+            <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs font-semibold text-[#024182] hover:text-[#013266] flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{evidenciaUrl ? 'Cambiar Foto de Ticket' : 'Abrir Cámara Dispositivo'}</span>
+              </button>
+              {evidenciaNombre && (
+                <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[140px]">
+                  {evidenciaNombre}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Action Button Section AFTER the photo capture card */}
+        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs flex justify-end items-center">
+          <button
+            type="submit"
+            className="flex items-center gap-2 bg-[#024182] hover:bg-[#013266] text-white text-xs sm:text-sm font-semibold px-8 py-3 rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+          >
+            <Send className="w-4 h-4" />
+            <span>Enviar Comprobante al Custodio</span>
+          </button>
+        </div>
+      </form>
 
       {/* Submitted Fuel Tickets History Table */}
       <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden">
