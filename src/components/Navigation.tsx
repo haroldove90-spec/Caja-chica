@@ -12,7 +12,9 @@ import {
   ArrowLeft,
   ChevronDown,
   Fuel,
-  FileBadge
+  FileBadge,
+  User,
+  Camera
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -33,6 +35,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           { id: 'movimientos', label: 'Consulta de Fondo', icon: Wallet },
           { id: 'gastos', label: 'Registro de Gastos', icon: Receipt },
           { id: 'gasolina', label: 'Control de Gasolina', icon: Fuel },
+          { id: 'combustible_clientes', label: 'Comprobantes Clientes', icon: Camera },
           { id: 'comprobantes', label: 'Comprobante Gastos', icon: FileBadge },
           { id: 'cierre', label: 'Cierre y Reembolso', icon: Lock }
         ];
@@ -49,6 +52,11 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           { id: 'catalogos', label: 'Catálogos', icon: Tags },
           { id: 'usuarios', label: 'Usuarios y Seguridad', icon: Users }
         ];
+      case 'cliente':
+        return [
+          { id: 'perfil', label: 'Mi Perfil', icon: User },
+          { id: 'comprobantes_combustible', label: 'Comprobantes Combustible', icon: Fuel }
+        ];
       default:
         return [];
     }
@@ -61,6 +69,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
       case 'custodio': return 'Custodio de Caja';
       case 'contador': return 'Contador / Auditor';
       case 'admin': return 'Super Administrador';
+      case 'cliente': return 'Cliente / Usuario';
       default: return '';
     }
   };

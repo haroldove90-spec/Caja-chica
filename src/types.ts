@@ -1,4 +1,32 @@
-export type RoleType = 'home' | 'custodio' | 'contador' | 'admin';
+export type RoleType = 'home' | 'custodio' | 'contador' | 'admin' | 'cliente';
+
+export interface ClienteProfile {
+  id: string;
+  nombre: string;
+  email: string;
+  telefono: string;
+  empresa: string;
+  rfc: string;
+  direccion: string;
+}
+
+export interface ComprobanteCombustibleCliente {
+  id: string;
+  cajaId: string;
+  clienteId: string;
+  clienteNombre: string;
+  fecha: string;
+  vehiculo: string;
+  placas?: string;
+  estacion?: string;
+  tipoCombustible: string;
+  litros?: number;
+  importe: number;
+  evidenciaUrl: string;
+  evidenciaType?: 'image' | 'pdf';
+  estado: 'enviado' | 'revisado' | 'aprobado' | 'rechazado';
+  observaciones?: string;
+}
 
 export type EstadoGasto = 'borrador' | 'aprobado' | 'rechazado';
 export type EstadoCaja = 'Abierta' | 'Pendiente' | 'Cerrada';

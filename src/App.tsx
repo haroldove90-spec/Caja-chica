@@ -7,8 +7,13 @@ import { Navigation } from './components/Navigation';
 import { CustodioMovimientos } from './components/CustodioMovimientos';
 import { CustodioGastos } from './components/CustodioGastos';
 import { CustodioGasolina } from './components/CustodioGasolina';
+import { CustodioCombustibleCliente } from './components/CustodioCombustibleCliente';
 import { CustodioComprobantes } from './components/CustodioComprobantes';
 import { CustodioCierre } from './components/CustodioCierre';
+
+// Cliente Components
+import { ClientePerfil } from './components/ClientePerfil';
+import { ClienteCombustible } from './components/ClienteCombustible';
 
 // Contador Components
 import { ContadorAuditoria } from './components/ContadorAuditoria';
@@ -40,6 +45,7 @@ function MainAppContent() {
       case 'custodio':
         if (activeModule === 'gastos') return <CustodioGastos />;
         if (activeModule === 'gasolina') return <CustodioGasolina />;
+        if (activeModule === 'combustible_clientes') return <CustodioCombustibleCliente />;
         if (activeModule === 'comprobantes') return <CustodioComprobantes />;
         if (activeModule === 'cierre') return <CustodioCierre />;
         return <CustodioMovimientos />;
@@ -53,6 +59,10 @@ function MainAppContent() {
         if (activeModule === 'catalogos') return <AdminCatalogos />;
         if (activeModule === 'usuarios') return <AdminUsuarios />;
         return <AdminMultiCajas />;
+
+      case 'cliente':
+        if (activeModule === 'comprobantes_combustible') return <ClienteCombustible />;
+        return <ClientePerfil />;
 
       default:
         return <CustodioMovimientos />;

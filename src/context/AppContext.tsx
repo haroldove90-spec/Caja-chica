@@ -11,7 +11,9 @@ import {
   Usuario,
   AuditLog,
   RegistroGasolina,
-  ComprobanteGastos
+  ComprobanteGastos,
+  ClienteProfile,
+  ComprobanteCombustibleCliente
 } from '../types';
 import {
   INITIAL_CAJAS,
@@ -24,7 +26,9 @@ import {
   INITIAL_ABONOS,
   INITIAL_AUDIT_LOGS,
   INITIAL_GASOLINA,
-  INITIAL_COMPROBANTES
+  INITIAL_COMPROBANTES,
+  INITIAL_CLIENTE_PROFILE,
+  INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE
 } from '../data/initialData';
 
 interface AppContextType {
@@ -46,6 +50,8 @@ interface AppContextType {
   auditLogs: AuditLog[];
   gasolinaRecords: RegistroGasolina[];
   comprobantesGastos: ComprobanteGastos[];
+  clienteProfile: ClienteProfile;
+  comprobantesCombustibleCliente: ComprobanteCombustibleCliente[];
 
   // Active Caja Helper
   activeCaja: CajaChica | undefined;
@@ -90,6 +96,11 @@ interface AppContextType {
 
   addComprobanteGastos: (comp: Omit<ComprobanteGastos, 'id'>) => void;
   deleteComprobanteGastos: (id: string) => void;
+
+  updateClienteProfile: (profile: Partial<ClienteProfile>) => void;
+  addComprobanteCombustibleCliente: (comp: Omit<ComprobanteCombustibleCliente, 'id' | 'estado'>) => void;
+  updateComprobanteCombustibleClienteEstado: (id: string, estado: 'enviado' | 'revisado' | 'aprobado' | 'rechazado') => void;
+  deleteComprobanteCombustibleCliente: (id: string) => void;
 
   resetData: () => void;
 
@@ -174,6 +185,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : INITIAL_COMPROBANTES;
   });
 
+  const [clienteProfile, setClienteProfile] = useState<ClienteProfile>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_clienteProfile`);
+    return saved ? JSON.parse(saved) : INITIAL_CLIENTE_PROFILE;
+  });
+
+  const [comprobantesCombustibleCliente, setComprobantesCombustibleCliente] = useState<ComprobanteCombustibleCliente[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_comprobantesCombustibleCliente`);
+    return saved ? JSON.parse(saved) : INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE;
+  });
+
   // Modal preview state
   const [previewEvidencia, setPreviewEvidencia] = useState<{ url: string; type?: 'image' | 'pdf'; title?: string } | null>(null);
   const [pdfModalData, setPdfModalData] = useState<{ reembolso?: ReembolsoRequest; caja?: CajaChica; gastos?: Gasto[] } | null>(null);
@@ -225,11 +246,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(`${STORAGE_KEY}_comprobantesGastos`, JSON.stringify(comprobantesGastos));
   }, [comprobantesGastos]);
 
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_clienteProfile`, JSON.stringify(clienteProfile));
+  }, [clienteProfile]);
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_comprobantesCombustibleCliente`, JSON.stringify(comprobantesCombustibleCliente));
+  }, [comprobantesCombustibleCliente]);
+
   const setRole = (newRole: RoleType) => {
     setRoleState(newRole);
     if (newRole === 'custodio') setActiveModuleState('movimientos');
     else if (newRole === 'contador') setActiveModuleState('auditoria');
     else if (newRole === 'admin') setActiveModuleState('multicajas');
+    else if (newRole === 'cliente') setActiveModuleState('perfil');
   };
 
   const setActiveModule = (mod: string) => {
@@ -528,6 +558,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const updateClienteProfile = (profileData: Partial<ClienteProfile>) => {
+    setClienteProfile(prev => ({ ...prev, ...profileData }));
+    logAudit('ACTUALIZAR_PERFIL', 'Perfil Cliente', `Cliente ${clienteProfile.nombre} actualizó su perfil`);
+  };
+
+  const addComprobanteCombustibleCliente = (compData: Omit<ComprobanteCombustibleCliente, 'id' | 'estado'>) => {
+    const newComp: ComprobanteCombustibleCliente = {
+      ...compData,
+      id: `cc-${Date.now().toString().slice(-4)}`,
+      estado: 'enviado'
+    };
+    setComprobantesCombustibleCliente(prev => [newComp, ...prev]);
+    logAudit('ENVIAR_COMBUSTIBLE_CLIENTE', 'Comprobantes Combustible', `Cliente ${newComp.clienteNombre} envió comprobante de $${newComp.importe.toFixed(2)} (${newComp.vehiculo})`);
+  };
+
+  const updateComprobanteCombustibleClienteEstado = (id: string, estado: 'enviado' | 'revisado' | 'aprobado' | 'rechazado') => {
+    setComprobantesCombustibleCliente(prev => prev.map(c => c.id === id ? { ...c, estado } : c));
+    logAudit('CAMBIAR_ESTADO_COMBUSTIBLE', 'Control Combustible Cliente', `Actualizó estado a ${estado} para el comprobante ${id}`);
+  };
+
+  const deleteComprobanteCombustibleCliente = (id: string) => {
+    setComprobantesCombustibleCliente(prev => prev.filter(c => c.id !== id));
+  };
+
   const resetData = () => {
     localStorage.clear();
     setCajas(INITIAL_CAJAS);
@@ -541,6 +595,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAuditLogs(INITIAL_AUDIT_LOGS);
     setGasolinaRecords(INITIAL_GASOLINA);
     setComprobantesGastos(INITIAL_COMPROBANTES);
+    setClienteProfile(INITIAL_CLIENTE_PROFILE);
+    setComprobantesCombustibleCliente(INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE);
     setRoleState('home');
   };
 
@@ -595,6 +651,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteRegistroGasolina,
         addComprobanteGastos,
         deleteComprobanteGastos,
+        clienteProfile,
+        comprobantesCombustibleCliente,
+        updateClienteProfile,
+        addComprobanteCombustibleCliente,
+        updateComprobanteCombustibleClienteEstado,
+        deleteComprobanteCombustibleCliente,
         resetData,
         previewEvidencia,
         setPreviewEvidencia,

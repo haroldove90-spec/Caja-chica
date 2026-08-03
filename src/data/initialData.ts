@@ -1,4 +1,4 @@
-import { CajaChica, Giro, Proveedor, Empleado, Usuario, Gasto, ReembolsoRequest, Abono, AuditLog, RegistroGasolina, ComprobanteGastos } from '../types';
+import { CajaChica, Giro, Proveedor, Empleado, Usuario, Gasto, ReembolsoRequest, Abono, AuditLog, RegistroGasolina, ComprobanteGastos, ClienteProfile, ComprobanteCombustibleCliente } from '../types';
 
 // Sample placeholder receipt image base64 or clean generated canvas preview
 export const SAMPLE_TICKET_URL = 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80';
@@ -334,3 +334,51 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     detalles: 'Abonó $10,000.00 a Caja Chica - Reina Pino'
   }
 ];
+
+export const INITIAL_CLIENTE_PROFILE: ClienteProfile = {
+  id: 'cli-001',
+  nombre: 'Alejandro Morales Ruíz',
+  email: 'alejandro.morales@empresa.com',
+  telefono: '9931234567',
+  empresa: 'Constructora y Proyectos del Sur S.A. de C.V.',
+  rfc: 'CPS180512AB3',
+  direccion: 'Av. Paseo Tabasco 1205, Col. Lindavista, Villahermosa, Tabasco'
+};
+
+export const INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE: ComprobanteCombustibleCliente[] = [
+  {
+    id: 'cc-101',
+    cajaId: 'caja-1',
+    clienteId: 'cli-001',
+    clienteNombre: 'Alejandro Morales Ruíz',
+    fecha: '2026-08-01 14:20',
+    vehiculo: 'Nissan NP300 2023',
+    placas: 'VS-4580-B',
+    estacion: 'Pemex Servicio Tabasco Est. 4521',
+    tipoCombustible: 'Magna',
+    litros: 42.5,
+    importe: 1020.00,
+    evidenciaUrl: 'https://images.unsplash.com/photo-1527018601619-a508a2be00e6?auto=format&fit=crop&w=800&q=80',
+    evidenciaType: 'image',
+    estado: 'enviado',
+    observaciones: 'Carga de combustible para traslado a obra en Macuspana'
+  },
+  {
+    id: 'cc-102',
+    cajaId: 'caja-1',
+    clienteId: 'cli-001',
+    clienteNombre: 'Alejandro Morales Ruíz',
+    fecha: '2026-07-28 09:15',
+    vehiculo: 'Chevrolet Aveo 2022',
+    placas: 'WTR-992-A',
+    estacion: 'G500 Circuito Exterior',
+    tipoCombustible: 'Premium',
+    litros: 35.0,
+    importe: 890.50,
+    evidenciaUrl: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=800&q=80',
+    evidenciaType: 'image',
+    estado: 'aprobado',
+    observaciones: 'Reunión de supervisión en planta'
+  }
+];
+
