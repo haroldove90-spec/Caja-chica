@@ -82,26 +82,38 @@ export const PDFComprobanteReportModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Table Breakdown (No. Cuenta | Nombre | Importe) */}
-          <div className="border border-[#024182] rounded-lg overflow-hidden bg-white">
+          {/* Table Breakdown (No. Cuenta | # Orden | # Cotización | Nombre Proyecto | Nombre | Importe) */}
+          <div className="border border-[#024182] rounded-lg overflow-hidden bg-white shadow-xs">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#024182] text-white text-[10px] font-bold uppercase tracking-wider">
-                  <th className="p-2 border-r border-white/20 w-32">No. Cuenta</th>
-                  <th className="p-2 border-r border-white/20">Nombre</th>
-                  <th className="p-2 text-right w-32">Importe</th>
+                  <th className="p-2 border-r border-white/20 text-center w-[13%]">No. Cuenta</th>
+                  <th className="p-2 border-r border-white/20 text-center w-[12%]"># Orden</th>
+                  <th className="p-2 border-r border-white/20 text-center w-[13%]"># Cotización</th>
+                  <th className="p-2 border-r border-white/20 text-left w-[20%]">Nombre Proyecto</th>
+                  <th className="p-2 border-r border-white/20 text-left w-[27%]">Nombre</th>
+                  <th className="p-2 text-right w-[15%]">Importe</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 text-xs">
                 {tableRows.map((row, idx) => (
                   <tr key={idx} className="h-9">
-                    <td className="p-2 border-r border-zinc-200 font-mono font-semibold text-zinc-800">
-                      {row.noCuenta || `${idx + 1}`}
+                    <td className="p-2 border-r border-zinc-200 font-mono font-semibold text-zinc-800 text-center text-[11px]">
+                      {row.noCuenta || (row.nombre || row.importe ? `${idx + 1}` : '')}
                     </td>
-                    <td className="p-2 border-r border-zinc-200 font-medium text-zinc-700">
+                    <td className="p-2 border-r border-zinc-200 font-mono text-zinc-700 text-center text-[11px]">
+                      {row.noOrden || ''}
+                    </td>
+                    <td className="p-2 border-r border-zinc-200 font-mono text-zinc-700 text-center text-[11px]">
+                      {row.noCotizacion || ''}
+                    </td>
+                    <td className="p-2 border-r border-zinc-200 font-medium text-zinc-800 text-[11px] truncate max-w-[120px]">
+                      {row.nombreProyecto || ''}
+                    </td>
+                    <td className="p-2 border-r border-zinc-200 font-medium text-zinc-700 text-[11px]">
                       {row.nombre}
                     </td>
-                    <td className="p-2 text-right font-bold text-zinc-900 font-mono">
+                    <td className="p-2 text-right font-bold text-zinc-900 font-mono text-[11px]">
                       {row.importe > 0 ? `$${row.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
                     </td>
                   </tr>
@@ -109,10 +121,10 @@ export const PDFComprobanteReportModal: React.FC = () => {
               </tbody>
               <tfoot>
                 <tr className="bg-sky-100/60 font-black border-t-2 border-[#024182] text-xs">
-                  <td colSpan={2} className="p-2 text-right uppercase border-r border-zinc-300 text-[#024182]">
+                  <td colSpan={5} className="p-2 text-right uppercase border-r border-zinc-300 text-[#024182]">
                     TOTAL $
                   </td>
-                  <td className="p-2 text-right text-[#024182] text-sm font-mono">
+                  <td className="p-2 text-right text-[#024182] text-sm font-mono font-black">
                     ${comp.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>

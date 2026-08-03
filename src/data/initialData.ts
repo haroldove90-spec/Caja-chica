@@ -63,9 +63,9 @@ export const INITIAL_COMPROBANTES: ComprobanteGastos[] = [
     concepto: 'Pago de viáticos, alimentos y casetas por viaje de entregas express',
     solicitadoA: 'Ing. Carlos Mendoza',
     items: [
-      { noCuenta: '602-01', nombre: 'Alimentos y Comida en Ruta', importe: 450.00 },
-      { noCuenta: '602-05', nombre: 'Peajes y Casetas de Autopista', importe: 380.00 },
-      { noCuenta: '602-09', nombre: 'Estacionamiento y Valet', importe: 420.00 }
+      { noCuenta: '602-01', noOrden: 'ORD-101', noCotizacion: 'COT-201', nombreProyecto: 'Publikrea Norte', nombre: 'Alimentos y Comida en Ruta', importe: 450.00 },
+      { noCuenta: '602-05', noOrden: 'ORD-102', noCotizacion: 'COT-202', nombreProyecto: 'Publikrea Norte', nombre: 'Peajes y Casetas de Autopista', importe: 380.00 },
+      { noCuenta: '602-09', noOrden: 'ORD-103', noCotizacion: 'COT-203', nombreProyecto: 'Planta Sur', nombre: 'Estacionamiento y Valet', importe: 420.00 }
     ],
     autorizadoPor: 'CP. Alberto Vargas',
     recibidoPor: 'Ing. Carlos Mendoza',
@@ -82,8 +82,8 @@ export const INITIAL_COMPROBANTES: ComprobanteGastos[] = [
     concepto: 'Compra urgente de papelería y consumibles de impresión',
     solicitadoA: 'Beatriz Hernández',
     items: [
-      { noCuenta: '501-12', nombre: 'Papelería General y Cartuchos', importe: 650.00 },
-      { noCuenta: '501-15', nombre: 'Encuadernación de Manuales', importe: 240.00 }
+      { noCuenta: '501-12', noOrden: 'ORD-201', noCotizacion: 'COT-301', nombreProyecto: 'Oficinas Centrales', nombre: 'Papelería General y Cartuchos', importe: 650.00 },
+      { noCuenta: '501-15', noOrden: 'ORD-202', noCotizacion: 'COT-302', nombreProyecto: 'Oficinas Centrales', nombre: 'Encuadernación de Manuales', importe: 240.00 }
     ],
     autorizadoPor: 'Lic. Sofía Rodríguez',
     recibidoPor: 'Beatriz Hernández',

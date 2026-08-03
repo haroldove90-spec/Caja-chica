@@ -119,6 +119,9 @@ export interface RegistroGasolina {
 
 export interface ComprobanteGastosItem {
   noCuenta: string;
+  noOrden?: string;
+  noCotizacion?: string;
+  nombreProyecto?: string;
   nombre: string;
   importe: number;
 }

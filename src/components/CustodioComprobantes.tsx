@@ -25,8 +25,8 @@ export const CustodioComprobantes: React.FC = () => {
 
   // Items breakdown (default 2 items, up to 4)
   const [items, setItems] = useState<ComprobanteGastosItem[]>([
-    { noCuenta: '602-01', nombre: 'Alimentos y Consumo', importe: 0 },
-    { noCuenta: '602-05', nombre: 'Transporte y Casetas', importe: 0 }
+    { noCuenta: '602-01', noOrden: 'ORD-101', noCotizacion: 'COT-201', nombreProyecto: 'Publikrea Norte', nombre: 'Alimentos y Consumo', importe: 0 },
+    { noCuenta: '602-05', noOrden: 'ORD-102', noCotizacion: 'COT-202', nombreProyecto: 'Publikrea Norte', nombre: 'Transporte y Casetas', importe: 0 }
   ]);
 
   // Total auto-calculated from breakdown items or explicit amount
@@ -48,7 +48,7 @@ export const CustodioComprobantes: React.FC = () => {
 
   const handleAddItem = () => {
     if (items.length < 4) {
-      setItems([...items, { noCuenta: `602-0${items.length + 1}`, nombre: '', importe: 0 }]);
+      setItems([...items, { noCuenta: `602-0${items.length + 1}`, noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: '', importe: 0 }]);
     }
   };
 
@@ -85,8 +85,8 @@ export const CustodioComprobantes: React.FC = () => {
     setImporteLetra('');
     setEvidenciaUrl('');
     setItems([
-      { noCuenta: '602-01', nombre: 'Alimentos y Consumo', importe: 0 },
-      { noCuenta: '602-05', nombre: 'Transporte y Casetas', importe: 0 }
+      { noCuenta: '602-01', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Alimentos y Consumo', importe: 0 },
+      { noCuenta: '602-05', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Transporte y Casetas', importe: 0 }
     ]);
   };
 
@@ -215,11 +215,11 @@ export const CustodioComprobantes: React.FC = () => {
               />
             </div>
 
-            {/* ACCOUNT BREAKDOWN TABLE (NO. CUENTA | NOMBRE | IMPORTE) */}
-            <div className="p-3 bg-zinc-50/80 rounded-xl border border-zinc-200/80 space-y-2">
+            {/* ACCOUNT BREAKDOWN TABLE (NO. CUENTA | # ORDEN | # COTIZACIÓN | NOMBRE PROYECTO | NOMBRE | IMPORTE) */}
+            <div className="p-3 bg-zinc-50/80 rounded-xl border border-zinc-200/80 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-zinc-800 uppercase">
-                  Desglose por No. Cuenta y Nombre (Máx 4 filas)
+                  Desglose por Cuenta, Orden, Cotización y Proyecto (Máx 4)
                 </span>
                 {items.length < 4 && (
                   <button
@@ -232,43 +232,91 @@ export const CustodioComprobantes: React.FC = () => {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {items.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="No. Cuenta (e.g. 602-01)"
-                      value={item.noCuenta}
-                      onChange={(e) => handleItemChange(idx, 'noCuenta', e.target.value)}
-                      className="col-span-3 bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-[11px] font-mono focus:outline-none"
-                    />
+                  <div key={idx} className="p-2.5 bg-white rounded-xl border border-zinc-200/80 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between pb-1 border-b border-zinc-100">
+                      <span className="text-[10px] font-bold text-[#024182] uppercase">Fila {idx + 1}</span>
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          className="text-zinc-400 hover:text-rose-600 flex items-center gap-1 text-[10px] font-medium transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Eliminar</span>
+                        </button>
+                      )}
+                    </div>
 
-                    <input
-                      type="text"
-                      placeholder="Nombre de la cuenta / concepto"
-                      value={item.nombre}
-                      onChange={(e) => handleItemChange(idx, 'nombre', e.target.value)}
-                      className="col-span-5 bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-[11px] focus:outline-none"
-                    />
+                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-zinc-600 mb-0.5">No. Cuenta *</label>
+                        <input
+                          type="text"
+                          placeholder="602-01"
+                          value={item.noCuenta}
+                          onChange={(e) => handleItemChange(idx, 'noCuenta', e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-zinc-800"
+                        />
+                      </div>
 
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Importe"
-                      value={item.importe || ''}
-                      onChange={(e) => handleItemChange(idx, 'importe', e.target.value)}
-                      className="col-span-3 bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right focus:outline-none"
-                    />
+                      <div>
+                        <label className="block text-[10px] font-medium text-zinc-600 mb-0.5"># Orden</label>
+                        <input
+                          type="text"
+                          placeholder="ORD-101"
+                          value={item.noOrden || ''}
+                          onChange={(e) => handleItemChange(idx, 'noOrden', e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-zinc-800"
+                        />
+                      </div>
 
-                    {items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(idx)}
-                        className="col-span-1 p-1 text-zinc-400 hover:text-rose-600"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                      <div>
+                        <label className="block text-[10px] font-medium text-zinc-600 mb-0.5"># Cotización</label>
+                        <input
+                          type="text"
+                          placeholder="COT-201"
+                          value={item.noCotizacion || ''}
+                          onChange={(e) => handleItemChange(idx, 'noCotizacion', e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-zinc-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-medium text-zinc-600 mb-0.5">Nombre Proyecto</label>
+                        <input
+                          type="text"
+                          placeholder="Ej: Proyecto Norte"
+                          value={item.nombreProyecto || ''}
+                          onChange={(e) => handleItemChange(idx, 'nombreProyecto', e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-zinc-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-medium text-zinc-600 mb-0.5">Nombre / Concepto *</label>
+                        <input
+                          type="text"
+                          placeholder="Descripción"
+                          value={item.nombre}
+                          onChange={(e) => handleItemChange(idx, 'nombre', e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-zinc-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-medium text-zinc-600 mb-0.5">Importe ($) *</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.importe || ''}
+                          onChange={(e) => handleItemChange(idx, 'importe', e.target.value)}
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-[11px] font-bold text-right focus:outline-none focus:border-zinc-800"
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -375,9 +423,15 @@ export const CustodioComprobantes: React.FC = () => {
                   <div className="p-2 rounded-lg bg-blue-50/40 border border-blue-100 text-[10px] text-zinc-600 space-y-1">
                     <span className="font-bold text-[#024182] block">Desglose de Cuentas ({comp.items.length}):</span>
                     {comp.items.map((it, idx) => (
-                      <div key={idx} className="flex justify-between font-mono">
-                        <span>{it.noCuenta} - {it.nombre || 'General'}</span>
-                        <span className="font-semibold">${it.importe.toFixed(2)}</span>
+                      <div key={idx} className="flex justify-between items-center font-mono gap-2 text-[10px]">
+                        <span className="truncate">
+                          <strong>{it.noCuenta}</strong>
+                          {it.noOrden ? ` | Ord: ${it.noOrden}` : ''}
+                          {it.noCotizacion ? ` | Cot: ${it.noCotizacion}` : ''}
+                          {it.nombreProyecto ? ` | Proy: ${it.nombreProyecto}` : ''}
+                          {` - ${it.nombre || 'General'}`}
+                        </span>
+                        <span className="font-semibold shrink-0">${it.importe.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
