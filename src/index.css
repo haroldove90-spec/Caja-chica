@@ -6,7 +6,7 @@
 }
 
 @media print {
-  /* Force color and background graphics printing */
+  /* Preserve exact colors for logos, headers, badges, and gauge meters */
   *,
   *::before,
   *::after {
@@ -14,28 +14,51 @@
     print-color-adjust: exact !important;
   }
 
-  html, body {
+  /* Reset document root to expand to full page without canvas backgrounds */
+  html,
+  body {
     background-color: white !important;
+    background: white !important;
     color: black !important;
     width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
   }
 
-  /* Hide all non-modal background app content when printing */
-  body > #root > div > *:not(.fixed) {
-    display: none !important;
-  }
-
-  /* Hide print-hidden elements (headers, close buttons, logo selectors) */
+  /* Strictly hide all navigation bars, sidebars, top headers, close buttons, print control bars */
+  aside,
+  nav,
+  header,
+  footer,
   .print\:hidden,
   .print\:hidden * {
     display: none !important;
+    visibility: hidden !important;
   }
 
-  /* Reset fixed modal overlay backdrop */
+  /* When a printable modal sheet is open, hide all non-modal sibling components in <main> */
+  body:has(.printable-sheet) main > *:not(:has(.printable-sheet)) {
+    display: none !important;
+  }
+
+  /* Flatten app wrappers so only printable sheets are laid out */
+  #root,
+  #root > div,
+  .min-h-screen,
+  main {
+    background: white !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  /* Reset modal overlay backdrop position so it flows natively in print */
   .fixed.inset-0 {
     position: static !important;
     background: transparent !important;
@@ -47,7 +70,7 @@
     height: auto !important;
   }
 
-  /* Reset inner modal box constraints */
+  /* Remove modal borders, rounded corners, max-width caps, and drop shadows */
   .printable-modal-container {
     position: static !important;
     max-width: 100% !important;
@@ -62,7 +85,7 @@
     overflow: visible !important;
   }
 
-  /* Unencapsulated, full width letter report sheet */
+  /* Sheet container spans 100% full Letter width without padding or borders */
   .printable-sheet {
     position: static !important;
     width: 100% !important;
@@ -75,6 +98,7 @@
     overflow: visible !important;
   }
 
+  /* Force tables to stretch 100% across the full page width without breaking mid-row */
   table {
     width: 100% !important;
     max-width: 100% !important;
@@ -86,3 +110,4 @@
     page-break-after: auto;
   }
 }
+

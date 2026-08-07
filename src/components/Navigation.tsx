@@ -77,7 +77,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row antialiased text-zinc-900 selection:bg-zinc-900 selection:text-white">
       {/* FULLSCREEN DESKTOP SIDEBAR (md:flex) */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-zinc-200/80 bg-white sticky top-0 h-screen shrink-0 z-30 select-none">
+      <aside className="hidden md:flex flex-col w-64 border-r border-zinc-200/80 bg-white sticky top-0 h-screen shrink-0 z-30 select-none print:hidden">
         {/* Top Role Header */}
         <div className="p-5 border-b border-zinc-100 flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -146,7 +146,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
       </aside>
 
       {/* MOBILE / TABLET TOP COMPACT STRIP (< md) */}
-      <div className="md:hidden bg-white border-b border-zinc-200/80 px-4 py-3 sticky top-0 z-20 flex items-center justify-between">
+      <div className="md:hidden bg-white border-b border-zinc-200/80 px-4 py-3 sticky top-0 z-20 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setRole('home')}
@@ -178,12 +178,12 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 pb-24 md:pb-8 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+      <main className="flex-1 pb-24 md:pb-8 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full overflow-x-hidden print:p-0 print:m-0 print:max-w-none print:overflow-visible">
         {children}
       </main>
 
       {/* MOBILE / TABLET BOTTOM NAVIGATION BAR (< md) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-zinc-200 px-2 py-2 flex items-center justify-around shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-zinc-200 px-2 py-2 flex items-center justify-around shadow-lg print:hidden">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeModule === item.id;
