@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Printer, Download, Car, Fuel, Image as ImageIcon } from 'lucide-react';
+import { X, Printer, Download, Car, Fuel, Image as ImageIcon, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { FuelGaugeSVG } from './FuelGaugeSVG';
 import { LogoSelector } from './LogoSelector';
@@ -8,6 +8,7 @@ import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 export const PDFGasolinaReportModal: React.FC = () => {
   const { pdfGasolinaModalData, setPdfGasolinaModalData } = useApp();
   const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
+  const [incluirEvidencias, setIncluirEvidencias] = useState<boolean>(true);
 
   if (!pdfGasolinaModalData) return null;
 
@@ -16,6 +17,7 @@ export const PDFGasolinaReportModal: React.FC = () => {
 
   const recordsToPrint = record ? [record] : list;
   const totalImporte = recordsToPrint.reduce((acc, r) => acc + r.importe, 0);
+  const recordsConEvidencia = recordsToPrint.filter(r => Boolean(r.evidenciaUrl));
 
   const handlePrint = () => {
     window.print();
@@ -38,6 +40,22 @@ export const PDFGasolinaReportModal: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {recordsConEvidencia.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIncluirEvidencias(!incluirEvidencias)}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                    incluirEvidencias
+                      ? 'bg-sky-50 text-[#1d5fa6] border-sky-300 shadow-xs'
+                      : 'bg-zinc-100 text-zinc-500 border-zinc-200 hover:bg-zinc-200'
+                  }`}
+                  title="Activar u omitir imágenes de tickets de gasolina en la impresión del PDF"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>{incluirEvidencias ? `Evidencias (${recordsConEvidencia.length}): INCLUIDAS` : `Evidencias (${recordsConEvidencia.length}): OMITIDAS`}</span>
+                </button>
+              )}
+
               <button
                 onClick={handlePrint}
                 className="bg-[#1d5fa6] hover:bg-[#15467c] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
@@ -169,6 +187,34 @@ export const PDFGasolinaReportModal: React.FC = () => {
               </tfoot>
             </table>
           </div>
+
+          {/* ANEXO DE EVIDENCIAS FOTOGRÁFICAS / TICKETS */}
+          {incluirEvidencias && recordsConEvidencia.length > 0 && (
+            <div className="pt-8 border-t-2 border-dashed border-zinc-300 space-y-4 page-break-before">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+                <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-[#1d5fa6]" />
+                  <span>Anexo: Evidencias Fotográficas y Comprobantes de Combustible ({recordsConEvidencia.length})</span>
+                </h4>
+                <span className="text-[10px] text-zinc-400 font-mono">Bitácora de Cargas</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {recordsConEvidencia.map((r, idx) => (
+                  <div key={r.id || idx} className="border border-zinc-200 rounded-lg p-3 space-y-2 bg-zinc-50/50 break-inside-avoid">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-zinc-800 border-b border-zinc-200 pb-1">
+                      <span>{r.fecha} - {r.formaPago}</span>
+                      <span className="font-mono text-[#1d5fa6]">${r.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 line-clamp-1">{r.descripcionUso} (KM: {r.km})</p>
+                    <div className="mt-2 flex justify-center bg-white border border-zinc-200 rounded p-2 max-h-64 overflow-hidden">
+                      <img src={r.evidenciaUrl} alt={`Ticket ${r.fecha}`} className="max-h-56 w-auto object-contain" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Footer Note */}
           <div className="flex items-center justify-between pt-4 border-t border-zinc-200 text-[10px] text-zinc-400">

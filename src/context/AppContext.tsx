@@ -30,6 +30,17 @@ import {
   INITIAL_CLIENTE_PROFILE,
   INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE
 } from '../data/initialData';
+import {
+  fetchSupabaseTable,
+  insertSupabaseRecord,
+  deleteSupabaseRecord,
+  gastoToDb,
+  dbToGasto,
+  gasolinaToDb,
+  dbToGasolina,
+  comprobanteToDb,
+  dbToComprobante
+} from '../lib/supabaseSync';
 
 interface AppContextType {
   role: RoleType;
@@ -201,6 +212,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [pdfGasolinaModalData, setPdfGasolinaModalData] = useState<{ record?: RegistroGasolina; list?: RegistroGasolina[]; vehiculo?: string } | null>(null);
   const [pdfComprobanteModalData, setPdfComprobanteModalData] = useState<ComprobanteGastos | null>(null);
 
+  // Initial Fetch from Supabase (if tables exist)
+  useEffect(() => {
+    let isMounted = true;
+    async function loadFromSupabase() {
+      // Fetch gastos
+      const dbGastos = await fetchSupabaseTable('gastos');
+      if (dbGastos && dbGastos.length > 0 && isMounted) {
+        const mapped = dbGastos.map(dbToGasto);
+        setGastos(mapped);
+      }
+
+      // Fetch gasolina
+      const dbGasolina = await fetchSupabaseTable('registros_gasolina');
+      if (dbGasolina && dbGasolina.length > 0 && isMounted) {
+        const mapped = dbGasolina.map(dbToGasolina);
+        setGasolinaRecords(mapped);
+      }
+
+      // Fetch comprobantes
+      const dbComprobantes = await fetchSupabaseTable('comprobantes_gastos');
+      if (dbComprobantes && dbComprobantes.length > 0 && isMounted) {
+        const mapped = dbComprobantes.map(dbToComprobante);
+        setComprobantesGastos(mapped);
+      }
+    }
+    loadFromSupabase();
+    return () => { isMounted = false; };
+  }, []);
+
   // Sync with LocalStorage
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_cajas`, JSON.stringify(cajas));
@@ -293,7 +333,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: newId,
       estado: 'borrador'
     };
+    // Prepend so new record is always FIRST
     setGastos(prev => [newGasto, ...prev]);
+
+    // Save to Supabase DB asynchronously
+    insertSupabaseRecord('gastos', gastoToDb(newGasto));
 
     // recalculate caja saldo
     setCajas(prev => prev.map(c => {
@@ -310,7 +354,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateGasto = (updated: Gasto) => {
-    setGastos(prev => prev.map(g => g.id === updated.id ? updated : g));
+    // Keep updated item at top if required or preserve top position
+    setGastos(prev => [updated, ...prev.filter(g => g.id !== updated.id)]);
+
+    // Save to Supabase DB asynchronously
+    insertSupabaseRecord('gastos', gastoToDb(updated));
+
     logAudit('EDITAR_GASTO', 'Registro de Gastos', `Editó gasto ${updated.nroOrden}`);
   };
 
@@ -318,6 +367,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const target = gastos.find(g => g.id === id);
     if (!target) return;
     setGastos(prev => prev.filter(g => g.id !== id));
+
+    // Delete from Supabase DB asynchronously
+    deleteSupabaseRecord('gastos', id);
 
     // Restore balance
     setCajas(prev => prev.map(c => {
@@ -529,13 +581,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...recData,
       id: `gas-${Date.now().toString().slice(-4)}`
     };
+    // Prepend so new record is always FIRST
     setGasolinaRecords(prev => [newRec, ...prev]);
+
+    // Save to Supabase DB asynchronously
+    insertSupabaseRecord('registros_gasolina', gasolinaToDb(newRec));
+
     logAudit('CREAR_GASOLINA', 'Control de Gasolina', `Registró $${newRec.importe.toFixed(2)} para ${newRec.vehiculo} (KM: ${newRec.km})`);
   };
 
   const deleteRegistroGasolina = (id: string) => {
     const target = gasolinaRecords.find(g => g.id === id);
     setGasolinaRecords(prev => prev.filter(g => g.id !== id));
+
+    // Delete from Supabase DB asynchronously
+    deleteSupabaseRecord('registros_gasolina', id);
+
     if (target) {
       logAudit('ELIMINAR_GASOLINA', 'Control de Gasolina', `Eliminó registro de gasolina ${target.vehiculo} del ${target.fecha}`);
     }
@@ -546,13 +607,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...compData,
       id: `cmp-${Date.now().toString().slice(-4)}`
     };
+    // Prepend so new record is always FIRST
     setComprobantesGastos(prev => [newComp, ...prev]);
+
+    // Save to Supabase DB asynchronously
+    insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(newComp));
+
     logAudit('CREAR_COMPROBANTE', 'Comprobante de Gastos', `Generó comprobante ${newComp.folio} por $${newComp.importe.toFixed(2)}`);
   };
 
   const deleteComprobanteGastos = (id: string) => {
     const target = comprobantesGastos.find(c => c.id === id);
     setComprobantesGastos(prev => prev.filter(c => c.id !== id));
+
+    // Delete from Supabase DB asynchronously
+    deleteSupabaseRecord('comprobantes_gastos', id);
+
     if (target) {
       logAudit('ELIMINAR_COMPROBANTE', 'Comprobante de Gastos', `Eliminó comprobante ${target.folio}`);
     }

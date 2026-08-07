@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Printer, FileBadge, Download, Star } from 'lucide-react';
+import { X, Printer, FileBadge, Download, Star, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
@@ -7,6 +7,7 @@ import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 export const PDFComprobanteReportModal: React.FC = () => {
   const { pdfComprobanteModalData, setPdfComprobanteModalData } = useApp();
   const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
+  const [incluirEvidencias, setIncluirEvidencias] = useState<boolean>(true);
 
   if (!pdfComprobanteModalData) return null;
 
@@ -40,6 +41,22 @@ export const PDFComprobanteReportModal: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {comp.evidenciaUrl && (
+                <button
+                  type="button"
+                  onClick={() => setIncluirEvidencias(!incluirEvidencias)}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                    incluirEvidencias
+                      ? 'bg-blue-50 text-[#024182] border-blue-300 shadow-xs'
+                      : 'bg-zinc-100 text-zinc-500 border-zinc-200 hover:bg-zinc-200'
+                  }`}
+                  title="Activar u omitir la imagen de la evidencia/ticket en el PDF"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>{incluirEvidencias ? 'Evidencia: INCLUIDA' : 'Evidencia: OMITIDA'}</span>
+                </button>
+              )}
+
               <button
                 onClick={handlePrint}
                 className="bg-[#024182] hover:bg-[#0b315b] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
@@ -196,6 +213,27 @@ export const PDFComprobanteReportModal: React.FC = () => {
               <Star className="w-3 h-3 fill-[#024182]" />
             </div>
           </div>
+
+          {/* ANEXO DE EVIDENCIA ADJUNTA */}
+          {incluirEvidencias && comp.evidenciaUrl && (
+            <div className="pt-8 border-t-2 border-dashed border-zinc-300 space-y-3 page-break-before">
+              <div className="flex items-center justify-between pb-1 border-b border-zinc-200">
+                <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-[#024182]" />
+                  <span>Anexo: Evidencia Fotográfica / Ticket Adjunto</span>
+                </h4>
+                <span className="text-[10px] text-zinc-400 font-mono">Folio: {comp.folio}</span>
+              </div>
+
+              <div className="flex justify-center bg-zinc-50 border border-zinc-200 rounded-lg p-4">
+                <img
+                  src={comp.evidenciaUrl}
+                  alt={`Evidencia ${comp.folio}`}
+                  className="max-h-[500px] w-auto object-contain rounded border border-zinc-200 shadow-xs"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

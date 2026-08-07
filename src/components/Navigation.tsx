@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Receipt,
   Wallet,
@@ -14,9 +14,11 @@ import {
   Fuel,
   FileBadge,
   User,
-  Camera
+  Camera,
+  Database
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { SupabaseSqlModal } from './SupabaseSqlModal';
 
 interface NavItem {
   id: string;
@@ -26,6 +28,7 @@ interface NavItem {
 
 export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role, setRole, activeModule, setActiveModule, cajas, activeCajaId, setActiveCajaId } = useApp();
+  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
 
   // Define modules according to active role
   const getNavItems = (): NavItem[] => {
@@ -134,7 +137,16 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-zinc-100">
+        <div className="p-4 border-t border-zinc-100 space-y-2">
+          <button
+            onClick={() => setIsSqlModalOpen(true)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+            title="Ver y Copiar Script SQL Corregido para Supabase"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Script SQL Supabase</span>
+          </button>
+
           <button
             onClick={() => setRole('home')}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-600 border border-zinc-200 hover:border-zinc-900 hover:text-zinc-900 transition-all cursor-pointer"
@@ -205,6 +217,8 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           );
         })}
       </nav>
+
+      <SupabaseSqlModal isOpen={isSqlModalOpen} onClose={() => setIsSqlModalOpen(false)} />
     </div>
   );
 };

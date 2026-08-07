@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Printer, Download, Building2, CheckCircle2 } from 'lucide-react';
+import { X, Printer, Download, Building2, CheckCircle2, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
@@ -7,6 +7,7 @@ import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 export const PDFReportModal: React.FC = () => {
   const { pdfModalData, setPdfModalData, giros } = useApp();
   const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
+  const [incluirEvidencias, setIncluirEvidencias] = useState<boolean>(true);
 
   if (!pdfModalData) return null;
 
@@ -18,6 +19,7 @@ export const PDFReportModal: React.FC = () => {
   };
 
   const totalReport = gastos.reduce((a, b) => a + b.importe, 0);
+  const gastosConEvidencia = gastos.filter(g => Boolean(g.evidenciaUrl));
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
@@ -36,6 +38,22 @@ export const PDFReportModal: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {gastosConEvidencia.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIncluirEvidencias(!incluirEvidencias)}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                    incluirEvidencias
+                      ? 'bg-blue-50 text-[#024182] border-blue-300 shadow-xs'
+                      : 'bg-zinc-100 text-zinc-500 border-zinc-200 hover:bg-zinc-200'
+                  }`}
+                  title="Activar u omitir imágenes de tickets/evidencias en la impresión del PDF"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>{incluirEvidencias ? `Evidencias (${gastosConEvidencia.length}): INCLUIDAS` : `Evidencias (${gastosConEvidencia.length}): OMITIDAS`}</span>
+                </button>
+              )}
+
               <button
                 onClick={handlePrint}
                 className="bg-[#024182] hover:bg-[#013266] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
@@ -184,6 +202,34 @@ export const PDFReportModal: React.FC = () => {
               <p className="text-[9px] text-zinc-400">Autorización Final</p>
             </div>
           </div>
+
+          {/* ANEXO DE EVIDENCIAS FOTOGRÁFICAS / TICKETS */}
+          {incluirEvidencias && gastosConEvidencia.length > 0 && (
+            <div className="pt-8 border-t-2 border-dashed border-zinc-300 space-y-4 page-break-before">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-200">
+                <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-[#024182]" />
+                  <span>Anexo: Evidencias Fotográficas y Comprobantes Adjuntos ({gastosConEvidencia.length})</span>
+                </h4>
+                <span className="text-[10px] text-zinc-400 font-mono">Impresión con comprobantes</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {gastosConEvidencia.map((g, idx) => (
+                  <div key={g.id || idx} className="border border-zinc-200 rounded-lg p-3 space-y-2 bg-zinc-50/50 break-inside-avoid">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-zinc-800 border-b border-zinc-200 pb-1">
+                      <span>{g.nroOrden} - {g.proveedor}</span>
+                      <span className="font-mono text-[#024182]">${g.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 line-clamp-1">{g.concepto}</p>
+                    <div className="mt-2 flex justify-center bg-white border border-zinc-200 rounded p-2 max-h-64 overflow-hidden">
+                      <img src={g.evidenciaUrl} alt={`Comprobante ${g.nroOrden}`} className="max-h-56 w-auto object-contain" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
