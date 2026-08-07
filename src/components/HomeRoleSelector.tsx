@@ -72,12 +72,19 @@ export const HomeRoleSelector: React.FC = () => {
 
     // Check against registered usuarios list
     const foundUser = usuarios.find(u => {
-      const matchUser = (u.username && u.username.trim().toLowerCase() === inputClean) ||
-                        (u.email && u.email.trim().toLowerCase() === inputClean) ||
-                        (u.nombre && u.nombre.trim().toLowerCase().includes(inputClean));
+      const uUsr = u.username ? u.username.trim().toLowerCase() : '';
+      const uEmail = u.email ? u.email.trim().toLowerCase() : '';
+      const uEmailPrefix = uEmail ? uEmail.split('@')[0] : '';
+      const uNombre = u.nombre ? u.nombre.trim().toLowerCase() : '';
+
+      const matchUser = (uUsr && uUsr === inputClean) ||
+                        (uEmail && uEmail === inputClean) ||
+                        (uEmailPrefix && uEmailPrefix === inputClean) ||
+                        (uNombre && (uNombre.includes(inputClean) || inputClean.includes(uNombre)));
       
-      const matchPass = u.password 
-        ? (u.password.trim() === passClean || passClean === '123' || passClean === 'Admin_123')
+      const uPass = u.password ? u.password.trim() : '';
+      const matchPass = uPass
+        ? (uPass === passClean || passClean === '123' || passClean === 'Admin_123')
         : (passClean === '123' || passClean === 'Admin_123' || passClean.length > 0);
 
       return matchUser && matchPass;

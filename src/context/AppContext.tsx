@@ -330,8 +330,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Fetch usuarios
       const dbUsuarios = await fetchSupabaseTable<any>('usuarios');
       if (dbUsuarios && dbUsuarios.length > 0 && isMounted) {
-        const mapped = dbUsuarios.map(dbToUsuario);
         setUsuarios(prev => {
+          const mapped = dbUsuarios.map(dbRow => {
+            const parsed = dbToUsuario(dbRow);
+            const localMatch = prev.find(p => p.id === parsed.id || (p.email && p.email.toLowerCase() === parsed.email.toLowerCase()));
+            return {
+              ...parsed,
+              username: parsed.username || localMatch?.username,
+              password: parsed.password || localMatch?.password,
+              telefono: parsed.telefono || localMatch?.telefono,
+            };
+          });
           const dbIds = new Set(mapped.map(m => m.id));
           const localOnly = prev.filter(p => !dbIds.has(p.id));
           localOnly.forEach(item => insertSupabaseRecord('usuarios', usuarioToDb(item)));
