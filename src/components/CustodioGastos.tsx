@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X } from 'lucide-react';
+import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X, Printer } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Gasto } from '../types';
 
@@ -14,7 +14,8 @@ export const CustodioGastos: React.FC = () => {
     addGasto,
     updateGasto,
     deleteGasto,
-    setPreviewEvidencia
+    setPreviewEvidencia,
+    setPdfModalData
   } = useApp();
 
   // Form State
@@ -396,6 +397,17 @@ export const CustodioGastos: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setPdfModalData({
+                          caja: activeCaja,
+                          gastos: [gasto]
+                        })}
+                        title="Ver PDF de este Gasto Seleccionado"
+                        className="p-1.5 text-[#024182] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>PDF</span>
+                      </button>
                       <button
                         onClick={() => handleStartEdit(gasto)}
                         title="Editar Gasto"
