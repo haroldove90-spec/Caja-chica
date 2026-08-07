@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Database, Copy, Check, Download, X, AlertTriangle, Terminal, ShieldCheck } from 'lucide-react';
+import { Database, Copy, Check, Download, X, AlertTriangle, Terminal, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 interface SupabaseSqlModalProps {
   isOpen: boolean;
@@ -8,8 +9,25 @@ interface SupabaseSqlModalProps {
 
 export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const { syncWithSupabaseNow } = useApp();
 
   if (!isOpen) return null;
+
+  const handleSyncNow = async () => {
+    setSyncing(true);
+    setSyncSuccess(false);
+    try {
+      await syncWithSupabaseNow();
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 5000);
+    } catch (err) {
+      console.error('Error syncing:', err);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const sqlScript = `-- ====================================================================
 -- SCRIPT COMPLETO, UNIFICADO Y CORREGIDO PARA SUPABASE (100% SIN ERRORES)
@@ -352,6 +370,31 @@ ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
 
         {/* Content */}
         <div className="p-5 space-y-4 overflow-y-auto flex-1">
+          {/* Direct Sync Action Box */}
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                <Database className="w-4 h-4 text-emerald-600" />
+                <span>Sincronizar Base de Datos con Supabase</span>
+              </div>
+              <p className="text-xs text-emerald-700">
+                Sube todos los comprobantes de cliente, gastos, cajas y registros a tu proyecto de Supabase.
+              </p>
+            </div>
+            <button
+              onClick={handleSyncNow}
+              disabled={syncing}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-xs ${
+                syncSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-[#024182] hover:bg-[#013266] text-white disabled:opacity-50'
+              }`}
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              <span>{syncing ? 'Sincronizando...' : syncSuccess ? '¡Sincronizado!' : 'Sincronizar Todo a Supabase'}</span>
+            </button>
+          </div>
+
           {/* Explanation Alert */}
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />

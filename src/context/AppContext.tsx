@@ -41,7 +41,16 @@ import {
   comprobanteToDb,
   dbToComprobante,
   clienteCombustibleToDb,
-  dbToClienteCombustible
+  dbToClienteCombustible,
+  cajaToDb,
+  dbToCaja,
+  abonoToDb,
+  dbToAbono,
+  reembolsoToDb,
+  dbToReembolso,
+  auditToDb,
+  dbToAudit,
+  syncAllDataToSupabase
 } from '../lib/supabaseSync';
 
 interface AppContextType {
@@ -116,6 +125,7 @@ interface AppContextType {
   deleteComprobanteCombustibleCliente: (id: string) => void;
 
   resetData: () => void;
+  syncWithSupabaseNow: () => Promise<void>;
 
   // Evidencia Modal Preview
   previewEvidencia: { url: string; type?: 'image' | 'pdf'; title?: string } | null;
@@ -214,47 +224,105 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [pdfGasolinaModalData, setPdfGasolinaModalData] = useState<{ record?: RegistroGasolina; list?: RegistroGasolina[]; vehiculo?: string } | null>(null);
   const [pdfComprobanteModalData, setPdfComprobanteModalData] = useState<ComprobanteGastos | null>(null);
 
-  // Initial Fetch from Supabase (if tables exist) & Periodic Sync for Multi-Browser / Realtime
+  // Initial Fetch from Supabase & Periodic Sync for Multi-Browser / Realtime
   useEffect(() => {
     let isMounted = true;
     async function loadFromSupabase() {
+      if (!isMounted) return;
+
       // Fetch gastos
       const dbGastos = await fetchSupabaseTable('gastos');
       if (dbGastos && dbGastos.length > 0 && isMounted) {
         const mapped = dbGastos.map(dbToGasto);
-        setGastos(mapped);
+        setGastos(prev => {
+          const dbIds = new Set(mapped.map(m => m.id));
+          const localOnly = prev.filter(p => !dbIds.has(p.id));
+          localOnly.forEach(item => insertSupabaseRecord('gastos', gastoToDb(item)));
+          return [...mapped, ...localOnly];
+        });
+      } else if (dbGastos && dbGastos.length === 0 && isMounted) {
+        gastos.forEach(item => insertSupabaseRecord('gastos', gastoToDb(item)));
       }
 
       // Fetch gasolina
       const dbGasolina = await fetchSupabaseTable('registros_gasolina');
       if (dbGasolina && dbGasolina.length > 0 && isMounted) {
         const mapped = dbGasolina.map(dbToGasolina);
-        setGasolinaRecords(mapped);
+        setGasolinaRecords(prev => {
+          const dbIds = new Set(mapped.map(m => m.id));
+          const localOnly = prev.filter(p => !dbIds.has(p.id));
+          localOnly.forEach(item => {
+            insertSupabaseRecord('registros_gasolina', gasolinaToDb(item));
+            insertSupabaseRecord('registro_gasolina', gasolinaToDb(item));
+          });
+          return [...mapped, ...localOnly];
+        });
+      } else if (dbGasolina && dbGasolina.length === 0 && isMounted) {
+        gasolinaRecords.forEach(item => {
+          insertSupabaseRecord('registros_gasolina', gasolinaToDb(item));
+          insertSupabaseRecord('registro_gasolina', gasolinaToDb(item));
+        });
       }
 
       // Fetch comprobantes
       const dbComprobantes = await fetchSupabaseTable('comprobantes_gastos');
       if (dbComprobantes && dbComprobantes.length > 0 && isMounted) {
         const mapped = dbComprobantes.map(dbToComprobante);
-        setComprobantesGastos(mapped);
+        setComprobantesGastos(prev => {
+          const dbIds = new Set(mapped.map(m => m.id));
+          const localOnly = prev.filter(p => !dbIds.has(p.id));
+          localOnly.forEach(item => insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(item)));
+          return [...mapped, ...localOnly];
+        });
+      } else if (dbComprobantes && dbComprobantes.length === 0 && isMounted) {
+        comprobantesGastos.forEach(item => insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(item)));
       }
 
       // Fetch comprobantes combustible cliente
       const dbClienteComb = await fetchSupabaseTable('comprobantes_combustible_cliente');
-      if (dbClienteComb && isMounted) {
+      if (dbClienteComb && dbClienteComb.length > 0 && isMounted) {
         const mapped = dbClienteComb.map(dbToClienteCombustible);
         setComprobantesCombustibleCliente(prev => {
           const dbIds = new Set(mapped.map(m => m.id));
           const localOnly = prev.filter(p => !dbIds.has(p.id));
-          // Upload any local items not yet in DB
           localOnly.forEach(item => {
             insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(item));
           });
           const combined = [...mapped, ...localOnly];
-          // Sort newest first
           combined.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
           return combined;
         });
+      } else if (dbClienteComb && dbClienteComb.length === 0 && isMounted) {
+        comprobantesCombustibleCliente.forEach(item => {
+          insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(item));
+        });
+      }
+
+      // Fetch cajas
+      const dbCajas = await fetchSupabaseTable('cajas_chicas');
+      if (dbCajas && dbCajas.length > 0 && isMounted) {
+        const mapped = dbCajas.map(dbToCaja);
+        setCajas(mapped);
+      } else if (dbCajas && dbCajas.length === 0 && isMounted) {
+        cajas.forEach(item => insertSupabaseRecord('cajas_chicas', cajaToDb(item)));
+      }
+
+      // Fetch abonos
+      const dbAbonos = await fetchSupabaseTable('abonos');
+      if (dbAbonos && dbAbonos.length > 0 && isMounted) {
+        const mapped = dbAbonos.map(dbToAbono);
+        setAbonos(mapped);
+      } else if (dbAbonos && dbAbonos.length === 0 && isMounted) {
+        abonos.forEach(item => insertSupabaseRecord('abonos', abonoToDb(item)));
+      }
+
+      // Fetch reembolsos
+      const dbReembolsos = await fetchSupabaseTable('reembolsos');
+      if (dbReembolsos && dbReembolsos.length > 0 && isMounted) {
+        const mapped = dbReembolsos.map(dbToReembolso);
+        setReembolsos(mapped);
+      } else if (dbReembolsos && dbReembolsos.length === 0 && isMounted) {
+        reembolsos.forEach(item => insertSupabaseRecord('reembolsos', reembolsoToDb(item)));
       }
     }
 
@@ -719,6 +787,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRoleState('home');
   };
 
+  const syncWithSupabaseNow = async () => {
+    await syncAllDataToSupabase({
+      cajas,
+      gastos,
+      gasolinaRecords,
+      comprobantesGastos,
+      comprobantesCombustibleCliente,
+      reembolsos,
+      abonos,
+      auditLogs,
+      giros,
+      proveedores,
+      empleados,
+      usuarios,
+      clienteProfile
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -777,6 +863,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateComprobanteCombustibleClienteEstado,
         deleteComprobanteCombustibleCliente,
         resetData,
+        syncWithSupabaseNow,
         previewEvidencia,
         setPreviewEvidencia,
         pdfModalData,
