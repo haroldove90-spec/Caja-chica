@@ -214,7 +214,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [pdfGasolinaModalData, setPdfGasolinaModalData] = useState<{ record?: RegistroGasolina; list?: RegistroGasolina[]; vehiculo?: string } | null>(null);
   const [pdfComprobanteModalData, setPdfComprobanteModalData] = useState<ComprobanteGastos | null>(null);
 
-  // Initial Fetch from Supabase (if tables exist)
+  // Initial Fetch from Supabase (if tables exist) & Periodic Sync for Multi-Browser / Realtime
   useEffect(() => {
     let isMounted = true;
     async function loadFromSupabase() {
@@ -241,13 +241,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       // Fetch comprobantes combustible cliente
       const dbClienteComb = await fetchSupabaseTable('comprobantes_combustible_cliente');
-      if (dbClienteComb && dbClienteComb.length > 0 && isMounted) {
+      if (dbClienteComb && isMounted) {
         const mapped = dbClienteComb.map(dbToClienteCombustible);
-        setComprobantesCombustibleCliente(mapped);
+        setComprobantesCombustibleCliente(prev => {
+          const dbIds = new Set(mapped.map(m => m.id));
+          const localOnly = prev.filter(p => !dbIds.has(p.id));
+          // Upload any local items not yet in DB
+          localOnly.forEach(item => {
+            insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(item));
+          });
+          const combined = [...mapped, ...localOnly];
+          // Sort newest first
+          combined.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+          return combined;
+        });
       }
     }
+
     loadFromSupabase();
-    return () => { isMounted = false; };
+
+    // Auto-polling every 6 seconds and on window focus to keep multiple browsers in sync
+    const interval = setInterval(() => {
+      if (isMounted) loadFromSupabase();
+    }, 6000);
+
+    const handleFocus = () => {
+      if (isMounted) loadFromSupabase();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // Sync with LocalStorage
@@ -645,7 +672,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addComprobanteCombustibleCliente = (compData: Omit<ComprobanteCombustibleCliente, 'id' | 'estado'>) => {
     const newComp: ComprobanteCombustibleCliente = {
       ...compData,
-      id: `cc-${Date.now().toString().slice(-4)}`,
+      id: `cc-${Date.now()}`,
       estado: 'enviado'
     };
     // Prepend so new items are always FIRST

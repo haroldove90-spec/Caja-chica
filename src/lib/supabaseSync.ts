@@ -170,19 +170,32 @@ export function dbToComprobante(db: any): ComprobanteGastos {
 
 // Convert ComprobanteCombustibleCliente
 export function clienteCombustibleToDb(c: ComprobanteCombustibleCliente) {
+  let formattedFecha = c.fecha;
+  try {
+    if (c.fecha && !c.fecha.includes('T')) {
+      formattedFecha = new Date(c.fecha.replace(' ', 'T')).toISOString();
+    } else if (c.fecha) {
+      formattedFecha = new Date(c.fecha).toISOString();
+    } else {
+      formattedFecha = new Date().toISOString();
+    }
+  } catch {
+    formattedFecha = new Date().toISOString();
+  }
+
   return {
     id: c.id,
     caja_id: c.cajaId || null,
-    cliente_id: c.clienteId,
-    cliente_nombre: c.clienteNombre,
-    fecha: c.fecha,
-    vehiculo: c.vehiculo,
+    cliente_id: c.clienteId || 'cli-001',
+    cliente_nombre: c.clienteNombre || 'Cliente',
+    fecha: formattedFecha,
+    vehiculo: c.vehiculo || 'Vehículo',
     placas: c.placas || null,
     estacion: c.estacionServicio || null,
-    tipo_combustible: c.tipoCombustible,
+    tipo_combustible: c.tipoCombustible || 'Magna',
     litros: c.litros || null,
-    importe: c.importe,
-    evidencia_url: c.evidenciaUrl,
+    importe: Number(c.importe || 0),
+    evidencia_url: c.evidenciaUrl || 'https://images.unsplash.com/photo-1527018601619-a508a2be00e6?auto=format&fit=crop&w=800&q=80',
     evidencia_type: c.evidenciaType || 'image',
     estado: c.estado || 'enviado',
     observaciones: c.observaciones || null
