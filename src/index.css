@@ -1,1 +1,63 @@
 @import "tailwindcss";
+
+@page {
+  size: letter portrait;
+  margin: 10mm;
+}
+
+@media print {
+  html, body {
+    background-color: white !important;
+    color: black !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset all fixed modal position overlays and force 100% letter page width */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Remove modal card bounds, borders, max-widths, shadows and rounded corners */
+  .fixed.inset-0 > div,
+  .printable-modal-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Full-width printable sheet without encapsulation */
+  .printable-sheet {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: white !important;
+  }
+
+  /* Force tables to expand to 100% full letter page width */
+  table {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

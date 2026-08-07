@@ -23,7 +23,7 @@ export const PDFGasolinaReportModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl relative my-auto max-h-[96vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl relative my-auto max-h-[96vh] flex flex-col overflow-hidden printable-modal-container">
         {/* STICKY TOP HEADER FOR ACTIONS & LOGO SELECTOR */}
         <div className="bg-white border-b border-zinc-200 p-4 sm:p-5 space-y-3 shrink-0 print:hidden z-30 shadow-xs">
           <div className="flex items-center justify-between">
@@ -64,9 +64,9 @@ export const PDFGasolinaReportModal: React.FC = () => {
         </div>
 
         {/* SCROLLABLE INNER SHEET CONTAINER */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 print:p-0 print:overflow-visible">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 print:p-0 print:overflow-visible bg-white">
           {/* OFFICIAL PRINT SHEET CONTAINER (MATCHING ATTACHMENT 1) */}
-          <div className="p-6 sm:p-8 border-2 border-[#1d5fa6] rounded-lg bg-white text-zinc-900 text-xs font-sans space-y-6 shadow-sm">
+          <div className="printable-sheet w-full bg-white text-zinc-900 text-xs font-sans space-y-6">
           {/* Header Layout with Selected Logo & Title */}
           <div className="flex items-center justify-between border-b-2 border-[#1d5fa6] pb-4 gap-4">
             {/* Left Logo Slot */}

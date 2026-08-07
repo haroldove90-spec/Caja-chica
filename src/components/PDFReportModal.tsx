@@ -21,7 +21,7 @@ export const PDFReportModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl relative my-auto max-h-[96vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl relative my-auto max-h-[96vh] flex flex-col overflow-hidden printable-modal-container">
         {/* STICKY TOP HEADER FOR ACTIONS & LOGO SELECTOR */}
         <div className="bg-white border-b border-zinc-200 p-4 sm:p-5 space-y-3 shrink-0 print:hidden z-30 shadow-xs">
           <div className="flex items-center justify-between">
@@ -62,9 +62,9 @@ export const PDFReportModal: React.FC = () => {
         </div>
 
         {/* SCROLLABLE INNER SHEET CONTAINER */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 print:p-0 print:overflow-visible">
-          {/* OFFICIAL PRINT SHEET CONTAINER */}
-          <div className="p-6 sm:p-8 border border-zinc-200 rounded-xl space-y-6 bg-white text-zinc-900 text-xs font-sans">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 print:p-0 print:overflow-visible bg-white">
+          {/* OFFICIAL PRINT SHEET CONTAINER (FULL WIDTH, NO ENCAPSULATION) */}
+          <div className="printable-sheet w-full space-y-6 text-zinc-900 text-xs font-sans">
           {/* Official Header with Logo */}
           <div className="flex justify-between items-start border-b border-zinc-900 pb-4">
             <div className="flex items-center gap-4">
