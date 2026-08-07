@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Printer, Download, Building2, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { LogoSelector } from './LogoSelector';
+import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 
 export const PDFReportModal: React.FC = () => {
   const { pdfModalData, setPdfModalData, giros } = useApp();
+  const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
 
   if (!pdfModalData) return null;
 
   const { reembolso, caja, gastos = [] } = pdfModalData;
+  const activeLogo = LOGOS_DISPONIBLES.find(l => l.id === selectedLogoId);
 
   const handlePrint = () => {
     window.print();
@@ -17,7 +21,7 @@ export const PDFReportModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
         {/* Printable Actions Bar */}
         <div className="flex items-center justify-between pb-4 border-b border-zinc-200 print:hidden">
           <div className="flex items-center gap-2">
@@ -36,28 +40,45 @@ export const PDFReportModal: React.FC = () => {
 
             <button
               onClick={() => setPdfModalData(null)}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg"
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
+        {/* LOGO SELECTOR BAR */}
+        <LogoSelector
+          selectedLogoId={selectedLogoId}
+          onSelectLogo={(logo: LogoOption) => setSelectedLogoId(logo.id)}
+        />
+
         {/* OFFICIAL PRINT SHEET CONTAINER */}
         <div className="p-6 sm:p-8 border border-zinc-200 rounded-xl space-y-6 bg-white text-zinc-900 text-xs font-sans">
-          {/* Official Header */}
+          {/* Official Header with Logo */}
           <div className="flex justify-between items-start border-b border-zinc-900 pb-4">
-            <div>
-              <h1 className="text-lg font-black tracking-tight text-zinc-900 uppercase">
-                REPORTE OFICIAL DE REEMBOLSO DE CAJA CHICA
-              </h1>
-              <p className="text-xs text-zinc-600 font-medium mt-0.5">
-                {caja?.nombre || 'Caja Chica General'}
-              </p>
-              <p className="text-[10px] text-zinc-400">Responsable: {caja?.responsable}</p>
+            <div className="flex items-center gap-4">
+              {activeLogo?.url && (
+                <div className="shrink-0">
+                  <img
+                    src={activeLogo.url}
+                    alt={activeLogo.nombre}
+                    className="h-12 sm:h-16 w-auto max-w-[180px] object-contain"
+                  />
+                </div>
+              )}
+              <div>
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-zinc-900 uppercase">
+                  REPORTE OFICIAL DE REEMBOLSO DE CAJA CHICA
+                </h1>
+                <p className="text-xs text-zinc-600 font-medium mt-0.5">
+                  {caja?.nombre || 'Caja Chica General'}
+                </p>
+                <p className="text-[10px] text-zinc-400">Responsable: {caja?.responsable}</p>
+              </div>
             </div>
 
-            <div className="text-right space-y-0.5">
+            <div className="text-right space-y-0.5 shrink-0 pl-2">
               <span className="font-mono text-sm font-bold text-zinc-900 block">
                 {reembolso ? reembolso.nroReembolso : `REP-${new Date().toISOString().substring(0, 10)}`}
               </span>

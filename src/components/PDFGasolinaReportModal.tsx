@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Printer, Download, Car, Fuel, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { FuelGaugeSVG } from './FuelGaugeSVG';
+import { LogoSelector } from './LogoSelector';
+import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 
 export const PDFGasolinaReportModal: React.FC = () => {
   const { pdfGasolinaModalData, setPdfGasolinaModalData } = useApp();
+  const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
 
   if (!pdfGasolinaModalData) return null;
 
   const { list = [], record, vehiculo = 'CAMIONETA PARTNER' } = pdfGasolinaModalData;
+  const activeLogo = LOGOS_DISPONIBLES.find(l => l.id === selectedLogoId);
 
   const recordsToPrint = record ? [record] : list;
   const totalImporte = recordsToPrint.reduce((acc, r) => acc + r.importe, 0);
@@ -19,7 +23,7 @@ export const PDFGasolinaReportModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+      <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
         {/* Printable Actions Bar */}
         <div className="flex items-center justify-between pb-4 border-b border-zinc-200 print:hidden">
           <div className="flex items-center gap-2">
@@ -38,32 +42,40 @@ export const PDFGasolinaReportModal: React.FC = () => {
 
             <button
               onClick={() => setPdfGasolinaModalData(null)}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg"
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
+        {/* LOGO SELECTOR BAR */}
+        <LogoSelector
+          selectedLogoId={selectedLogoId}
+          onSelectLogo={(logo: LogoOption) => setSelectedLogoId(logo.id)}
+        />
+
         {/* OFFICIAL PRINT SHEET CONTAINER (MATCHING ATTACHMENT 1) */}
         <div className="p-6 sm:p-8 border-2 border-[#1d5fa6] rounded-lg bg-white text-zinc-900 text-xs font-sans space-y-6 shadow-sm">
-          {/* Header Layout with Logos & Title */}
-          <div className="grid grid-cols-12 items-center border-b-2 border-[#1d5fa6] pb-4 gap-2">
-            {/* Left Brand Logo: Coteyuc */}
-            <div className="col-span-3 text-left space-y-0.5">
-              <div className="flex items-center gap-1">
-                <div className="w-6 h-6 rounded-full border-2 border-[#1d5fa6] flex items-center justify-center text-[#1d5fa6] font-black text-xs">
-                  C
-                </div>
-                <span className="font-black text-base tracking-tight text-[#1d5fa6]">coteyuc</span>
-              </div>
-              <span className="text-[8px] font-bold text-zinc-500 block uppercase tracking-wider">
-                CORPORATIVO TEXTIL DE YUCATÁN
-              </span>
+          {/* Header Layout with Selected Logo & Title */}
+          <div className="flex items-center justify-between border-b-2 border-[#1d5fa6] pb-4 gap-4">
+            {/* Left Logo Slot */}
+            <div className="w-1/3 text-left">
+              {activeLogo?.url ? (
+                <img
+                  src={activeLogo.url}
+                  alt={activeLogo.nombre}
+                  className="h-12 sm:h-14 w-auto max-w-[180px] object-contain"
+                />
+              ) : (
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">
+                  Reporte General
+                </span>
+              )}
             </div>
 
             {/* Center Header Title */}
-            <div className="col-span-6 text-center">
+            <div className="w-1/3 text-center">
               <h1 className="text-lg font-black tracking-tight text-zinc-900 uppercase">
                 CONTROL DE COMBUSTIBLE
               </h1>
@@ -72,11 +84,13 @@ export const PDFGasolinaReportModal: React.FC = () => {
               </h2>
             </div>
 
-            {/* Right Brand Logo: Proyecta Digital */}
-            <div className="col-span-3 text-right">
-              <span className="text-lg font-black text-rose-600 italic tracking-tight">Proyecta</span>
-              <span className="text-[9px] font-bold text-zinc-800 block uppercase tracking-widest">
-                DIGITAL
+            {/* Right Sub-info or Brand */}
+            <div className="w-1/3 text-right">
+              <span className="text-xs font-mono font-bold text-zinc-700 block uppercase">
+                EMISIÓN OFICIAL
+              </span>
+              <span className="text-[10px] font-medium text-zinc-400 block">
+                {new Date().toISOString().substring(0, 10)}
               </span>
             </div>
           </div>

@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Printer, FileBadge, Download, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { LogoSelector } from './LogoSelector';
+import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 
 export const PDFComprobanteReportModal: React.FC = () => {
   const { pdfComprobanteModalData, setPdfComprobanteModalData } = useApp();
+  const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
 
   if (!pdfComprobanteModalData) return null;
 
   const comp = pdfComprobanteModalData;
+  const activeLogo = LOGOS_DISPONIBLES.find(l => l.id === selectedLogoId);
 
   const handlePrint = () => {
     window.print();
@@ -21,7 +25,7 @@ export const PDFComprobanteReportModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative my-8">
+      <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
         {/* Printable Actions Bar */}
         <div className="flex items-center justify-between pb-4 border-b border-zinc-200 print:hidden">
           <div className="flex items-center gap-2">
@@ -40,24 +44,45 @@ export const PDFComprobanteReportModal: React.FC = () => {
 
             <button
               onClick={() => setPdfComprobanteModalData(null)}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg"
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
+        {/* LOGO SELECTOR BAR */}
+        <LogoSelector
+          selectedLogoId={selectedLogoId}
+          onSelectLogo={(logo: LogoOption) => setSelectedLogoId(logo.id)}
+        />
+
         {/* OFFICIAL PRINT SHEET CONTAINER (FAITHFUL TO ATTACHMENT 2 FORMAT) */}
         <div className="p-6 sm:p-8 bg-sky-50/50 border-2 border-[#024182] rounded-xl text-zinc-900 text-xs font-sans space-y-5 shadow-sm">
-          {/* Header Dark Blue Banner */}
-          <div className="bg-[#024182] text-white rounded-lg p-3.5 flex items-center justify-between shadow-xs">
-            <div className="flex-1 text-center">
-              <h1 className="text-base sm:text-lg font-black tracking-wider uppercase">
-                COMPROBANTE DE GASTOS
-              </h1>
-            </div>
-            <div className="bg-white text-[#024182] font-black px-4 py-1.5 rounded text-sm sm:text-base border border-blue-200">
-              $ {comp.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          {/* Header Top Area with Optional Selected Logo & Dark Blue Banner */}
+          <div className="space-y-3">
+            {activeLogo?.url && (
+              <div className="flex items-center justify-between pb-2 border-b border-[#024182]/20">
+                <img
+                  src={activeLogo.url}
+                  alt={activeLogo.nombre}
+                  className="h-12 sm:h-14 w-auto max-w-[200px] object-contain"
+                />
+                <span className="text-[10px] font-mono font-bold text-[#024182] uppercase">
+                  {activeLogo.nombre}
+                </span>
+              </div>
+            )}
+
+            <div className="bg-[#024182] text-white rounded-lg p-3.5 flex items-center justify-between shadow-xs">
+              <div className="flex-1 text-center">
+                <h1 className="text-base sm:text-lg font-black tracking-wider uppercase">
+                  COMPROBANTE DE GASTOS
+                </h1>
+              </div>
+              <div className="bg-white text-[#024182] font-black px-4 py-1.5 rounded text-sm sm:text-base border border-blue-200">
+                $ {comp.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              </div>
             </div>
           </div>
 
