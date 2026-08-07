@@ -20,8 +20,7 @@ export async function fetchSupabaseTable<T>(tableName: string): Promise<T[] | nu
   try {
     const { data, error } = await supabase
       .from(tableName)
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
 
     if (error) {
       console.warn(`Supabase fetch notice [${tableName}]:`, error.message);

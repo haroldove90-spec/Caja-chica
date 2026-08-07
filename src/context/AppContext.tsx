@@ -308,7 +308,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (newRole === 'custodio') setActiveModuleState('movimientos');
     else if (newRole === 'contador') setActiveModuleState('auditoria');
     else if (newRole === 'admin') setActiveModuleState('multicajas');
-    else if (newRole === 'cliente') setActiveModuleState('perfil');
+    else if (newRole === 'cliente') setActiveModuleState('comprobantes_combustible');
   };
 
   const setActiveModule = (mod: string) => {

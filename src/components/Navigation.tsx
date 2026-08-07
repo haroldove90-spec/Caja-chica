@@ -57,8 +57,8 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         ];
       case 'cliente':
         return [
-          { id: 'perfil', label: 'Mi Perfil', icon: User },
-          { id: 'comprobantes_combustible', label: 'Comprobantes Combustible', icon: Fuel }
+          { id: 'comprobantes_combustible', label: 'Comprobantes Combustible', icon: Fuel },
+          { id: 'perfil', label: 'Mi Perfil', icon: User }
         ];
       default:
         return [];
