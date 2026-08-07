@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Fuel, Camera, Upload, Send, CheckCircle2, History, Eye, Truck, AlertCircle, X } from 'lucide-react';
+import { Fuel, Camera, Upload, Send, CheckCircle2, History, Eye, Truck, AlertCircle, X, Printer } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ComprobanteCombustibleCliente } from '../types';
 
@@ -9,7 +9,8 @@ export const ClienteCombustible: React.FC = () => {
     clienteProfile,
     comprobantesCombustibleCliente,
     addComprobanteCombustibleCliente,
-    setPreviewEvidencia
+    setPreviewEvidencia,
+    setPdfGasolinaModalData
   } = useApp();
 
   // Form state
@@ -359,9 +360,35 @@ export const ClienteCombustible: React.FC = () => {
             <History className="w-4 h-4 text-[#024182]" />
             <h2 className="text-sm font-semibold text-zinc-900">Mis Comprobantes de Combustible Enviados</h2>
           </div>
-          <span className="text-xs font-semibold text-zinc-500">
-            Total: {myRecords.length}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-zinc-500">
+              Total: {myRecords.length}
+            </span>
+            {myRecords.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setPdfGasolinaModalData({
+                  list: myRecords.map(r => ({
+                    id: r.id,
+                    cajaId: r.cajaId || 'caja-1',
+                    vehiculoId: 'v-cliente',
+                    fecha: r.fecha,
+                    formaPago: 'Efectivo',
+                    descripcionUso: `Carga ${r.tipoCombustible} - ${r.vehiculo}`,
+                    nivelAntes: 2,
+                    nivelDespues: 8,
+                    km: 0,
+                    importe: r.importe
+                  })),
+                  vehiculo: `CLIENTE ${clienteProfile.nombre.toUpperCase()}`
+                })}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#024182] hover:bg-[#013266] text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Ver PDF Mis Cargas</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {myRecords.length === 0 ? (

@@ -22,41 +22,51 @@ export const PDFGasolinaReportModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative my-8">
-        {/* Printable Actions Bar */}
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-200 print:hidden">
-          <div className="flex items-center gap-2">
-            <Fuel className="w-5 h-5 text-zinc-800" />
-            <h3 className="text-sm font-bold text-zinc-900">Vista Previa - Formato Oficial Control de Combustible</h3>
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl relative my-auto max-h-[96vh] flex flex-col overflow-hidden">
+        {/* STICKY TOP HEADER FOR ACTIONS & LOGO SELECTOR */}
+        <div className="bg-white border-b border-zinc-200 p-4 sm:p-5 space-y-3 shrink-0 print:hidden z-30 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-[#1d5fa6] text-white rounded-xl">
+                <Fuel className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900">Vista Previa - Control de Combustible</h3>
+                <p className="text-[11px] text-zinc-500">Seleccione un logotipo antes de guardar o imprimir</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrint}
+                className="bg-[#1d5fa6] hover:bg-[#15467c] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Imprimir / Guardar como PDF</span>
+              </button>
+
+              <button
+                onClick={() => setPdfGasolinaModalData(null)}
+                className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-xl cursor-pointer transition-colors"
+                title="Cerrar modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Imprimir / Guardar en PDF</span>
-            </button>
-
-            <button
-              onClick={() => setPdfGasolinaModalData(null)}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          {/* LOGO SELECTOR BAR */}
+          <LogoSelector
+            selectedLogoId={selectedLogoId}
+            onSelectLogo={(logo: LogoOption) => setSelectedLogoId(logo.id)}
+          />
         </div>
 
-        {/* LOGO SELECTOR BAR */}
-        <LogoSelector
-          selectedLogoId={selectedLogoId}
-          onSelectLogo={(logo: LogoOption) => setSelectedLogoId(logo.id)}
-        />
-
-        {/* OFFICIAL PRINT SHEET CONTAINER (MATCHING ATTACHMENT 1) */}
-        <div className="p-6 sm:p-8 border-2 border-[#1d5fa6] rounded-lg bg-white text-zinc-900 text-xs font-sans space-y-6 shadow-sm">
+        {/* SCROLLABLE INNER SHEET CONTAINER */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 print:p-0 print:overflow-visible">
+          {/* OFFICIAL PRINT SHEET CONTAINER (MATCHING ATTACHMENT 1) */}
+          <div className="p-6 sm:p-8 border-2 border-[#1d5fa6] rounded-lg bg-white text-zinc-900 text-xs font-sans space-y-6 shadow-sm">
           {/* Header Layout with Selected Logo & Title */}
           <div className="flex items-center justify-between border-b-2 border-[#1d5fa6] pb-4 gap-4">
             {/* Left Logo Slot */}
@@ -168,5 +178,6 @@ export const PDFGasolinaReportModal: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };

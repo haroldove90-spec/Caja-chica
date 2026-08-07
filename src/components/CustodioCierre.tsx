@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Send, AlertCircle, CheckCircle2, FileText, PieChart } from 'lucide-react';
+import { Lock, Send, AlertCircle, CheckCircle2, FileText, PieChart, Printer } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const CustodioCierre: React.FC = () => {
@@ -11,7 +11,8 @@ export const CustodioCierre: React.FC = () => {
     giros,
     solicitarReembolso,
     reembolsos,
-    setActiveModule
+    setActiveModule,
+    setPdfModalData
   } = useApp();
 
   const [observaciones, setObservaciones] = useState('');
@@ -80,14 +81,27 @@ export const CustodioCierre: React.FC = () => {
         <>
           {/* Resumen de Cierre */}
           <div className="bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
               <div>
                 <h3 className="text-sm font-semibold text-zinc-900">Resumen para Solicitud de Reembolso</h3>
                 <p className="text-xs text-zinc-500">{activeCaja.nombre}</p>
               </div>
-              <span className="text-xs font-mono font-semibold text-zinc-700 bg-zinc-100 px-3 py-1 rounded-full border border-zinc-200">
-                {activeCajaGastos.length} Comprobantes
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-semibold text-zinc-700 bg-zinc-100 px-3 py-1 rounded-full border border-zinc-200">
+                  {activeCajaGastos.length} Comprobantes
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPdfModalData({
+                    caja: activeCaja,
+                    gastos: activeCajaGastos
+                  })}
+                  className="bg-[#024182] hover:bg-[#013266] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Previsualizar PDF Cierre</span>
+                </button>
+              </div>
             </div>
 
             {/* General Metrics */}

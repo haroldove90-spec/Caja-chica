@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Fuel, Camera, Eye, CheckCircle2, Clock, XCircle, User, Filter, AlertCircle, ExternalLink, Search } from 'lucide-react';
+import { Fuel, Camera, Eye, CheckCircle2, Clock, XCircle, User, Filter, AlertCircle, ExternalLink, Search, Printer } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ComprobanteCombustibleCliente } from '../types';
 
@@ -10,7 +10,8 @@ export const CustodioCombustibleCliente: React.FC = () => {
     comprobantesCombustibleCliente,
     updateComprobanteCombustibleClienteEstado,
     deleteComprobanteCombustibleCliente,
-    setPreviewEvidencia
+    setPreviewEvidencia,
+    setPdfGasolinaModalData
   } = useApp();
 
   const [filterState, setFilterState] = useState<string>('todos');
@@ -83,6 +84,28 @@ export const CustodioCombustibleCliente: React.FC = () => {
             <span className="text-[10px] uppercase font-bold text-blue-600 block">Total Comprobantes</span>
             <span className="text-base font-black font-mono">{comprobantesCombustibleCliente.length}</span>
           </div>
+
+          <button
+            onClick={() => setPdfGasolinaModalData({
+              list: filteredRecords.map((r, i) => ({
+                id: r.id,
+                cajaId: r.cajaId || 'caja-1',
+                vehiculoId: 'v-cliente',
+                fecha: r.fecha,
+                formaPago: 'Efectivo',
+                descripcionUso: `Carga Combustible ${r.tipoCombustible} - Cliente ${r.clienteNombre} (${r.vehiculo})`,
+                nivelAntes: 2,
+                nivelDespues: 8,
+                km: 0,
+                importe: r.importe
+              })),
+              vehiculo: 'COMPROBANTES COMBUSTIBLE CLIENTE'
+            })}
+            className="bg-[#024182] hover:bg-[#013266] text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-md transition-all active:scale-95"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Generar PDF Reporte</span>
+          </button>
         </div>
       </div>
 
