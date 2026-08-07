@@ -149,9 +149,10 @@ export const INITIAL_EMPLEADOS: Empleado[] = [
 ];
 
 export const INITIAL_USUARIOS: Usuario[] = [
-  { id: 'usr-1', nombre: 'Sofía Rodríguez', email: 'sofia.rodriguez@empresa.com', rol: 'custodio', cajaId: 'caja-1', activo: true },
-  { id: 'usr-2', nombre: 'CP. Alberto Vargas', email: 'alberto.vargas@empresa.com', rol: 'contador', activo: true },
-  { id: 'usr-3', nombre: 'Admin General', email: 'admin@empresa.com', rol: 'admin', activo: true }
+  { id: 'usr-admin1', nombre: 'Super Administrador Principal', email: 'admin1@empresa.com', username: 'admin1', password: 'Admin_123', rol: 'admin', activo: true },
+  { id: 'usr-1', nombre: 'Sofía Rodríguez', email: 'sofia.rodriguez@empresa.com', username: 'custodio1', password: '123', rol: 'custodio', cajaId: 'caja-1', activo: true },
+  { id: 'usr-2', nombre: 'CP. Alberto Vargas', email: 'alberto.vargas@empresa.com', username: 'contador1', password: '123', rol: 'contador', activo: true },
+  { id: 'usr-3', nombre: 'Cliente Usuario', email: 'cliente@empresa.com', username: 'cliente1', password: '123', rol: 'cliente', activo: true }
 ];
 
 export const INITIAL_GASTOS: Gasto[] = [

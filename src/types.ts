@@ -112,7 +112,9 @@ export interface Usuario {
   id: string;
   nombre: string;
   email: string;
-  rol: 'custodio' | 'contador' | 'admin';
+  username?: string;
+  password?: string;
+  rol: RoleType;
   cajaId?: string;
   activo: boolean;
 }
