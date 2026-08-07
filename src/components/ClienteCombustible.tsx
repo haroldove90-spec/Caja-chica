@@ -28,8 +28,57 @@ export const ClienteCombustible: React.FC = () => {
   const [subiendoFoto, setSubiendoFoto] = useState<boolean>(false);
   const [sentSuccess, setSentSuccess] = useState<boolean>(false);
 
+  // Live Camera state
+  const [showLiveCameraModal, setShowLiveCameraModal] = useState<boolean>(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
+
+  const startLiveCamera = async () => {
+    setShowLiveCameraModal(true);
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      mediaStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch (err: any) {
+      console.warn('Error accessing camera:', err);
+      setCameraError('No se pudo acceder a la cámara. Por favor otorgue permisos a la aplicación o utilice la opción de subir imagen.');
+    }
+  };
+
+  const stopLiveCamera = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    setShowLiveCameraModal(false);
+  };
+
+  const captureCameraSnapshot = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setEvidenciaUrl(dataUrl);
+      setEvidenciaNombre(`ticket_camara_${Date.now()}.jpg`);
+      stopLiveCamera();
+    }
+  };
 
   // Filter client's records
   const myRecords = comprobantesCombustibleCliente.filter(
@@ -339,11 +388,19 @@ export const ClienteCombustible: React.FC = () => {
                   <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                     <button
                       type="button"
-                      onClick={() => cameraInputRef.current?.click()}
+                      onClick={startLiveCamera}
                       className="inline-flex items-center gap-1.5 bg-[#024182] hover:bg-[#013266] text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
                     >
                       <Camera className="w-4 h-4" />
-                      <span>Tomar Foto (Cámara)</span>
+                      <span>Cámara en Vivo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Cámara Nativa Móvil</span>
                     </button>
                     <button
                       type="button"
@@ -515,6 +572,80 @@ export const ClienteCombustible: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Live Camera Stream Modal */}
+      {showLiveCameraModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-zinc-200">
+            <div className="bg-zinc-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-blue-400 animate-pulse" />
+                <h3 className="text-sm font-bold">Cámara en Vivo - Capturar Ticket</h3>
+              </div>
+              <button
+                type="button"
+                onClick={stopLiveCamera}
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 bg-zinc-950 flex flex-col items-center justify-center min-h-[300px] relative">
+              {cameraError ? (
+                <div className="text-center p-6 space-y-3">
+                  <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+                  <p className="text-xs text-rose-300 font-medium">{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopLiveCamera();
+                      cameraInputRef.current?.click();
+                    }}
+                    className="mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Abrir Cámara Nativa del Móvil
+                  </button>
+                </div>
+              ) : (
+                <div className="relative w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                  <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    className="w-full max-h-[360px] object-cover rounded-xl"
+                  />
+                  <div className="absolute inset-0 border-2 border-dashed border-white/40 pointer-events-none rounded-xl m-4 flex items-center justify-center">
+                    <span className="text-[10px] text-white/70 bg-black/50 px-2 py-1 rounded-md backdrop-blur-xs">
+                      Encuadre el ticket de combustible aquí
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-zinc-100 p-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={stopLiveCamera}
+                className="px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-200 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              {!cameraError && (
+                <button
+                  type="button"
+                  onClick={captureCameraSnapshot}
+                  className="inline-flex items-center gap-2 bg-[#024182] hover:bg-[#013266] text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Capturar Foto del Ticket</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

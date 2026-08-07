@@ -39,7 +39,9 @@ import {
   gasolinaToDb,
   dbToGasolina,
   comprobanteToDb,
-  dbToComprobante
+  dbToComprobante,
+  clienteCombustibleToDb,
+  dbToClienteCombustible
 } from '../lib/supabaseSync';
 
 interface AppContextType {
@@ -235,6 +237,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dbComprobantes && dbComprobantes.length > 0 && isMounted) {
         const mapped = dbComprobantes.map(dbToComprobante);
         setComprobantesGastos(mapped);
+      }
+
+      // Fetch comprobantes combustible cliente
+      const dbClienteComb = await fetchSupabaseTable('comprobantes_combustible_cliente');
+      if (dbClienteComb && dbClienteComb.length > 0 && isMounted) {
+        const mapped = dbClienteComb.map(dbToClienteCombustible);
+        setComprobantesCombustibleCliente(mapped);
       }
     }
     loadFromSupabase();
@@ -639,17 +648,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `cc-${Date.now().toString().slice(-4)}`,
       estado: 'enviado'
     };
+    // Prepend so new items are always FIRST
     setComprobantesCombustibleCliente(prev => [newComp, ...prev]);
+
+    // Save to Supabase DB asynchronously
+    insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(newComp));
+
     logAudit('ENVIAR_COMBUSTIBLE_CLIENTE', 'Comprobantes Combustible', `Cliente ${newComp.clienteNombre} envió comprobante de $${newComp.importe.toFixed(2)} (${newComp.vehiculo})`);
   };
 
   const updateComprobanteCombustibleClienteEstado = (id: string, estado: 'enviado' | 'revisado' | 'aprobado' | 'rechazado') => {
-    setComprobantesCombustibleCliente(prev => prev.map(c => c.id === id ? { ...c, estado } : c));
+    setComprobantesCombustibleCliente(prev => prev.map(c => {
+      if (c.id === id) {
+        const updated = { ...c, estado };
+        insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(updated));
+        return updated;
+      }
+      return c;
+    }));
     logAudit('CAMBIAR_ESTADO_COMBUSTIBLE', 'Control Combustible Cliente', `Actualizó estado a ${estado} para el comprobante ${id}`);
   };
 
   const deleteComprobanteCombustibleCliente = (id: string) => {
     setComprobantesCombustibleCliente(prev => prev.filter(c => c.id !== id));
+    deleteSupabaseRecord('comprobantes_combustible_cliente', id);
   };
 
   const resetData = () => {

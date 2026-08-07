@@ -168,3 +168,45 @@ export function dbToComprobante(db: any): ComprobanteGastos {
     evidenciaUrl: db.evidencia_url || undefined
   };
 }
+
+// Convert ComprobanteCombustibleCliente
+export function clienteCombustibleToDb(c: ComprobanteCombustibleCliente) {
+  return {
+    id: c.id,
+    caja_id: c.cajaId || null,
+    cliente_id: c.clienteId,
+    cliente_nombre: c.clienteNombre,
+    fecha: c.fecha,
+    vehiculo: c.vehiculo,
+    placas: c.placas || null,
+    estacion: c.estacionServicio || null,
+    tipo_combustible: c.tipoCombustible,
+    litros: c.litros || null,
+    importe: c.importe,
+    evidencia_url: c.evidenciaUrl,
+    evidencia_type: c.evidenciaType || 'image',
+    estado: c.estado || 'enviado',
+    observaciones: c.observaciones || null
+  };
+}
+
+export function dbToClienteCombustible(db: any): ComprobanteCombustibleCliente {
+  return {
+    id: db.id,
+    cajaId: db.caja_id || undefined,
+    clienteId: db.cliente_id || 'cli-001',
+    clienteNombre: db.cliente_nombre || 'Cliente',
+    vehiculo: db.vehiculo || '',
+    placas: db.placas || '',
+    fecha: db.fecha || new Date().toISOString(),
+    importe: Number(db.importe || 0),
+    litros: db.litros ? Number(db.litros) : undefined,
+    tipoCombustible: db.tipo_combustible || 'Magna',
+    estacionServicio: db.estacion || db.estacion_servicio || undefined,
+    observaciones: db.observaciones || undefined,
+    evidenciaUrl: db.evidencia_url || '',
+    evidenciaType: db.evidencia_type || 'image',
+    estado: db.estado || 'enviado'
+  };
+}
+
