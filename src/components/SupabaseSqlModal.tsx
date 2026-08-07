@@ -11,225 +11,305 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
-  const sqlScript = `-- =======================================================
--- SCRIPT SQL COMPLETO Y CORREGIDO PARA SUPABASE (CAJA CHICA)
--- Ejecuta este script en el Editor SQL de tu proyecto Supabase:
--- https://supabase.com/dashboard/project/_/sql/new
--- =======================================================
+  const sqlScript = `-- ====================================================================
+-- SCRIPT COMPLETO, UNIFICADO Y CORREGIDO PARA SUPABASE (100% SIN ERRORES)
+-- Control de Cajas Chicas, Gastos, Combustible y Logotipos Oficiales
+-- ====================================================================
 
--- 1. CREACIÓN DE TABLAS SI NO EXISTEN
-CREATE TABLE IF NOT EXISTS cajas_chicas (
-  id VARCHAR(100) PRIMARY KEY,
-  nombre VARCHAR(255) NOT NULL,
-  responsable VARCHAR(255) NOT NULL,
-  fondo_base NUMERIC(12,2) DEFAULT 0.00,
-  saldo_actual NUMERIC(12,2) DEFAULT 0.00,
-  empresa_logo VARCHAR(100) DEFAULT 'coteyuc',
-  estado VARCHAR(50) DEFAULT 'Abierta',
-  limite_alerta NUMERIC(12,2) DEFAULT 3000.00,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- 1. TABLAS PRINCIPALES DE CAJA CHICA Y GASTOS
+CREATE TABLE IF NOT EXISTS public.cajas_chicas (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  responsable TEXT NOT NULL,
+  fondo_base NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+  saldo_actual NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+  estado TEXT NOT NULL DEFAULT 'Abierta',
+  ubicacion TEXT NOT NULL DEFAULT ''
 );
 
-CREATE TABLE IF NOT EXISTS giros (
-  id VARCHAR(100) PRIMARY KEY,
-  nombre VARCHAR(255) NOT NULL,
-  color VARCHAR(50) DEFAULT '#024182',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.giros (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  codigo TEXT NOT NULL,
+  color TEXT DEFAULT 'bg-zinc-100 text-zinc-800',
+  activo BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS proveedores (
-  id VARCHAR(100) PRIMARY KEY,
-  nombre VARCHAR(255) NOT NULL,
-  rfc VARCHAR(50),
-  categoria VARCHAR(100),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.proveedores (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  rfc TEXT NOT NULL,
+  categoria TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS empleados (
-  id VARCHAR(100) PRIMARY KEY,
-  nombre VARCHAR(255) NOT NULL,
-  puesto VARCHAR(100),
-  departamento VARCHAR(100),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.empleados (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  puesto TEXT NOT NULL,
+  departamento TEXT NOT NULL,
+  activo BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS usuarios (
-  id VARCHAR(100) PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  nombre VARCHAR(255) NOT NULL,
-  rol VARCHAR(50) DEFAULT 'custodio',
-  activo BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.usuarios (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  rol TEXT NOT NULL DEFAULT 'custodio',
+  caja_id TEXT,
+  activo BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS gastos (
-  id VARCHAR(100) PRIMARY KEY,
-  caja_id VARCHAR(100) NOT NULL,
-  nro_orden VARCHAR(100) NOT NULL,
-  fecha VARCHAR(50) NOT NULL,
-  proveedor VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS public.gastos (
+  id TEXT PRIMARY KEY,
+  caja_id TEXT NOT NULL,
+  nro_orden TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  proveedor TEXT NOT NULL,
   concepto TEXT NOT NULL,
   importe NUMERIC(12,2) NOT NULL DEFAULT 0.00,
-  solicitante VARCHAR(255) NOT NULL,
-  giro_id VARCHAR(100) NOT NULL,
-  facturado BOOLEAN DEFAULT true,
-  estado VARCHAR(50) DEFAULT 'borrador',
-  reembolso_id VARCHAR(100),
+  solicitante TEXT NOT NULL,
+  giro_id TEXT,
+  facturado BOOLEAN DEFAULT FALSE,
   evidencia_url TEXT,
-  evidencia_nombre VARCHAR(255),
-  evidencia_type VARCHAR(50) DEFAULT 'image',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  evidencia_type TEXT,
+  evidencia_nombre TEXT,
+  estado TEXT NOT NULL DEFAULT 'borrador',
+  nota_rechazo TEXT,
+  reembolso_id TEXT
 );
 
-CREATE TABLE IF NOT EXISTS reembolsos (
-  id VARCHAR(100) PRIMARY KEY,
-  nro_reembolso VARCHAR(100) NOT NULL,
-  caja_id VARCHAR(100) NOT NULL,
-  fecha_solicitud VARCHAR(50) NOT NULL,
-  total_gastos NUMERIC(12,2) DEFAULT 0.00,
-  cant_gastos INT DEFAULT 0,
+CREATE TABLE IF NOT EXISTS public.reembolsos (
+  id TEXT PRIMARY KEY,
+  nro_reembolso TEXT NOT NULL,
+  caja_id TEXT NOT NULL,
+  fecha_solicitud TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  total_gastos NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+  cant_gastos INT NOT NULL DEFAULT 0,
   observaciones TEXT,
-  estado VARCHAR(50) DEFAULT 'pendiente',
-  fecha_aprobacion VARCHAR(50),
-  aprobado_por VARCHAR(255),
-  firma_electronica TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  estado TEXT NOT NULL DEFAULT 'pendiente',
+  fecha_aprobacion TIMESTAMP WITH TIME ZONE,
+  aprobado_por TEXT,
+  firma_electronica TEXT
 );
 
-CREATE TABLE IF NOT EXISTS abonos (
-  id VARCHAR(100) PRIMARY KEY,
-  caja_id VARCHAR(100) NOT NULL,
-  monto NUMERIC(12,2) NOT NULL,
-  fecha VARCHAR(50) NOT NULL,
-  observaciones TEXT,
-  registrado_por VARCHAR(255),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS registros_gasolina (
-  id VARCHAR(100) PRIMARY KEY,
-  caja_id VARCHAR(100) NOT NULL,
-  fecha VARCHAR(50) NOT NULL,
-  vehiculo VARCHAR(255) NOT NULL,
-  forma_pago VARCHAR(100) DEFAULT 'EFECTIVO',
-  descripcion_uso TEXT NOT NULL,
-  nivel_antes VARCHAR(20) DEFAULT '1/4',
-  nivel_despues VARCHAR(20) DEFAULT 'F',
-  km NUMERIC(12,2) DEFAULT 0.00,
-  importe NUMERIC(12,2) DEFAULT 0.00,
-  registrado_por VARCHAR(255) NOT NULL,
-  evidencia_url TEXT,
-  evidencia_type VARCHAR(50) DEFAULT 'image',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS comprobantes_gastos (
-  id VARCHAR(100) PRIMARY KEY,
-  caja_id VARCHAR(100) NOT NULL,
-  folio VARCHAR(100) NOT NULL,
-  fecha VARCHAR(50) NOT NULL,
-  solicitante VARCHAR(255) NOT NULL,
-  giro VARCHAR(255) NOT NULL,
-  monto_letra TEXT NOT NULL,
-  autorizado_por VARCHAR(255) NOT NULL,
-  recibido_por VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS public.abonos (
+  id TEXT PRIMARY KEY,
+  caja_id TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  monto NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   concepto TEXT NOT NULL,
-  importe NUMERIC(12,2) DEFAULT 0.00,
+  registrado_por TEXT NOT NULL,
+  comprobante TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id TEXT PRIMARY KEY,
+  fecha TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  usuario TEXT NOT NULL,
+  rol TEXT NOT NULL,
+  accion TEXT NOT NULL,
+  modulo TEXT NOT NULL,
+  detalles TEXT NOT NULL
+);
+
+-- 2. TABLAS DE REGISTROS DE GASOLINA (PLURAL Y SINGULAR)
+CREATE TABLE IF NOT EXISTS public.registros_gasolina (
+  id TEXT PRIMARY KEY,
+  caja_id TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  vehiculo TEXT NOT NULL,
+  forma_pago TEXT NOT NULL DEFAULT 'EFECTIVO',
+  descripcion_uso TEXT NOT NULL,
+  nivel_antes TEXT NOT NULL DEFAULT '1/4',
+  nivel_despues TEXT NOT NULL DEFAULT 'F',
+  km INT NOT NULL DEFAULT 0,
+  importe NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+  registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  evidencia_type TEXT DEFAULT 'image'
 );
 
-CREATE TABLE IF NOT EXISTS comprobantes_combustible_cliente (
-  id VARCHAR(100) PRIMARY KEY,
-  cliente_id VARCHAR(100) NOT NULL,
-  cliente_nombre VARCHAR(255) NOT NULL,
-  vehiculo VARCHAR(255) NOT NULL,
-  placas VARCHAR(100),
-  fecha VARCHAR(50) NOT NULL,
-  monto NUMERIC(12,2) DEFAULT 0.00,
-  litros NUMERIC(12,2) DEFAULT 0.00,
-  odometro NUMERIC(12,2) DEFAULT 0.00,
-  estacion_servicio VARCHAR(255),
+CREATE TABLE IF NOT EXISTS public.registro_gasolina (
+  id TEXT PRIMARY KEY,
+  caja_id TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  vehiculo TEXT NOT NULL,
+  forma_pago TEXT NOT NULL DEFAULT 'EFECTIVO',
+  descripcion_uso TEXT NOT NULL,
+  nivel_antes TEXT NOT NULL DEFAULT '1/4',
+  nivel_despues TEXT NOT NULL DEFAULT 'F',
+  km INT NOT NULL DEFAULT 0,
+  importe NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+  registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
-  estado VARCHAR(50) DEFAULT 'enviado',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  evidencia_type TEXT DEFAULT 'image'
 );
 
-CREATE TABLE IF NOT EXISTS audit_logs (
-  id VARCHAR(100) PRIMARY KEY,
-  fecha VARCHAR(50) NOT NULL,
-  usuario VARCHAR(255) NOT NULL,
-  rol VARCHAR(50) NOT NULL,
-  accion VARCHAR(100) NOT NULL,
-  modulo VARCHAR(100) NOT NULL,
-  detalles TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- 3. TABLAS DE COMPROBANTES DE GASTOS Y DESGLOSE ITEMS
+CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
+    id TEXT PRIMARY KEY,
+    caja_id TEXT NOT NULL,
+    folio TEXT NOT NULL UNIQUE,
+    fecha DATE NOT NULL DEFAULT CURRENT_DATE,
+    importe NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    importe_letra TEXT NOT NULL,
+    concepto TEXT NOT NULL,
+    solicitado_a TEXT NOT NULL,
+    autorizado_por TEXT,
+    recibido_por TEXT,
+    evidencia_url TEXT,
+    evidencia_type TEXT DEFAULT 'image',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- 2. ASEGURAR COLUMNAS PARA EVIDENCIAS
-ALTER TABLE gastos ADD COLUMN IF NOT EXISTS evidencia_url TEXT;
-ALTER TABLE gastos ADD COLUMN IF NOT EXISTS evidencia_nombre VARCHAR(255);
-ALTER TABLE gastos ADD COLUMN IF NOT EXISTS evidencia_type VARCHAR(50);
+CREATE TABLE IF NOT EXISTS public.comprobante_gastos_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    comprobante_id TEXT REFERENCES public.comprobantes_gastos(id) ON DELETE CASCADE,
+    no_cuenta VARCHAR(50) NOT NULL,
+    no_orden VARCHAR(50),
+    no_cotizacion VARCHAR(50),
+    nombre_proyecto VARCHAR(150),
+    nombre TEXT NOT NULL,
+    importe NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
-ALTER TABLE registros_gasolina ADD COLUMN IF NOT EXISTS evidencia_url TEXT;
-ALTER TABLE registros_gasolina ADD COLUMN IF NOT EXISTS evidencia_type VARCHAR(50);
+-- Asegurar columnas en comprobante_gastos_items si la tabla ya existía
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comprobante_gastos_items' AND column_name='no_orden') THEN
+        ALTER TABLE public.comprobante_gastos_items ADD COLUMN no_orden VARCHAR(50);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comprobante_gastos_items' AND column_name='no_cotizacion') THEN
+        ALTER TABLE public.comprobante_gastos_items ADD COLUMN no_cotizacion VARCHAR(50);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comprobante_gastos_items' AND column_name='nombre_proyecto') THEN
+        ALTER TABLE public.comprobante_gastos_items ADD COLUMN nombre_proyecto VARCHAR(150);
+    END IF;
+END $$;
 
--- 3. PERMISOS DE LECTURA Y ESCRITURA PÚBLICA (ANON)
+-- 4. TABLAS DE PERFIL CLIENTE Y COMBUSTIBLE CLIENTE
+CREATE TABLE IF NOT EXISTS public.clientes_perfil (
+    id TEXT PRIMARY KEY DEFAULT 'cli-001',
+    nombre TEXT NOT NULL,
+    email TEXT NOT NULL,
+    telefono TEXT,
+    empresa TEXT,
+    rfc TEXT,
+    direccion TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS public.comprobantes_combustible_cliente (
+    id TEXT PRIMARY KEY,
+    caja_id TEXT,
+    cliente_id TEXT NOT NULL,
+    cliente_nombre TEXT NOT NULL,
+    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    vehiculo TEXT NOT NULL,
+    placas TEXT,
+    estacion TEXT,
+    tipo_combustible TEXT NOT NULL DEFAULT 'Magna',
+    litros NUMERIC(10,2),
+    importe NUMERIC(10,2) NOT NULL,
+    evidencia_url TEXT NOT NULL,
+    evidencia_type TEXT DEFAULT 'image',
+    estado TEXT NOT NULL DEFAULT 'enviado',
+    observaciones TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. TABLA DE LOGOTIPOS OFICIALES PARA PDF
+CREATE TABLE IF NOT EXISTS public.logos (
+    id TEXT PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. HABILITAR SEGURIDAD POR FILA (RLS)
+ALTER TABLE public.cajas_chicas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.giros ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.proveedores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.empleados ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gastos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reembolsos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.abonos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registros_gasolina ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registro_gasolina ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comprobantes_gastos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comprobante_gastos_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clientes_perfil ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comprobantes_combustible_cliente ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.logos ENABLE ROW LEVEL SECURITY;
+
+-- 7. BORRAR POLÍTICAS PREVIAS PARA EVITAR EL ERROR 42710
+DROP POLICY IF EXISTS "Public full access on cajas_chicas" ON public.cajas_chicas;
+DROP POLICY IF EXISTS "Public full access on giros" ON public.giros;
+DROP POLICY IF EXISTS "Public full access on proveedores" ON public.proveedores;
+DROP POLICY IF EXISTS "Public full access on empleados" ON public.empleados;
+DROP POLICY IF EXISTS "Public full access on usuarios" ON public.usuarios;
+DROP POLICY IF EXISTS "Public full access on gastos" ON public.gastos;
+DROP POLICY IF EXISTS "Public full access on reembolsos" ON public.reembolsos;
+DROP POLICY IF EXISTS "Public full access on abonos" ON public.abonos;
+DROP POLICY IF EXISTS "Public full access on audit_logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "Public full access on registros_gasolina" ON public.registros_gasolina;
+DROP POLICY IF EXISTS "Public full access on registro_gasolina" ON public.registro_gasolina;
+DROP POLICY IF EXISTS "Public full access on comprobantes_gastos" ON public.comprobantes_gastos;
+DROP POLICY IF EXISTS "Public full access on comprobante_gastos_items" ON public.comprobante_gastos_items;
+DROP POLICY IF EXISTS "Acceso total lectura/escritura perfil clientes" ON public.clientes_perfil;
+DROP POLICY IF EXISTS "Acceso total lectura/escritura comprobantes combustible" ON public.comprobantes_combustible_cliente;
+DROP POLICY IF EXISTS "Acceso lectura/escritura logos" ON public.logos;
+
+-- 8. RECREAR POLÍTICAS DE ACCESO TOTAL
+CREATE POLICY "Public full access on cajas_chicas" ON public.cajas_chicas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on giros" ON public.giros FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on proveedores" ON public.proveedores FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on empleados" ON public.empleados FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on usuarios" ON public.usuarios FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on gastos" ON public.gastos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on reembolsos" ON public.reembolsos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on abonos" ON public.abonos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on audit_logs" ON public.audit_logs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on registros_gasolina" ON public.registros_gasolina FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on registro_gasolina" ON public.registro_gasolina FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on comprobantes_gastos" ON public.comprobantes_gastos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public full access on comprobante_gastos_items" ON public.comprobante_gastos_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Acceso total lectura/escritura perfil clientes" ON public.clientes_perfil FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Acceso total lectura/escritura comprobantes combustible" ON public.comprobantes_combustible_cliente FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Acceso lectura/escritura logos" ON public.logos FOR ALL USING (true) WITH CHECK (true);
+
+-- 9. PERMISOS RLS Y ROLES PÚBLICOS
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, postgres;
 
-ALTER TABLE cajas_chicas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE giros ENABLE ROW LEVEL SECURITY;
-ALTER TABLE proveedores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE empleados ENABLE ROW LEVEL SECURITY;
-ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gastos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reembolsos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE abonos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE registros_gasolina ENABLE ROW LEVEL SECURITY;
-ALTER TABLE comprobantes_gastos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE comprobantes_combustible_cliente ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+-- 10. INSERTAR Y/O ACTUALIZAR LOGOTIPOS Y COLUMNAS DE EVIDENCIA
+INSERT INTO public.logos (id, nombre, url)
+VALUES 
+  ('coteyuc', 'Coteyuc', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'),
+  ('jscontadores', 'JS Contadores', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/jscontadores.png'),
+  ('proyecta', 'Proyecta Digital', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyecta.jpeg'),
+  ('publicrea', 'Publicrea', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'),
+  ('sin_logo', 'Sin Logo', NULL)
+ON CONFLICT (id) DO UPDATE 
+SET nombre = EXCLUDED.nombre,
+    url = EXCLUDED.url;
 
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_cajas') THEN
-    CREATE POLICY policy_cajas ON cajas_chicas FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_giros') THEN
-    CREATE POLICY policy_giros ON giros FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_gastos') THEN
-    CREATE POLICY policy_gastos ON gastos FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_gasolina') THEN
-    CREATE POLICY policy_gasolina ON registros_gasolina FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_comprobantes') THEN
-    CREATE POLICY policy_comprobantes ON comprobantes_gastos FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_reembolsos') THEN
-    CREATE POLICY policy_reembolsos ON reembolsos FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_abonos') THEN
-    CREATE POLICY policy_abonos ON abonos FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_audit') THEN
-    CREATE POLICY policy_audit ON audit_logs FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_prov') THEN
-    CREATE POLICY policy_prov ON proveedores FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_emp') THEN
-    CREATE POLICY policy_emp ON empleados FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_usr') THEN
-    CREATE POLICY policy_usr ON usuarios FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'policy_ccc') THEN
-    CREATE POLICY policy_ccc ON comprobantes_combustible_cliente FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+-- COLUMNAS ADICIONALES SI YA EXISTÍAN OTRAS TABLAS PREVIAS
+ALTER TABLE public.gastos 
+ADD COLUMN IF NOT EXISTS evidencia_url TEXT,
+ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT,
+ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
+
+ALTER TABLE public.registros_gasolina 
+ADD COLUMN IF NOT EXISTS evidencia_url TEXT,
+ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
+
+ALTER TABLE public.registro_gasolina 
+ADD COLUMN IF NOT EXISTS evidencia_url TEXT,
+ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
 `;
 
   const handleCopy = () => {
