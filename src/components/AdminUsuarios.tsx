@@ -8,6 +8,7 @@ export const AdminUsuarios: React.FC = () => {
 
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,6 +33,7 @@ export const AdminUsuarios: React.FC = () => {
     const newUser: Omit<Usuario, 'id'> = {
       nombre,
       email,
+      telefono: telefono.trim() || undefined,
       username: finalUsername,
       password: finalPassword,
       rol,
@@ -50,6 +52,7 @@ export const AdminUsuarios: React.FC = () => {
     // Reset form
     setNombre('');
     setEmail('');
+    setTelefono('');
     setUsername('');
     setPassword('');
     setRol('custodio');
@@ -69,6 +72,7 @@ export const AdminUsuarios: React.FC = () => {
   const formatShareMessage = (user: Usuario) => {
     const usrName = user.username || user.email.split('@')[0];
     const pass = user.password || '123';
+    const telStr = user.telefono ? `\n📱 WhatsApp / Tel: ${user.telefono}` : '';
     return `🔑 ACCESO AL SISTEMA DE CAJA CHICA
 
 ¡Hola ${user.nombre}! Se han generado tus credenciales para ingresar a la plataforma:
@@ -76,7 +80,7 @@ export const AdminUsuarios: React.FC = () => {
 🌐 Link de la Aplicación:
 ${appLink}
 
-👤 Usuario / Correo: ${usrName} (${user.email})
+👤 Usuario / Correo: ${usrName} (${user.email})${telStr}
 🔒 Contraseña: ${pass}
 🎭 Rol Asignado: ${getRoleLabel(user.rol)}
 
@@ -92,7 +96,12 @@ Ingresa directamente al link para comenzar a operar.`;
 
   const handleSendWhatsApp = (user: Usuario) => {
     const text = encodeURIComponent(formatShareMessage(user));
-    window.open(`https://wa.me/?text=${text}`, '_blank');
+    const cleanPhone = user.telefono ? user.telefono.replace(/[^0-9]/g, '') : '';
+    if (cleanPhone) {
+      window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
+    } else {
+      window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
   };
 
   const handleSendEmail = (user: Usuario) => {
@@ -126,16 +135,29 @@ Ingresa directamente al link para comenzar a operar.`;
             />
           </div>
 
-          <div>
-            <label className="block text-zinc-600 font-medium mb-1">Correo Electrónico *</label>
-            <input
-              type="email"
-              required
-              placeholder="sofia.rodriguez@empresa.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-zinc-600 font-medium mb-1">Correo Electrónico *</label>
+              <input
+                type="email"
+                required
+                placeholder="sofia.rodriguez@empresa.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900"
+              />
+            </div>
+
+            <div>
+              <label className="block text-zinc-600 font-medium mb-1">WhatsApp / Teléfono</label>
+              <input
+                type="tel"
+                placeholder="Ej: +52 55 1234 5678"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -228,7 +250,7 @@ Ingresa directamente al link para comenzar a operar.`;
                     </span>
                   </div>
                   <div className="text-[10px] text-zinc-500 font-mono truncate">
-                    Usr: <span className="font-bold text-zinc-800">{u.username || u.email}</span> • Clave: <span className="font-bold text-zinc-800">{u.password || '123'}</span>
+                    Usr: <span className="font-bold text-zinc-800">{u.username || u.email}</span> • Clave: <span className="font-bold text-zinc-800">{u.password || '123'}</span>{u.telefono ? <span className="text-emerald-700"> • WA: {u.telefono}</span> : ''}
                   </div>
                 </div>
 

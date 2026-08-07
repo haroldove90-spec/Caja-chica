@@ -112,6 +112,7 @@ export interface Usuario {
   id: string;
   nombre: string;
   email: string;
+  telefono?: string;
   username?: string;
   password?: string;
   rol: RoleType;

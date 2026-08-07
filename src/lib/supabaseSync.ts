@@ -354,6 +354,9 @@ export async function syncAllDataToSupabase(state: {
       id: u.id,
       nombre: u.nombre,
       email: u.email,
+      telefono: u.telefono || null,
+      username: u.username || null,
+      password: u.password || null,
       rol: u.rol,
       caja_id: u.cajaId || null,
       activo: u.activo ?? true
