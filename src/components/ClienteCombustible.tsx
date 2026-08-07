@@ -13,22 +13,23 @@ export const ClienteCombustible: React.FC = () => {
     setPdfGasolinaModalData
   } = useApp();
 
-  // Form state
-  const [vehiculo, setVehiculo] = useState('Nissan NP300 2023');
-  const [placas, setPlacas] = useState('VS-4580-B');
-  const [estacion, setEstacion] = useState('Pemex Servicio Tabasco');
+  // Form state - Empty by default so user can fill in from scratch
+  const [vehiculo, setVehiculo] = useState('');
+  const [placas, setPlacas] = useState('');
+  const [estacion, setEstacion] = useState('');
   const [tipoCombustible, setTipoCombustible] = useState('Magna');
-  const [litros, setLitros] = useState<number | ''>(40);
-  const [importe, setImporte] = useState<number | ''>(960);
+  const [litros, setLitros] = useState<number | ''>('');
+  const [importe, setImporte] = useState<number | ''>('');
   const [observaciones, setObservaciones] = useState('');
   
   // Camera & photo evidence
-  const [evidenciaUrl, setEvidenciaUrl] = useState<string>('https://images.unsplash.com/photo-1527018601619-a508a2be00e6?auto=format&fit=crop&w=800&q=80');
-  const [evidenciaNombre, setEvidenciaNombre] = useState<string>('ticket_combustible.jpg');
+  const [evidenciaUrl, setEvidenciaUrl] = useState<string>('');
+  const [evidenciaNombre, setEvidenciaNombre] = useState<string>('');
   const [subiendoFoto, setSubiendoFoto] = useState<boolean>(false);
   const [sentSuccess, setSentSuccess] = useState<boolean>(false);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   // Filter client's records
   const myRecords = comprobantesCombustibleCliente.filter(
@@ -52,15 +53,14 @@ export const ClienteCombustible: React.FC = () => {
   const handleClearPhoto = () => {
     setEvidenciaUrl('');
     setEvidenciaNombre('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!evidenciaUrl) {
-      alert('Por favor tome una foto del ticket de combustible antes de enviar.');
+      alert('Por favor tome o suba una foto del ticket de combustible antes de enviar.');
       return;
     }
     if (!importe || Number(importe) <= 0) {
@@ -88,7 +88,19 @@ export const ClienteCombustible: React.FC = () => {
     });
 
     setSentSuccess(true);
+    // Reset form after successful submission
+    setVehiculo('');
+    setPlacas('');
+    setEstacion('');
+    setTipoCombustible('Magna');
+    setLitros('');
+    setImporte('');
     setObservaciones('');
+    setEvidenciaUrl('');
+    setEvidenciaNombre('');
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+
     setTimeout(() => setSentSuccess(false), 4000);
   };
 
@@ -260,9 +272,9 @@ export const ClienteCombustible: React.FC = () => {
               Utilice la cámara de su dispositivo móvil o suba una foto clara del ticket de compra.
             </p>
 
-            {/* Hidden HTML Camera & File Input */}
+            {/* Hidden HTML Inputs for Camera & File Gallery */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
@@ -270,10 +282,23 @@ export const ClienteCombustible: React.FC = () => {
               className="hidden"
               id="mobile-ticket-camera-input"
             />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              id="mobile-ticket-gallery-input"
+            />
 
             {/* Photo Preview / Upload Area */}
             <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-zinc-300 rounded-2xl bg-zinc-50 p-4 relative min-h-[220px]">
-              {evidenciaUrl ? (
+              {subiendoFoto ? (
+                <div className="text-center space-y-2 py-8">
+                  <div className="w-8 h-8 border-2 border-[#024182] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-xs text-zinc-500 font-medium">Cargando foto del ticket...</p>
+                </div>
+              ) : evidenciaUrl ? (
                 <div className="relative w-full h-full flex flex-col items-center justify-center">
                   <img
                     src={evidenciaUrl}
@@ -284,10 +309,10 @@ export const ClienteCombustible: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleClearPhoto}
-                    className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition-colors"
+                    className="absolute top-1 right-1 bg-rose-600 text-white p-1.5 rounded-full shadow-md hover:bg-rose-700 transition-colors cursor-pointer"
                     title="Eliminar foto"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
                   <div className="mt-3 flex items-center gap-2">
                     <button
@@ -306,32 +331,57 @@ export const ClienteCombustible: React.FC = () => {
                     <Camera className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-zinc-800">Capturar Ticket con Cámara</p>
-                    <p className="text-[11px] text-zinc-400 max-w-[200px] mx-auto">
-                      Toque para abrir la cámara móvil o seleccionar foto
+                    <p className="text-xs font-bold text-zinc-800">Adjuntar Ticket de Compra</p>
+                    <p className="text-[11px] text-zinc-400 max-w-[220px] mx-auto">
+                      Tome una foto directa con la cámara de su móvil o elija un archivo existente.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 bg-zinc-900 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer shadow-xs"
-                  >
-                    <Camera className="w-4 h-4" />
-                    <span>Tomar Foto / Subir Imagen</span>
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 bg-[#024182] hover:bg-[#013266] text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Tomar Foto (Cámara)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Subir de Galería</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs font-semibold text-[#024182] hover:text-[#013266] flex items-center gap-1.5"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>{evidenciaUrl ? 'Cambiar Foto de Ticket' : 'Abrir Cámara Dispositivo'}</span>
-              </button>
+              {evidenciaUrl ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="text-xs font-semibold text-[#024182] hover:text-[#013266] flex items-center gap-1"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Tomar Otra</span>
+                  </button>
+                  <span className="text-zinc-300">•</span>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="text-xs font-semibold text-zinc-700 hover:text-zinc-900 flex items-center gap-1"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Cambiar Imagen</span>
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xs text-zinc-400">Sin foto seleccionada aún</span>
+              )}
               {evidenciaNombre && (
                 <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[140px]">
                   {evidenciaNombre}
