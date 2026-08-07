@@ -71,11 +71,20 @@ CREATE TABLE IF NOT EXISTS public.empleados (
 CREATE TABLE IF NOT EXISTS public.usuarios (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
+  telefono TEXT,
+  username TEXT,
+  password TEXT,
   rol TEXT NOT NULL DEFAULT 'custodio',
   caja_id TEXT,
   activo BOOLEAN DEFAULT TRUE
 );
+
+-- Asegurar que las columnas existan si la tabla ya había sido creada anteriormente
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS telefono TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS password TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.gastos (
   id TEXT PRIMARY KEY,

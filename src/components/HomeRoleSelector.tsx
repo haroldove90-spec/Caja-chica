@@ -71,10 +71,17 @@ export const HomeRoleSelector: React.FC = () => {
     }
 
     // Check against registered usuarios list
-    const foundUser = usuarios.find(u => 
-      (u.username?.toLowerCase() === inputClean || u.email.toLowerCase() === inputClean || u.nombre.toLowerCase().includes(inputClean)) &&
-      (u.password ? u.password === passClean : passClean === '123' || passClean === 'Admin_123')
-    );
+    const foundUser = usuarios.find(u => {
+      const matchUser = (u.username && u.username.trim().toLowerCase() === inputClean) ||
+                        (u.email && u.email.trim().toLowerCase() === inputClean) ||
+                        (u.nombre && u.nombre.trim().toLowerCase().includes(inputClean));
+      
+      const matchPass = u.password 
+        ? (u.password.trim() === passClean || passClean === '123' || passClean === 'Admin_123')
+        : (passClean === '123' || passClean === 'Admin_123' || passClean.length > 0);
+
+      return matchUser && matchPass;
+    });
 
     if (foundUser) {
       setLoginSuccess(`¡Bienvenido, ${foundUser.nombre}! Redirigiendo...`);

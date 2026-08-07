@@ -38,6 +38,17 @@ export async function insertSupabaseRecord(tableName: string, record: Record<str
     const { error } = await supabase.from(tableName).upsert([record], { onConflict: 'id' });
     if (error) {
       console.warn(`Error inserting into Supabase [${tableName}]:`, error.message);
+      // Fallback for usuarios if schema is missing new columns
+      if (tableName === 'usuarios') {
+        const fallback = {
+          id: record.id,
+          nombre: record.nombre,
+          email: record.email,
+          rol: record.rol,
+          caja_id: record.caja_id
+        };
+        await supabase.from('usuarios').upsert([fallback], { onConflict: 'id' });
+      }
     }
   } catch (err) {
     console.warn(`Supabase insert error [${tableName}]:`, err);
@@ -50,6 +61,16 @@ export async function bulkInsertSupabaseRecords(tableName: string, records: Reco
     const { error } = await supabase.from(tableName).upsert(records, { onConflict: 'id' });
     if (error) {
       console.warn(`Error bulk inserting into Supabase [${tableName}]:`, error.message);
+      if (tableName === 'usuarios') {
+        const fallbacks = records.map(r => ({
+          id: r.id,
+          nombre: r.nombre,
+          email: r.email,
+          rol: r.rol,
+          caja_id: r.caja_id
+        }));
+        await supabase.from('usuarios').upsert(fallbacks, { onConflict: 'id' });
+      }
     } else {
       console.log(`Successfully synced ${records.length} records to Supabase [${tableName}]`);
     }
@@ -67,6 +88,35 @@ export async function deleteSupabaseRecord(tableName: string, id: string) {
   } catch (err) {
     console.warn(`Supabase delete error [${tableName}]:`, err);
   }
+}
+
+// Convert Usuario
+export function usuarioToDb(u: Usuario) {
+  return {
+    id: u.id,
+    nombre: u.nombre,
+    email: u.email,
+    telefono: u.telefono || null,
+    username: u.username || null,
+    password: u.password || null,
+    rol: u.rol,
+    caja_id: u.cajaId || null,
+    activo: u.activo ?? true
+  };
+}
+
+export function dbToUsuario(db: any): Usuario {
+  return {
+    id: db.id,
+    nombre: db.nombre || '',
+    email: db.email || '',
+    telefono: db.telefono || undefined,
+    username: db.username || undefined,
+    password: db.password || undefined,
+    rol: db.rol || 'custodio',
+    cajaId: db.caja_id || undefined,
+    activo: db.activo ?? true
+  };
 }
 
 // Convert CajaChica
@@ -350,17 +400,7 @@ export async function syncAllDataToSupabase(state: {
   }
 
   if (state.usuarios?.length) {
-    await bulkInsertSupabaseRecords('usuarios', state.usuarios.map(u => ({
-      id: u.id,
-      nombre: u.nombre,
-      email: u.email,
-      telefono: u.telefono || null,
-      username: u.username || null,
-      password: u.password || null,
-      rol: u.rol,
-      caja_id: u.cajaId || null,
-      activo: u.activo ?? true
-    })));
+    await bulkInsertSupabaseRecords('usuarios', state.usuarios.map(usuarioToDb));
   }
 
   if (state.clienteProfile) {

@@ -50,6 +50,8 @@ import {
   dbToReembolso,
   auditToDb,
   dbToAudit,
+  usuarioToDb,
+  dbToUsuario,
   syncAllDataToSupabase
 } from '../lib/supabaseSync';
 
@@ -323,6 +325,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setReembolsos(mapped);
       } else if (dbReembolsos && dbReembolsos.length === 0 && isMounted) {
         reembolsos.forEach(item => insertSupabaseRecord('reembolsos', reembolsoToDb(item)));
+      }
+
+      // Fetch usuarios
+      const dbUsuarios = await fetchSupabaseTable<any>('usuarios');
+      if (dbUsuarios && dbUsuarios.length > 0 && isMounted) {
+        const mapped = dbUsuarios.map(dbToUsuario);
+        setUsuarios(prev => {
+          const dbIds = new Set(mapped.map(m => m.id));
+          const localOnly = prev.filter(p => !dbIds.has(p.id));
+          localOnly.forEach(item => insertSupabaseRecord('usuarios', usuarioToDb(item)));
+          return [...mapped, ...localOnly];
+        });
+      } else if (dbUsuarios && dbUsuarios.length === 0 && isMounted) {
+        usuarios.forEach(item => insertSupabaseRecord('usuarios', usuarioToDb(item)));
       }
     }
 
@@ -669,15 +685,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `usr-${Date.now().toString().slice(-4)}`
     };
     setUsuarios(prev => [...prev, newUsr]);
+    insertSupabaseRecord('usuarios', usuarioToDb(newUsr));
     logAudit('CREAR_USUARIO', 'Seguridad', `Creó usuario: ${newUsr.email} con rol ${newUsr.rol}`);
   };
 
   const updateUsuario = (updated: Usuario) => {
     setUsuarios(prev => prev.map(u => u.id === updated.id ? updated : u));
+    insertSupabaseRecord('usuarios', usuarioToDb(updated));
   };
 
   const deleteUsuario = (id: string) => {
     setUsuarios(prev => prev.filter(u => u.id !== id));
+    deleteSupabaseRecord('usuarios', id);
   };
 
   const addRegistroGasolina = (recData: Omit<RegistroGasolina, 'id'>) => {
