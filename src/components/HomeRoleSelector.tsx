@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Wallet, Landmark, ShieldCheck, User, Lock, LogIn, Key, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { RoleType } from '../types';
+import { RoleType, Usuario } from '../types';
 
 interface RoleOption {
   id: RoleType;
@@ -63,9 +63,18 @@ export const HomeRoleSelector: React.FC = () => {
 
     // Direct check for default Super Admin credentials
     if ((inputClean === 'admin1' || inputClean === 'admin1@empresa.com') && passClean === 'Admin_123') {
+      const adminUsr: Usuario = {
+        id: 'usr-admin-1',
+        nombre: 'Super Administrador',
+        email: 'admin1@empresa.com',
+        username: 'admin1',
+        password: 'Admin_123',
+        rol: 'admin',
+        activo: true
+      };
       setLoginSuccess('¡Acceso concedido como Super Administrador!');
       setTimeout(() => {
-        setRole('admin');
+        setRole('admin', adminUsr);
       }, 600);
       return;
     }
@@ -93,10 +102,33 @@ export const HomeRoleSelector: React.FC = () => {
     if (foundUser) {
       setLoginSuccess(`¡Bienvenido, ${foundUser.nombre}! Redirigiendo...`);
       setTimeout(() => {
-        setRole(foundUser.rol);
+        setRole(foundUser.rol, foundUser);
       }, 600);
     } else {
       setErrorMsg('Credenciales inválidas. Verifique usuario o contraseña.');
+    }
+  };
+
+  const handleSelectRoleDirect = (targetRole: RoleType) => {
+    const matchedUser = usuarios.find(u => u.rol === targetRole);
+    if (matchedUser) {
+      setRole(targetRole, matchedUser);
+    } else {
+      const defaultNames: Record<string, string> = {
+        custodio: 'Lic. Sofía Rodríguez',
+        contador: 'CP. Alberto Vargas',
+        admin: 'Admin General',
+        cliente: 'Johana Bribiesca'
+      };
+      const fallbackUsr: Usuario = {
+        id: `usr-demo-${targetRole}`,
+        nombre: defaultNames[targetRole] || 'Usuario Demo',
+        email: `${targetRole}@empresa.com`,
+        username: targetRole,
+        rol: targetRole,
+        activo: true
+      };
+      setRole(targetRole, fallbackUsr);
     }
   };
 
@@ -261,7 +293,7 @@ export const HomeRoleSelector: React.FC = () => {
                   <button
                     key={role.id}
                     id={`role-btn-${role.id}`}
-                    onClick={() => setRole(role.id)}
+                    onClick={() => handleSelectRoleDirect(role.id)}
                     className="group relative bg-white rounded-2xl p-4 sm:p-6 border border-zinc-200/80 hover:border-zinc-900 shadow-xs hover:shadow-xl transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[160px] sm:min-h-[190px] cursor-pointer"
                   >
                     <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-zinc-100 group-hover:bg-zinc-900 group-hover:text-white text-zinc-800 flex items-center justify-center transition-colors duration-200 mb-2 sm:mb-3">

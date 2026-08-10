@@ -3,6 +3,7 @@ import { X, Printer, FileBadge, Download, Star, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
+import { getPdfRowColor } from '../utils/pdfColors';
 
 export const PDFComprobanteReportModal: React.FC = () => {
   const { pdfComprobanteModalData, setPdfComprobanteModalData } = useApp();
@@ -135,48 +136,56 @@ export const PDFComprobanteReportModal: React.FC = () => {
           </div>
 
           {/* Table Breakdown (No. Cuenta | # Orden | # Cotización | Nombre Proyecto | Nombre | Importe) */}
-          <div className="border border-[#024182] rounded-lg overflow-hidden bg-white shadow-xs">
+          <div className="border-2 border-black rounded-lg overflow-hidden bg-white shadow-xs">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#024182] text-white text-[10px] font-bold uppercase tracking-wider">
-                  <th className="p-2 border-r border-white/20 text-center w-[13%]">No. Cuenta</th>
-                  <th className="p-2 border-r border-white/20 text-center w-[12%]"># Orden</th>
-                  <th className="p-2 border-r border-white/20 text-center w-[13%]"># Cotización</th>
-                  <th className="p-2 border-r border-white/20 text-left w-[20%]">Nombre Proyecto</th>
-                  <th className="p-2 border-r border-white/20 text-left w-[27%]">Nombre</th>
+                <tr className="bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-wider border-b-2 border-black">
+                  <th className="p-2 border-r border-zinc-700 text-center w-[13%]">No. Cuenta</th>
+                  <th className="p-2 border-r border-zinc-700 text-center w-[12%]"># Orden</th>
+                  <th className="p-2 border-r border-zinc-700 text-center w-[13%]"># Cotización</th>
+                  <th className="p-2 border-r border-zinc-700 text-left w-[20%]">Nombre Proyecto</th>
+                  <th className="p-2 border-r border-zinc-700 text-left w-[27%]">Nombre</th>
                   <th className="p-2 text-right w-[15%]">Importe</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 text-xs">
-                {tableRows.map((row, idx) => (
-                  <tr key={idx} className="h-9">
-                    <td className="p-2 border-r border-zinc-200 font-mono font-semibold text-zinc-800 text-center text-[11px]">
-                      {row.noCuenta || (row.nombre || row.importe ? `${idx + 1}` : '')}
-                    </td>
-                    <td className="p-2 border-r border-zinc-200 font-mono text-zinc-700 text-center text-[11px]">
-                      {row.noOrden || ''}
-                    </td>
-                    <td className="p-2 border-r border-zinc-200 font-mono text-zinc-700 text-center text-[11px]">
-                      {row.noCotizacion || ''}
-                    </td>
-                    <td className="p-2 border-r border-zinc-200 font-medium text-zinc-800 text-[11px] truncate max-w-[120px]">
-                      {row.nombreProyecto || ''}
-                    </td>
-                    <td className="p-2 border-r border-zinc-200 font-medium text-zinc-700 text-[11px]">
-                      {row.nombre}
-                    </td>
-                    <td className="p-2 text-right font-bold text-zinc-900 font-mono text-[11px]">
-                      {row.importe > 0 ? `$${row.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-black text-xs font-bold">
+                {tableRows.map((row, idx) => {
+                  const style = getPdfRowColor(row.nombreProyecto || row.nombre || (row.importe ? 'COTEYUC' : null), idx);
+                  const isFilled = Boolean(row.nombre || row.importe > 0 || row.nombreProyecto);
+                  return (
+                    <tr
+                      key={idx}
+                      style={isFilled ? { backgroundColor: style.bg, color: style.text } : { backgroundColor: '#FFFFFF', color: '#000000' }}
+                      className="h-9 border-b border-black"
+                    >
+                      <td className="p-2 border-r border-black font-mono font-black text-center text-[11px]">
+                        {row.noCuenta || (isFilled ? `${idx + 1}` : '')}
+                      </td>
+                      <td className="p-2 border-r border-black font-mono font-bold text-center text-[11px]">
+                        {row.noOrden || ''}
+                      </td>
+                      <td className="p-2 border-r border-black font-mono font-bold text-center text-[11px]">
+                        {row.noCotizacion || ''}
+                      </td>
+                      <td className="p-2 border-r border-black font-bold text-[11px] truncate max-w-[120px]">
+                        {row.nombreProyecto || ''}
+                      </td>
+                      <td className="p-2 border-r border-black font-bold text-[11px]">
+                        {row.nombre}
+                      </td>
+                      <td className="p-2 text-right font-black font-mono text-[11px]">
+                        {row.importe > 0 ? `$${row.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
-                <tr className="bg-sky-100/60 font-black border-t-2 border-[#024182] text-xs">
-                  <td colSpan={5} className="p-2 text-right uppercase border-r border-zinc-300 text-[#024182]">
+                <tr className="bg-white font-black border-t-2 border-black text-xs text-black">
+                  <td colSpan={5} className="p-2 text-right uppercase border-r border-black tracking-wider">
                     TOTAL $
                   </td>
-                  <td className="p-2 text-right text-[#024182] text-sm font-mono font-black">
+                  <td className="p-2 text-right text-black text-sm font-mono font-black">
                     ${comp.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>

@@ -27,7 +27,7 @@ interface NavItem {
 }
 
 export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { role, setRole, activeModule, setActiveModule, cajas, activeCajaId, setActiveCajaId } = useApp();
+  const { role, setRole, activeModule, setActiveModule, cajas, activeCajaId, setActiveCajaId, currentUser } = useApp();
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
 
   // Define modules according to active role
@@ -89,12 +89,24 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
             </span>
             <button
               onClick={() => setRole('home')}
-              title="Cambiar de Rol"
+              title="Cerrar Sesión / Cambiar de Rol"
               className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
           </div>
+
+          {currentUser && (
+            <div className="bg-zinc-50/80 rounded-xl p-2.5 border border-zinc-200/80 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-zinc-900 text-white font-semibold text-xs flex items-center justify-center shrink-0">
+                {currentUser.nombre ? currentUser.nombre.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-zinc-900 truncate">{currentUser.nombre}</p>
+                <p className="text-[10px] text-zinc-500 truncate">{currentUser.username ? `@${currentUser.username}` : currentUser.email}</p>
+              </div>
+            </div>
+          )}
 
           {/* Active Caja Selector Dropdown */}
           <div className="relative">
@@ -159,7 +171,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           </button>
           <div>
             <span className="text-xs font-semibold text-zinc-900 block leading-none">
-              {getRoleName()}
+              {currentUser?.nombre || getRoleName()}
             </span>
             <span className="text-[10px] text-zinc-500">
               {cajas.find(c => c.id === activeCajaId)?.nombre}

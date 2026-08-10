@@ -4,9 +4,10 @@ import { useApp } from '../context/AppContext';
 import { FuelGaugeSVG } from './FuelGaugeSVG';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
+import { getPdfRowColor } from '../utils/pdfColors';
 
 export const PDFGasolinaReportModal: React.FC = () => {
-  const { pdfGasolinaModalData, setPdfGasolinaModalData } = useApp();
+  const { pdfGasolinaModalData, setPdfGasolinaModalData, giros } = useApp();
   const [selectedLogoId, setSelectedLogoId] = useState<string>('coteyuc');
   const [incluirEvidencias, setIncluirEvidencias] = useState<boolean>(true);
 
@@ -18,6 +19,38 @@ export const PDFGasolinaReportModal: React.FC = () => {
   const recordsToPrint = record ? [record] : list;
   const totalImporte = recordsToPrint.reduce((acc, r) => acc + r.importe, 0);
   const recordsConEvidencia = recordsToPrint.filter(r => Boolean(r.evidenciaUrl));
+
+  // Build summary table matching Image 1 format for Gasolina
+  const defaultCategories = [
+    'TALLER COTEYUC',
+    'TALLER PROYECTA',
+    'PROYECTA',
+    'COTEYUC',
+    'PUBLIKREA',
+    'OTROS',
+    'LOCAL HOCABA',
+    'DESPACHO'
+  ];
+
+  const catTotals: Record<string, number> = {};
+  defaultCategories.forEach(cat => { catTotals[cat] = 0; });
+
+  recordsToPrint.forEach(r => {
+    const text = `${r.descripcionUso || ''} ${r.formaPago || ''}`.toUpperCase();
+    let matchedKey = 'OTROS';
+    if (text.includes('TALLER') && text.includes('COTEYUC')) matchedKey = 'TALLER COTEYUC';
+    else if (text.includes('TALLER') && text.includes('PROYECTA')) matchedKey = 'TALLER PROYECTA';
+    else if (text.includes('PROYECTA')) matchedKey = 'PROYECTA';
+    else if (text.includes('COTEYUC')) matchedKey = 'COTEYUC';
+    else if (text.includes('PUBLI') || text.includes('PUBLICREA')) matchedKey = 'PUBLIKREA';
+    else if (text.includes('DESPACHO')) matchedKey = 'DESPACHO';
+    else if (text.includes('HOCABA')) matchedKey = 'LOCAL HOCABA';
+    else if (recordsToPrint.length === 1 && catTotals['COTEYUC'] === 0) matchedKey = 'COTEYUC';
+
+    catTotals[matchedKey] = (catTotals[matchedKey] || 0) + r.importe;
+  });
+
+  const summaryList = Object.entries(catTotals).map(([name, amount]) => ({ name, amount }));
 
   const handlePrint = () => {
     window.print();
@@ -123,64 +156,106 @@ export const PDFGasolinaReportModal: React.FC = () => {
             </div>
           </div>
 
+          {/* COLORED SUMMARY TABLE BY GIRO / EMPRESA (MATCHING IMAGE 1 EXACTLY) */}
+          <div className="space-y-2">
+            <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider">
+              Resumen Consolidado por Empresa / Giro
+            </h4>
+            <div className="overflow-x-auto border-2 border-black">
+              <table className="w-full text-center border-collapse">
+                <tbody className="divide-y divide-black font-extrabold text-xs">
+                  {summaryList.map((item, idx) => {
+                    const style = getPdfRowColor(item.name, idx);
+                    return (
+                      <tr key={item.name} style={{ backgroundColor: style.bg, color: style.text }} className="border-b border-black">
+                        <td className="p-2 border-r border-black w-2/3 uppercase text-center font-black tracking-wide">
+                          {item.name}
+                        </td>
+                        <td className="p-2 w-1/3 text-right font-black tracking-wider pr-4 font-mono">
+                          {item.amount > 0 ? `$${item.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-white text-black font-black text-sm border-t-2 border-black">
+                    <td className="p-2.5 text-center uppercase border-r border-black tracking-widest">
+                      TOTAL
+                    </td>
+                    <td className="p-2.5 text-right font-black font-mono pr-4 text-base">
+                      $ {totalImporte.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
           {/* Table matching Attachment 1 Format */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-center border-collapse border border-[#1d5fa6]">
+          <div className="overflow-x-auto pt-2">
+            <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider mb-2">
+              Bitácora Detallada de Cargas de Combustible
+            </h4>
+            <table className="w-full text-center border-collapse border-2 border-black">
               <thead>
-                <tr className="bg-[#1d5fa6] text-white text-[10px] font-bold uppercase tracking-wider border-b border-[#1d5fa6]">
-                  <th className="p-2.5 border-r border-white/20 w-24">FECHA</th>
-                  <th className="p-2.5 border-r border-white/20 w-28">FORMA DE PAGO</th>
-                  <th className="p-2.5 border-r border-white/20 text-left">DESCRIPCIÓN DE USO</th>
-                  <th className="p-2.5 border-r border-white/20 w-24">ANTES</th>
-                  <th className="p-2.5 border-r border-white/20 w-24">DESPUES</th>
-                  <th className="p-2.5 border-r border-white/20 w-20">KM</th>
+                <tr className="bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-wider border-b-2 border-black">
+                  <th className="p-2.5 border-r border-zinc-700 w-24">FECHA</th>
+                  <th className="p-2.5 border-r border-zinc-700 w-28">FORMA DE PAGO</th>
+                  <th className="p-2.5 border-r border-zinc-700 text-left">DESCRIPCIÓN DE USO</th>
+                  <th className="p-2.5 border-r border-zinc-700 w-24">ANTES</th>
+                  <th className="p-2.5 border-r border-zinc-700 w-24">DESPUES</th>
+                  <th className="p-2.5 border-r border-zinc-700 w-20">KM</th>
                   <th className="p-2.5 w-24 text-right">IMPORTE</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 text-[11px] font-medium">
+              <tbody className="divide-y divide-black text-[11px] font-bold">
                 {recordsToPrint.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-8 text-zinc-400 italic">No hay cargas de combustible registradas.</td>
                   </tr>
                 ) : (
-                  recordsToPrint.map((r, i) => (
-                    <tr key={r.id || i} className="hover:bg-zinc-50">
-                      <td className="p-2.5 border-r border-zinc-200 font-semibold text-zinc-800">{r.fecha}</td>
-                      <td className="p-2.5 border-r border-zinc-200 text-xs font-bold text-zinc-700">{r.formaPago}</td>
-                      <td className="p-2.5 border-r border-zinc-200 text-left text-zinc-700">{r.descripcionUso}</td>
-                      <td className="p-2 border-r border-zinc-200">
-                        <FuelGaugeSVG level={r.nivelAntes} size={42} />
-                      </td>
-                      <td className="p-2 border-r border-zinc-200">
-                        <FuelGaugeSVG level={r.nivelDespues} size={42} />
-                      </td>
-                      <td className="p-2.5 border-r border-zinc-200 font-mono font-bold text-zinc-800">
-                        {r.km.toLocaleString()}
-                      </td>
-                      <td className="p-2.5 text-right font-bold text-zinc-900">
-                        ${r.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))
+                  recordsToPrint.map((r, i) => {
+                    const style = getPdfRowColor(r.descripcionUso || r.formaPago, i);
+                    return (
+                      <tr key={r.id || i} style={{ backgroundColor: style.bg, color: style.text }} className="border-b border-black">
+                        <td className="p-2.5 border-r border-black font-black">{r.fecha}</td>
+                        <td className="p-2.5 border-r border-black text-xs font-black uppercase">{r.formaPago}</td>
+                        <td className="p-2.5 border-r border-black text-left font-bold">{r.descripcionUso}</td>
+                        <td className="p-2 border-r border-black bg-white/80">
+                          <FuelGaugeSVG level={r.nivelAntes} size={42} />
+                        </td>
+                        <td className="p-2 border-r border-black bg-white/80">
+                          <FuelGaugeSVG level={r.nivelDespues} size={42} />
+                        </td>
+                        <td className="p-2.5 border-r border-black font-mono font-black">
+                          {r.km.toLocaleString()}
+                        </td>
+                        <td className="p-2.5 text-right font-black font-mono text-xs">
+                          ${r.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
 
                 {/* Fill empty template rows if needed for realistic format layout */}
-                {Array.from({ length: Math.max(0, 8 - recordsToPrint.length) }).map((_, idx) => (
-                  <tr key={`empty-${idx}`} className="h-10">
-                    <td className="border-r border-zinc-200"></td>
-                    <td className="border-r border-zinc-200"></td>
-                    <td className="border-r border-zinc-200"></td>
-                    <td className="border-r border-zinc-200"></td>
-                    <td className="border-r border-zinc-200"></td>
-                    <td className="border-r border-zinc-200"></td>
+                {Array.from({ length: Math.max(0, 4 - recordsToPrint.length) }).map((_, idx) => (
+                  <tr key={`empty-${idx}`} className="h-10 bg-white border-b border-black">
+                    <td className="border-r border-black"></td>
+                    <td className="border-r border-black"></td>
+                    <td className="border-r border-black"></td>
+                    <td className="border-r border-black"></td>
+                    <td className="border-r border-black"></td>
+                    <td className="border-r border-black"></td>
                     <td></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-zinc-100 font-black border-t-2 border-[#1d5fa6] text-xs">
-                  <td colSpan={6} className="p-2.5 text-right uppercase border-r border-zinc-300">TOTAL REGISTRADO:</td>
-                  <td className="p-2.5 text-right text-[#1d5fa6]">
+                <tr className="bg-white text-black font-black border-t-2 border-black text-xs">
+                  <td colSpan={6} className="p-2.5 text-right uppercase border-r border-black tracking-wider">TOTAL REGISTRADO:</td>
+                  <td className="p-2.5 text-right font-mono text-sm">
                     ${totalImporte.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>

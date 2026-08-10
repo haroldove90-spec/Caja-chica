@@ -57,7 +57,9 @@ import {
 
 interface AppContextType {
   role: RoleType;
-  setRole: (role: RoleType) => void;
+  currentUser: Usuario | null;
+  setCurrentUser: (usr: Usuario | null) => void;
+  setRole: (role: RoleType, user?: Usuario | null) => void;
   activeModule: string;
   setActiveModule: (mod: string) => void;
   activeCajaId: string;
@@ -151,6 +153,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [role, setRoleState] = useState<RoleType>('home');
+  const [currentUser, setCurrentUser] = useState<Usuario | null>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_currentUser`);
+    return saved ? JSON.parse(saved) : null;
+  });
   const [activeModule, setActiveModuleState] = useState<string>('movimientos');
   const [activeCajaId, setActiveCajaId] = useState<string>('caja-1');
 
@@ -423,8 +429,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem(`${STORAGE_KEY}_comprobantesCombustibleCliente`, JSON.stringify(comprobantesCombustibleCliente));
   }, [comprobantesCombustibleCliente]);
 
-  const setRole = (newRole: RoleType) => {
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem(`${STORAGE_KEY}_currentUser`, JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem(`${STORAGE_KEY}_currentUser`);
+    }
+  }, [currentUser]);
+
+  const setRole = (newRole: RoleType, user?: Usuario | null) => {
     setRoleState(newRole);
+    if (user !== undefined) {
+      setCurrentUser(user);
+      if (user && user.rol === 'cliente') {
+        setClienteProfile(prev => ({
+          ...prev,
+          nombre: user.nombre || prev.nombre,
+          email: user.email || prev.email,
+          telefono: user.telefono || prev.telefono
+        }));
+      }
+    } else if (newRole === 'home') {
+      setCurrentUser(null);
+    }
+
     if (newRole === 'custodio') setActiveModuleState('movimientos');
     else if (newRole === 'contador') setActiveModuleState('auditoria');
     else if (newRole === 'admin') setActiveModuleState('multicajas');
@@ -436,11 +464,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const logAudit = (accion: string, modulo: string, detalles: string) => {
+    const userDisplayName = currentUser?.nombre || (
+      role === 'custodio' ? 'Lic. Sofía Rodríguez' :
+      role === 'contador' ? 'CP. Alberto Vargas' :
+      role === 'cliente' ? 'Cliente Registrado' : 'Admin General'
+    );
+
     const newLog: AuditLog = {
       id: `log-${Date.now()}`,
       fecha: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      usuario: role === 'custodio' ? 'Lic. Sofía Rodríguez' : role === 'contador' ? 'CP. Alberto Vargas' : 'Admin General',
-      rol: role === 'custodio' ? 'Custodio' : role === 'contador' ? 'Contador' : 'Admin',
+      usuario: userDisplayName,
+      rol: role === 'custodio' ? 'Custodio' : role === 'contador' ? 'Contador' : role === 'cliente' ? 'Cliente' : 'Admin',
       accion,
       modulo,
       detalles
@@ -837,6 +871,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider
       value={{
         role,
+        currentUser,
+        setCurrentUser,
         setRole,
         activeModule,
         setActiveModule,

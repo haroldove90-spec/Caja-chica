@@ -3,6 +3,7 @@ import { X, Printer, Download, Building2, CheckCircle2, Camera } from 'lucide-re
 import { useApp } from '../context/AppContext';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
+import { getPdfRowColor, COMPANY_COLOR_PRESETS } from '../utils/pdfColors';
 
 export const PDFReportModal: React.FC = () => {
   const { pdfModalData, setPdfModalData, giros } = useApp();
@@ -20,6 +21,45 @@ export const PDFReportModal: React.FC = () => {
 
   const totalReport = gastos.reduce((a, b) => a + b.importe, 0);
   const gastosConEvidencia = gastos.filter(g => Boolean(g.evidenciaUrl));
+
+  // Build summary rows by Company / Giro for the colored summary table (matching Image 1 style)
+  const defaultCategories = [
+    'TALLER COTEYUC',
+    'TALLER PROYECTA',
+    'PROYECTA',
+    'COTEYUC',
+    'PUBLIKREA',
+    'OTROS',
+    'LOCAL HOCABA',
+    'DESPACHO'
+  ];
+
+  // Map expenses to these categories or dynamic giros
+  const giroTotalsMap: Record<string, number> = {};
+  defaultCategories.forEach(cat => { giroTotalsMap[cat] = 0; });
+
+  gastos.forEach(g => {
+    const giroObj = giros.find(gi => gi.id === g.giroId);
+    const label = giroObj?.nombre || g.concepto || g.proveedor || 'OTROS';
+    const cleanLabel = label.toUpperCase();
+
+    let matchedKey = 'OTROS';
+    if (cleanLabel.includes('TALLER') && cleanLabel.includes('COTEYUC')) matchedKey = 'TALLER COTEYUC';
+    else if (cleanLabel.includes('TALLER') && cleanLabel.includes('PROYECTA')) matchedKey = 'TALLER PROYECTA';
+    else if (cleanLabel.includes('PROYECTA')) matchedKey = 'PROYECTA';
+    else if (cleanLabel.includes('COTEYUC')) matchedKey = 'COTEYUC';
+    else if (cleanLabel.includes('PUBLI') || cleanLabel.includes('PUBLICREA')) matchedKey = 'PUBLIKREA';
+    else if (cleanLabel.includes('DESPACHO')) matchedKey = 'DESPACHO';
+    else if (cleanLabel.includes('HOCABA')) matchedKey = 'LOCAL HOCABA';
+    else if (giroObj?.nombre) matchedKey = giroObj.nombre.toUpperCase();
+
+    giroTotalsMap[matchedKey] = (giroTotalsMap[matchedKey] || 0) + g.importe;
+  });
+
+  const summaryList = Object.entries(giroTotalsMap).map(([name, amount]) => ({
+    name,
+    amount
+  }));
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
@@ -138,42 +178,81 @@ export const PDFReportModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Itemized Table */}
+          {/* COLORED SUMMARY TABLE BY GIRO / EMPRESA (MATCHING IMAGE 1 EXACTLY) */}
           <div className="space-y-2">
+            <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider">
+              Resumen Consolidado por Giro / Empresa
+            </h4>
+            <div className="overflow-x-auto border-2 border-black">
+              <table className="w-full text-center border-collapse">
+                <tbody className="divide-y divide-black font-extrabold text-xs">
+                  {summaryList.map((item, idx) => {
+                    const style = getPdfRowColor(item.name, idx);
+                    return (
+                      <tr key={item.name} style={{ backgroundColor: style.bg, color: style.text }} className="border-b border-black">
+                        <td className="p-2 border-r border-black w-2/3 uppercase text-center font-black tracking-wide">
+                          {item.name}
+                        </td>
+                        <td className="p-2 w-1/3 text-right font-black tracking-wider pr-4 font-mono">
+                          {item.amount > 0 ? `$${item.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-white text-black font-black text-sm border-t-2 border-black">
+                    <td className="p-2.5 text-center uppercase border-r border-black tracking-widest">
+                      TOTAL
+                    </td>
+                    <td className="p-2.5 text-right font-black font-mono pr-4 text-base">
+                      $ {totalReport.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* Itemized Table */}
+          <div className="space-y-2 pt-2">
             <h4 className="font-bold text-xs text-zinc-800 uppercase tracking-wider">
               Desglose de Comprobantes Presentados ({gastos.length})
             </h4>
 
-            <table className="w-full text-left border-collapse border border-zinc-200">
+            <table className="w-full text-left border-collapse border-2 border-black">
               <thead>
-                <tr className="bg-zinc-100 text-[10px] font-bold text-zinc-700 uppercase border-b border-zinc-200">
-                  <th className="p-2 border-r border-zinc-200">N° Orden</th>
-                  <th className="p-2 border-r border-zinc-200">Fecha</th>
-                  <th className="p-2 border-r border-zinc-200">Proveedor</th>
-                  <th className="p-2 border-r border-zinc-200">Concepto</th>
-                  <th className="p-2 border-r border-zinc-200">Giro</th>
-                  <th className="p-2 text-right">Importe ($)</th>
+                <tr className="bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-wider border-b-2 border-black">
+                  <th className="p-2.5 border-r border-zinc-700">N° Orden</th>
+                  <th className="p-2.5 border-r border-zinc-700">Fecha</th>
+                  <th className="p-2.5 border-r border-zinc-700">Proveedor</th>
+                  <th className="p-2.5 border-r border-zinc-700">Concepto</th>
+                  <th className="p-2.5 border-r border-zinc-700">Giro</th>
+                  <th className="p-2.5 text-right">Importe ($)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 text-[11px]">
-                {gastos.map((g) => {
+              <tbody className="divide-y divide-black text-[11px] font-bold">
+                {gastos.map((g, idx) => {
                   const giroObj = giros.find(gi => gi.id === g.giroId);
+                  const label = giroObj?.nombre || g.concepto || g.proveedor || 'General';
+                  const style = getPdfRowColor(label, idx);
+
                   return (
-                    <tr key={g.id}>
-                      <td className="p-2 border-r border-zinc-200 font-mono font-semibold">{g.nroOrden}</td>
-                      <td className="p-2 border-r border-zinc-200">{g.fecha}</td>
-                      <td className="p-2 border-r border-zinc-200 font-medium">{g.proveedor}</td>
-                      <td className="p-2 border-r border-zinc-200 text-zinc-600">{g.concepto}</td>
-                      <td className="p-2 border-r border-zinc-200 font-medium">{giroObj?.nombre || 'General'}</td>
-                      <td className="p-2 text-right font-bold">${g.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                    <tr key={g.id} style={{ backgroundColor: style.bg, color: style.text }} className="border-b border-black">
+                      <td className="p-2 border-r border-black font-mono font-black">{g.nroOrden}</td>
+                      <td className="p-2 border-r border-black font-bold">{g.fecha}</td>
+                      <td className="p-2 border-r border-black font-bold">{g.proveedor}</td>
+                      <td className="p-2 border-r border-black font-semibold">{g.concepto}</td>
+                      <td className="p-2 border-r border-black font-black uppercase">{giroObj?.nombre || 'General'}</td>
+                      <td className="p-2 text-right font-black font-mono text-xs">${g.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
                     </tr>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-zinc-50 font-bold border-t-2 border-zinc-900 text-xs">
-                  <td colSpan={5} className="p-2 text-right uppercase border-r border-zinc-200">Total a Reembolsar:</td>
-                  <td className="p-2 text-right text-zinc-900">${totalReport.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                <tr className="bg-white text-black font-black border-t-2 border-black text-xs">
+                  <td colSpan={5} className="p-2.5 text-right uppercase border-r border-black tracking-wider">Total a Reembolsar:</td>
+                  <td className="p-2.5 text-right font-mono text-sm">${totalReport.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
                 </tr>
               </tfoot>
             </table>
