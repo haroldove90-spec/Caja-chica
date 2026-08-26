@@ -4,35 +4,35 @@ export interface PDFColorStyle {
   border?: string;
 }
 
-// Preset color mapping matching user's reference image for companies and giros
+// Preset color mapping matching user's reference image for companies and giros with warmer, more saturated vibrant tones
 export const COMPANY_COLOR_PRESETS: Record<string, PDFColorStyle> = {
-  'TALLER COTEYUC': { bg: '#5CE1E6', text: '#000000', border: '#000000' }, // Celeste Cian (Pantone 310 C)
-  'TALLER PROYECTA': { bg: '#C779C7', text: '#000000', border: '#000000' }, // Lila / Orquidea (Pantone 251 C)
-  'PROYECTA': { bg: '#FFA800', text: '#000000', border: '#000000' }, // Naranja Ambar (Pantone 137 C)
-  'COTEYUC': { bg: '#00AEEF', text: '#000000', border: '#000000' }, // Azul Cielo Vibrante (Pantone 299 C)
-  'PUBLIKREA': { bg: '#FFFF00', text: '#000000', border: '#000000' }, // Amarillo Canario (Pantone Yellow C)
-  'PUBLICREA': { bg: '#FFFF00', text: '#000000', border: '#000000' }, // Amarillo Canario (Pantone Yellow C)
-  'OTROS': { bg: '#FFD1D1', text: '#000000', border: '#000000' }, // Rosa Palido (Pantone 705 C)
-  'LOCAL HOCABA': { bg: '#D9D9D9', text: '#000000', border: '#000000' }, // Gris Claro (Pantone Cool Gray 3 C)
-  'HOCABA': { bg: '#D9D9D9', text: '#000000', border: '#000000' }, // Gris Claro (Pantone Cool Gray 3 C)
-  'DESPACHO': { bg: '#A8D5A2', text: '#000000', border: '#000000' }, // Verde Menta / Pistache (Pantone 358 C)
-  'JS CONTADORES': { bg: '#C7D2FE', text: '#000000', border: '#000000' }, // Soft Indigo
+  'TALLER COTEYUC': { bg: '#18E0F7', text: '#000000', border: '#000000' }, // Celeste Cian Brillante Vivo (Pantone 305 C)
+  'TALLER PROYECTA': { bg: '#D870D8', text: '#000000', border: '#000000' }, // Lila / Orquídea Cálido Saturado (Pantone 245 C)
+  'PROYECTA': { bg: '#FF9900', text: '#000000', border: '#000000' }, // Amarillo-Naranja / Ámbar Intenso (Pantone 1375 C)
+  'COTEYUC': { bg: '#0099FF', text: '#000000', border: '#000000' }, // Azul Cielo Intenso Saturado (Pantone 2925 C)
+  'PUBLIKREA': { bg: '#FFFF00', text: '#000000', border: '#000000' }, // Amarillo Canario Eléctrico (Pantone Process Yellow C)
+  'PUBLICREA': { bg: '#FFFF00', text: '#000000', border: '#000000' }, // Amarillo Canario Eléctrico (Pantone Process Yellow C)
+  'OTROS': { bg: '#FFB8C6', text: '#000000', border: '#000000' }, // Rosa Pálido Cálido Intenso (Pantone 706 C)
+  'LOCAL HOCABA': { bg: '#CCCCCC', text: '#000000', border: '#000000' }, // Gris Medio Sólido (Pantone Cool Gray 4 C)
+  'HOCABA': { bg: '#CCCCCC', text: '#000000', border: '#000000' }, // Gris Medio Sólido (Pantone Cool Gray 4 C)
+  'DESPACHO': { bg: '#92E088', text: '#000000', border: '#000000' }, // Verde Pistache / Menta Cálido y Vivo (Pantone 366 C)
+  'JS CONTADORES': { bg: '#B4C6FC', text: '#000000', border: '#000000' }, // Soft Indigo
 };
 
 // Vibrant fallback palette to color-code rows when no preset matches
 export const VIBRANT_PDF_PALETTE: PDFColorStyle[] = [
-  { bg: '#5CE1E6', text: '#000000', border: '#000000' }, // Celeste Cian
-  { bg: '#C779C7', text: '#000000', border: '#000000' }, // Lila / Orquidea
-  { bg: '#FFA800', text: '#000000', border: '#000000' }, // Naranja Ambar
-  { bg: '#00AEEF', text: '#000000', border: '#000000' }, // Azul Cielo
+  { bg: '#18E0F7', text: '#000000', border: '#000000' }, // Celeste Cian Vivo
+  { bg: '#D870D8', text: '#000000', border: '#000000' }, // Lila / Orquídea Cálido
+  { bg: '#FF9900', text: '#000000', border: '#000000' }, // Amarillo-Naranja Ámbar Intenso
+  { bg: '#0099FF', text: '#000000', border: '#000000' }, // Azul Cielo Intenso
   { bg: '#FFFF00', text: '#000000', border: '#000000' }, // Amarillo Canario
-  { bg: '#FFD1D1', text: '#000000', border: '#000000' }, // Rosa Palido
-  { bg: '#D9D9D9', text: '#000000', border: '#000000' }, // Gris Claro
-  { bg: '#A8D5A2', text: '#000000', border: '#000000' }, // Verde Menta
-  { bg: '#F472B6', text: '#000000', border: '#000000' }, // Pink
-  { bg: '#38BDF8', text: '#000000', border: '#000000' }, // Sky Blue
-  { bg: '#FB923C', text: '#000000', border: '#000000' }, // Light Orange
-  { bg: '#A78BFA', text: '#000000', border: '#000000' }, // Purple
+  { bg: '#FFB8C6', text: '#000000', border: '#000000' }, // Rosa Pálido Cálido
+  { bg: '#CCCCCC', text: '#000000', border: '#000000' }, // Gris Medio Sólido
+  { bg: '#92E088', text: '#000000', border: '#000000' }, // Verde Pistache / Menta Cálido
+  { bg: '#FF69B4', text: '#000000', border: '#000000' }, // Hot Pink
+  { bg: '#00BFFF', text: '#000000', border: '#000000' }, // Deep Sky Blue
+  { bg: '#FF8C00', text: '#000000', border: '#000000' }, // Dark Orange
+  { bg: '#BA55D3', text: '#000000', border: '#000000' }, // Medium Orchid
 ];
 
 export function getPdfRowColor(label?: string | null, index: number = 0): PDFColorStyle {
@@ -42,14 +42,12 @@ export function getPdfRowColor(label?: string | null, index: number = 0): PDFCol
 
   const cleanLabel = label.trim().toUpperCase();
 
-  // 1. Check exact preset keys or substring matches
-  for (const [key, style] of Object.entries(COMPANY_COLOR_PRESETS)) {
-    if (cleanLabel === key || cleanLabel.includes(key) || key.includes(cleanLabel)) {
-      return style;
-    }
+  // 1. Exact matches first
+  if (COMPANY_COLOR_PRESETS[cleanLabel]) {
+    return COMPANY_COLOR_PRESETS[cleanLabel];
   }
 
-  // 2. Specific keyword matches
+  // 2. Specific compound keyword matches
   if (cleanLabel.includes('TALLER') && cleanLabel.includes('COTEYUC')) return COMPANY_COLOR_PRESETS['TALLER COTEYUC'];
   if (cleanLabel.includes('TALLER') && cleanLabel.includes('PROYECTA')) return COMPANY_COLOR_PRESETS['TALLER PROYECTA'];
   if (cleanLabel.includes('PROYECTA')) return COMPANY_COLOR_PRESETS['PROYECTA'];
@@ -59,6 +57,13 @@ export function getPdfRowColor(label?: string | null, index: number = 0): PDFCol
   if (cleanLabel.includes('HOCABA')) return COMPANY_COLOR_PRESETS['LOCAL HOCABA'];
   if (cleanLabel.includes('OTRO') || cleanLabel.includes('VARIO') || cleanLabel.includes('GENERAL')) return COMPANY_COLOR_PRESETS['OTROS'];
 
-  // 3. Fallback to palette cycle
+  // 3. Substring match against keys
+  for (const [key, style] of Object.entries(COMPANY_COLOR_PRESETS)) {
+    if (cleanLabel.includes(key) || key.includes(cleanLabel)) {
+      return style;
+    }
+  }
+
+  // 4. Fallback to palette cycle
   return VIBRANT_PDF_PALETTE[index % VIBRANT_PDF_PALETTE.length];
 }
