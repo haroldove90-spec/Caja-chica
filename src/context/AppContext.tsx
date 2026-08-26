@@ -34,6 +34,7 @@ import {
 import {
   fetchSupabaseTable,
   insertSupabaseRecord,
+  bulkInsertSupabaseRecords,
   deleteSupabaseRecord,
   gastoToDb,
   dbToGasto,
@@ -673,20 +674,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     // Attach refund ID to expenses
-    setGastos(prev => prev.map(g => {
+    const updatedGastosList = gastos.map(g => {
       if (g.cajaId === cajaId && !g.reembolsoId) {
         return { ...g, reembolsoId: rmbId };
       }
       return g;
-    }));
+    });
 
+    setGastos(updatedGastosList);
     setReembolsos(prev => [newRequest, ...prev]);
 
     // Freeze caja status to Pendiente
     setCajas(prev => prev.map(c => c.id === cajaId ? { ...c, estado: 'Pendiente' } : c));
 
+    // Persist refund request to Supabase
     const res = await insertSupabaseRecord('reembolsos', reembolsoToDb(newRequest));
     recordSupabaseTelemetry('reembolsos', 'Cierre de Caja', 'insert', newRequest.nroReembolso, prevCount, prevCount + 1, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
+
+    // Also persist gastos with updated reembolso_id to Supabase so background sync doesn't detach them
+    const affectedGastos = unsubmittedGastos.map(g => ({ ...g, reembolsoId: rmbId }));
+    await bulkInsertSupabaseRecords('gastos', affectedGastos.map(g => gastoToDb(g)));
 
     logAudit('SOLICITAR_REEMBOLSO', 'Cierre de Caja', `Solicitó reembolso ${nro} por $${total.toFixed(2)} (${unsubmittedGastos.length} comprobantes)`);
   };
@@ -707,6 +714,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setReembolsos(prev => prev.map(r => r.id === reembolsoId ? updatedRmb : r));
 
     // Mark expenses as approved
+    const affectedGastos = gastos.filter(g => g.reembolsoId === reembolsoId).map(g => ({ ...g, estado: 'aprobado' as const }));
     setGastos(prev => prev.map(g => g.reembolsoId === reembolsoId ? { ...g, estado: 'aprobado' } : g));
 
     // Reopen caja & restore balance to fondoBase
@@ -723,6 +731,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const res = await insertSupabaseRecord('reembolsos', reembolsoToDb(updatedRmb));
     recordSupabaseTelemetry('reembolsos', 'Auditoría', 'update', `Aprobado ${rmb.nroReembolso}`, reembolsos.length, reembolsos.length, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
+
+    if (affectedGastos.length > 0) {
+      await bulkInsertSupabaseRecords('gastos', affectedGastos.map(g => gastoToDb(g)));
+    }
 
     logAudit('APROBAR_REEMBOLSO', 'Auditoría', `Aprobó Reembolso ${rmb.nroReembolso} por $${rmb.totalGastos.toFixed(2)}`);
   };

@@ -37,7 +37,13 @@ export const ContadorAuditoria: React.FC = () => {
 
   const selectedReembolso = reembolsos.find(r => r.id === selectedRmbId);
   const selectedCaja = selectedReembolso ? cajas.find(c => c.id === selectedReembolso.cajaId) : null;
-  const reembolsoGastos = selectedReembolso ? gastos.filter(g => g.reembolsoId === selectedReembolso.id) : [];
+  
+  // Try matching by reembolsoId first; if empty (e.g. legacy or pending sync), fallback to caja's current expenses
+  const directReembolsoGastos = selectedReembolso ? gastos.filter(g => g.reembolsoId === selectedReembolso.id) : [];
+  const fallbackCajaGastos = selectedReembolso && directReembolsoGastos.length === 0 
+    ? gastos.filter(g => g.cajaId === selectedReembolso.cajaId && g.activo !== false)
+    : [];
+  const reembolsoGastos = directReembolsoGastos.length > 0 ? directReembolsoGastos : fallbackCajaGastos;
 
   const handleConfirmRechazo = (e: React.FormEvent) => {
     e.preventDefault();

@@ -19,7 +19,9 @@ export const PDFReportModal: React.FC = () => {
     window.print();
   };
 
-  const totalReport = gastos.reduce((a, b) => a + b.importe, 0);
+  // Calculate sum of provided gastos or fallback to reembolso.totalGastos
+  const gastosSum = gastos.reduce((a, b) => a + (Number(b.importe) || 0), 0);
+  const totalReport = gastos.length > 0 ? gastosSum : (reembolso?.totalGastos || 0);
   const gastosConEvidencia = gastos.filter(g => Boolean(g.evidenciaUrl));
 
   // Build summary rows by Company / Giro for the colored summary table (matching Image 1 style)
@@ -53,8 +55,13 @@ export const PDFReportModal: React.FC = () => {
     else if (cleanLabel.includes('HOCABA')) matchedKey = 'LOCAL HOCABA';
     else if (giroObj?.nombre) matchedKey = giroObj.nombre.toUpperCase();
 
-    giroTotalsMap[matchedKey] = (giroTotalsMap[matchedKey] || 0) + g.importe;
+    giroTotalsMap[matchedKey] = (giroTotalsMap[matchedKey] || 0) + (Number(g.importe) || 0);
   });
+
+  // If gastos is empty but reembolso has totalGastos, assign to the corresponding box or OTROS so it does not stay empty
+  if (gastos.length === 0 && totalReport > 0) {
+    giroTotalsMap['OTROS'] = totalReport;
+  }
 
   const summaryList = Object.entries(giroTotalsMap).map(([name, amount]) => ({
     name,

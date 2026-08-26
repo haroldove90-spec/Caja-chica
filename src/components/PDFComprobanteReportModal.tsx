@@ -20,7 +20,21 @@ export const PDFComprobanteReportModal: React.FC = () => {
   };
 
   // Ensure 4 row slots in breakdown table like Attachment 2
-  const tableRows = [...comp.items];
+  let rawItems = Array.isArray(comp.items) && comp.items.length > 0 
+    ? [...comp.items]
+    : [{ noCuenta: '602-01', nombre: comp.concepto || 'Gastos Diversos', importe: comp.importe || 0 }];
+
+  // If all items have 0 amount but comp has a positive importe, set the first row to comp.importe
+  const itemsTotal = rawItems.reduce((acc, it) => acc + (Number(it.importe) || 0), 0);
+  if (itemsTotal === 0 && comp.importe > 0) {
+    rawItems[0] = {
+      ...rawItems[0],
+      nombre: rawItems[0]?.nombre || comp.concepto || 'Gastos Diversos',
+      importe: comp.importe
+    };
+  }
+
+  const tableRows = [...rawItems];
   while (tableRows.length < 4) {
     tableRows.push({ noCuenta: '', nombre: '', importe: 0 });
   }
