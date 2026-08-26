@@ -224,6 +224,7 @@ CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
   importe_letra TEXT NOT NULL,
   concepto TEXT NOT NULL,
   solicitado_a TEXT NOT NULL,
+  items JSONB DEFAULT '[]'::jsonb,
   autorizado_por TEXT,
   recibido_por TEXT,
   evidencia_url TEXT,
@@ -234,6 +235,7 @@ CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS items JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
 ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS evidencias JSONB;
 

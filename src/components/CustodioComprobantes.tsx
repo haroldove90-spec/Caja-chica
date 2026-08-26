@@ -114,6 +114,18 @@ export const CustodioComprobantes: React.FC = () => {
     e.preventDefault();
     if (!concepto.trim() || !solicitadoA.trim() || importeFinal <= 0) return;
 
+    const cleanedItems = items.filter(it => it.nombre?.trim() !== '' || (Number(it.importe) || 0) > 0 || it.nombreProyecto?.trim() !== '' || it.noOrden?.trim() !== '' || it.noCotizacion?.trim() !== '');
+    const itemsToSave = cleanedItems.length > 0 ? cleanedItems : [
+      {
+        noCuenta: '602-01',
+        noOrden: folio,
+        noCotizacion: '',
+        nombreProyecto: 'COTEYUC',
+        nombre: concepto,
+        importe: importeFinal
+      }
+    ];
+
     if (editingId) {
       const existing = comprobantesGastos.find(c => c.id === editingId);
       if (existing) {
@@ -125,7 +137,7 @@ export const CustodioComprobantes: React.FC = () => {
           importeLetra: importeLetra.trim() || importeLetraAuto,
           concepto,
           solicitadoA,
-          items: items.filter(it => it.nombre.trim() !== '' || it.importe > 0),
+          items: itemsToSave,
           autorizadoPor,
           recibidoPor,
           evidenciaUrl: evidenciaUrl || undefined,
@@ -143,7 +155,7 @@ export const CustodioComprobantes: React.FC = () => {
         importeLetra: importeLetra.trim() || importeLetraAuto,
         concepto,
         solicitadoA,
-        items: items.filter(it => it.nombre.trim() !== '' || it.importe > 0),
+        items: itemsToSave,
         autorizadoPor,
         recibidoPor,
         evidenciaUrl: evidenciaUrl || undefined,
@@ -517,19 +529,28 @@ export const CustodioComprobantes: React.FC = () => {
 
                   {/* ITEMS COUNT / DETAILS SUMMARY */}
                   <div className="p-2 rounded-lg bg-blue-50/40 border border-blue-100 text-[10px] text-zinc-600 space-y-1">
-                    <span className="font-bold text-[#024182] block">Desglose de Cuentas ({comp.items.length}):</span>
-                    {comp.items.map((it, idx) => (
-                      <div key={idx} className="flex justify-between items-center font-mono gap-2 text-[10px]">
+                    <span className="font-bold text-[#024182] block">Desglose de Cuentas ({(comp.items || []).length}):</span>
+                    {(comp.items && comp.items.length > 0) ? (
+                      comp.items.map((it, idx) => (
+                        <div key={idx} className="flex justify-between items-center font-mono gap-2 text-[10px]">
+                          <span className="truncate">
+                            <strong>{it.noCuenta || '602-01'}</strong>
+                            {it.noOrden ? ` | Ord: ${it.noOrden}` : ''}
+                            {it.noCotizacion ? ` | Cot: ${it.noCotizacion}` : ''}
+                            {it.nombreProyecto ? ` | Proy: ${it.nombreProyecto}` : ''}
+                            {` - ${it.nombre || comp.concepto || 'General'}`}
+                          </span>
+                          <span className="font-semibold shrink-0">${(Number(it.importe) || 0).toFixed(2)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex justify-between items-center font-mono gap-2 text-[10px]">
                         <span className="truncate">
-                          <strong>{it.noCuenta}</strong>
-                          {it.noOrden ? ` | Ord: ${it.noOrden}` : ''}
-                          {it.noCotizacion ? ` | Cot: ${it.noCotizacion}` : ''}
-                          {it.nombreProyecto ? ` | Proy: ${it.nombreProyecto}` : ''}
-                          {` - ${it.nombre || 'General'}`}
+                          <strong>602-01</strong> - {comp.concepto || 'Gastos Diversos'}
                         </span>
-                        <span className="font-semibold shrink-0">${it.importe.toFixed(2)}</span>
+                        <span className="font-semibold shrink-0">${(Number(comp.importe) || 0).toFixed(2)}</span>
                       </div>
-                    ))}
+                    )}
                   </div>
 
                   {/* GRID DE EVIDENCIAS */}

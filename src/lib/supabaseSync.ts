@@ -3,6 +3,7 @@ import {
   Gasto,
   RegistroGasolina,
   ComprobanteGastos,
+  ComprobanteGastosItem,
   ComprobanteCombustibleCliente,
   ReembolsoRequest,
   Abono,
@@ -412,6 +413,7 @@ export function comprobanteToDb(c: ComprobanteGastos) {
     importe_letra: c.importeLetra || '',
     concepto: c.concepto || '',
     solicitado_a: c.solicitadoA || '',
+    items: c.items || [],
     autorizado_por: c.autorizadoPor || null,
     recibido_por: c.recibidoPor || null,
     evidencia_url: c.evidenciaUrl || null,
@@ -421,6 +423,20 @@ export function comprobanteToDb(c: ComprobanteGastos) {
 }
 
 export function dbToComprobante(db: any): ComprobanteGastos {
+  let parsedItems: ComprobanteGastosItem[] = [];
+  if (db.items) {
+    if (Array.isArray(db.items)) {
+      parsedItems = db.items;
+    } else if (typeof db.items === 'string') {
+      try {
+        const parsed = JSON.parse(db.items);
+        if (Array.isArray(parsed)) parsedItems = parsed;
+      } catch {
+        parsedItems = [];
+      }
+    }
+  }
+
   return {
     id: db.id,
     cajaId: db.caja_id,
@@ -430,7 +446,7 @@ export function dbToComprobante(db: any): ComprobanteGastos {
     importeLetra: db.importe_letra || '',
     concepto: db.concepto || '',
     solicitadoA: db.solicitado_a || '',
-    items: [],
+    items: parsedItems,
     autorizadoPor: db.autorizado_por || '',
     recibidoPor: db.recibido_por || '',
     evidenciaUrl: db.evidencia_url || undefined,

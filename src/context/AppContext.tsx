@@ -309,10 +309,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dbComprobantes && dbComprobantes.length > 0 && isMounted) {
         const mapped = dbComprobantes.map(dbToComprobante);
         setComprobantesGastos(prev => {
-          const dbIds = new Set(mapped.map(m => m.id));
+          const merged = mapped.map(item => {
+            const local = prev.find(p => p.id === item.id);
+            const preservedItems = (item.items && item.items.length > 0)
+              ? item.items
+              : (local?.items && local.items.length > 0 ? local.items : []);
+            return {
+              ...item,
+              items: preservedItems
+            };
+          });
+          const dbIds = new Set(merged.map(m => m.id));
           const localOnly = prev.filter(p => !dbIds.has(p.id));
           localOnly.forEach(item => insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(item)));
-          return [...mapped, ...localOnly];
+          return [...merged, ...localOnly];
         });
       } else if (dbComprobantes && dbComprobantes.length === 0 && isMounted) {
         comprobantesGastos.forEach(item => insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(item)));

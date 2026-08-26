@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
 import { getPdfRowColor } from '../utils/pdfColors';
+import { ComprobanteGastosItem } from '../types';
 
 export const PDFComprobanteReportModal: React.FC = () => {
   const { pdfComprobanteModalData, setPdfComprobanteModalData } = useApp();
@@ -19,24 +20,42 @@ export const PDFComprobanteReportModal: React.FC = () => {
     window.print();
   };
 
-  // Ensure 4 row slots in breakdown table like Attachment 2
-  let rawItems = Array.isArray(comp.items) && comp.items.length > 0 
-    ? [...comp.items]
-    : [{ noCuenta: '602-01', nombre: comp.concepto || 'Gastos Diversos', importe: comp.importe || 0 }];
+  // Extract all meaningful items (items that have nombre, importe > 0, or associated project/order/quote)
+  const meaningfulItems = (Array.isArray(comp.items) ? comp.items : []).filter(
+    it => it && (it.nombre?.trim() || (Number(it.importe) || 0) > 0 || it.nombreProyecto?.trim() || it.noOrden?.trim() || it.noCotizacion?.trim())
+  );
 
-  // If all items have 0 amount but comp has a positive importe, set the first row to comp.importe
-  const itemsTotal = rawItems.reduce((acc, it) => acc + (Number(it.importe) || 0), 0);
-  if (itemsTotal === 0 && comp.importe > 0) {
-    rawItems[0] = {
-      ...rawItems[0],
-      nombre: rawItems[0]?.nombre || comp.concepto || 'Gastos Diversos',
-      importe: comp.importe
-    };
+  let rawItems: ComprobanteGastosItem[] = [];
+  if (meaningfulItems.length > 0) {
+    rawItems = meaningfulItems.map((it, idx) => ({
+      noCuenta: it.noCuenta || `602-0${idx + 1}`,
+      noOrden: it.noOrden || '',
+      noCotizacion: it.noCotizacion || '',
+      nombreProyecto: it.nombreProyecto || '',
+      nombre: it.nombre || comp.concepto || 'Gasto General',
+      importe: Number(it.importe) || 0
+    }));
+  } else {
+    // If no meaningful breakdown items exist, provide the primary record row with total amount so table is never blank
+    rawItems = [
+      {
+        noCuenta: '602-01',
+        noOrden: comp.folio || '',
+        noCotizacion: '',
+        nombreProyecto: 'COTEYUC',
+        nombre: comp.concepto || 'Gastos Diversos',
+        importe: Number(comp.importe) || 0
+      }
+    ];
   }
 
+  const computedTotal = rawItems.reduce((acc, it) => acc + (Number(it.importe) || 0), 0);
+  const displayTotal = computedTotal > 0 ? computedTotal : (Number(comp.importe) || 0);
+
+  // Ensure minimum 4 row slots in breakdown table
   const tableRows = [...rawItems];
   while (tableRows.length < 4) {
-    tableRows.push({ noCuenta: '', nombre: '', importe: 0 });
+    tableRows.push({ noCuenta: '', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: '', importe: 0 });
   }
 
   return (
@@ -123,7 +142,7 @@ export const PDFComprobanteReportModal: React.FC = () => {
                 </h1>
               </div>
               <div className="bg-white text-[#024182] font-black px-4 py-1.5 rounded text-sm sm:text-base border border-blue-200">
-                $ {comp.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                $ {displayTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -164,8 +183,8 @@ export const PDFComprobanteReportModal: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-black text-xs font-bold">
                 {tableRows.map((row, idx) => {
+                  const isFilled = Boolean(row.nombre?.trim() || (Number(row.importe) || 0) > 0 || row.nombreProyecto?.trim() || row.noOrden?.trim() || row.noCotizacion?.trim());
                   const style = getPdfRowColor(row.nombreProyecto || row.nombre || (row.importe ? 'COTEYUC' : null), idx);
-                  const isFilled = Boolean(row.nombre || row.importe > 0 || row.nombreProyecto);
                   return (
                     <tr
                       key={idx}
@@ -173,7 +192,7 @@ export const PDFComprobanteReportModal: React.FC = () => {
                       className="h-9 border-b border-black"
                     >
                       <td className="p-2 border-r border-black font-mono font-black text-center text-[11px]">
-                        {row.noCuenta || (isFilled ? `${idx + 1}` : '')}
+                        {row.noCuenta || (isFilled ? `602-0${idx + 1}` : '')}
                       </td>
                       <td className="p-2 border-r border-black font-mono font-bold text-center text-[11px]">
                         {row.noOrden || ''}
@@ -185,10 +204,10 @@ export const PDFComprobanteReportModal: React.FC = () => {
                         {row.nombreProyecto || ''}
                       </td>
                       <td className="p-2 border-r border-black font-bold text-[11px]">
-                        {row.nombre}
+                        {row.nombre || ''}
                       </td>
                       <td className="p-2 text-right font-black font-mono text-[11px]">
-                        {row.importe > 0 ? `$${row.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
+                        {(Number(row.importe) || 0) > 0 ? `$${Number(row.importe).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : ''}
                       </td>
                     </tr>
                   );
@@ -200,7 +219,7 @@ export const PDFComprobanteReportModal: React.FC = () => {
                     TOTAL $
                   </td>
                   <td className="p-2 text-right text-black text-sm font-mono font-black">
-                    ${comp.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    ${displayTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>
