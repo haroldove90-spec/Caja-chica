@@ -16,14 +16,30 @@ import {
   ChevronRight,
   Sparkles,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  History,
+  CheckCircle,
+  Calendar,
+  Zap,
+  TrendingUp
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { pingSupabase, runFullSupabaseDiagnostic, DiagnosticResult } from '../lib/supabaseSync';
 import { FULL_SUPABASE_SQL_SCRIPT } from '../constants/supabaseSqlScript';
 
 export const SupabaseSmartButton: React.FC = () => {
-  const { role, syncWithSupabaseNow, gastos, gasolinaRecords, comprobantesGastos, comprobantesCombustibleCliente, cajas } = useApp();
+  const {
+    role,
+    syncWithSupabaseNow,
+    gastos,
+    gasolinaRecords,
+    comprobantesGastos,
+    comprobantesCombustibleCliente,
+    cajas,
+    lastSupabaseSave,
+    supabaseSaveHistory,
+    dismissLastSupabaseSave
+  } = useApp();
 
   // Hidden strictly for 'cliente' role as requested
   if (role === 'cliente' || role === 'home') {
@@ -31,12 +47,25 @@ export const SupabaseSmartButton: React.FC = () => {
   }
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'diagnostics' | 'sql' | 'sync'>('diagnostics');
+  const [activeTab, setActiveTab] = useState<'feedback' | 'diagnostics' | 'sql' | 'sync'>('feedback');
   const [isConnected, setIsConnected] = useState<boolean>(true);
   const [latencyMs, setLatencyMs] = useState<number>(38);
   const [isPinging, setIsPinging] = useState<boolean>(false);
   const [diagnostic, setDiagnostic] = useState<DiagnosticResult | null>(null);
   const [isDiagnosing, setIsDiagnosing] = useState<boolean>(false);
+
+  // Auto-dismiss floating toast timer
+  const [showToast, setShowToast] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (lastSupabaseSave) {
+      setShowToast(true);
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 7500);
+      return () => clearTimeout(timer);
+    }
+  }, [lastSupabaseSave]);
 
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -123,7 +152,7 @@ export const SupabaseSmartButton: React.FC = () => {
 
   return (
     <>
-      {/* SMART SUPABASE BUTTON (SEMÁFORO EN VIVO + LATENCIA + CHECK 1-CLIC) */}
+      {/* SMART SUPABASE BUTTON (SEMÁFORO EN VIVO + LATENCIA + FEEDBACK 1-CLIC) */}
       <button
         id="btn-supabase-smart"
         onClick={handleOpenModal}
@@ -165,7 +194,73 @@ export const SupabaseSmartButton: React.FC = () => {
         <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
       </button>
 
-      {/* DIAGNOSTIC AND SQL CONSOLE MODAL */}
+      {/* FLOATING REAL-TIME SAVE FEEDBACK TOAST / BANNER */}
+      {showToast && lastSupabaseSave && (
+        <div
+          id="supabase-save-feedback-toast"
+          className="fixed bottom-6 right-6 z-50 max-w-md w-full bg-white border border-emerald-300 rounded-2xl shadow-2xl p-4 animate-in slide-in-from-bottom-5 duration-300 print:hidden"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl shrink-0 mt-0.5">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-emerald-950">Guardado en Supabase OK</span>
+                  <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px] font-mono font-bold">
+                    {lastSupabaseSave.latencyMs} ms
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-zinc-800">
+                  {lastSupabaseSave.moduleName}: <span className="font-bold text-[#024182]">{lastSupabaseSave.recordIdentifier}</span>
+                </p>
+
+                {/* Counter comparison: Before and After */}
+                <div className="flex items-center gap-2 text-[11px] font-mono bg-zinc-50 px-2 py-1 rounded-lg border border-zinc-200">
+                  <span className="text-zinc-500">Antes: <strong className="text-zinc-800">{lastSupabaseSave.previousCount}</strong></span>
+                  <span className="text-zinc-400">→</span>
+                  <span className="text-emerald-700 font-bold">Total ahora: <strong>{lastSupabaseSave.newCount}</strong></span>
+                </div>
+
+                {/* Date, Time, and Day of Week */}
+                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-medium pt-0.5">
+                  <Calendar className="w-3 h-3 text-zinc-400" />
+                  <span>{lastSupabaseSave.formattedDateTime}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowToast(false);
+                dismissLastSupabaseSave();
+              }}
+              className="p-1 text-zinc-400 hover:text-zinc-700 rounded-lg hover:bg-zinc-100 cursor-pointer"
+              title="Cerrar notificación"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="mt-2.5 pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px]">
+            <button
+              onClick={() => {
+                setShowToast(false);
+                setIsOpen(true);
+                setActiveTab('feedback');
+              }}
+              className="text-[#024182] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+            >
+              <span>Ver bitácora de guardado en el Botón</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+            <span className="text-[10px] text-emerald-600 font-bold font-mono">100% PERSISTIDO</span>
+          </div>
+        </div>
+      )}
+
+      {/* DIAGNOSTIC, TELEMETRY AND SQL CONSOLE MODAL */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:hidden">
           <div className="bg-white border border-zinc-200 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-150">
@@ -182,7 +277,7 @@ export const SupabaseSmartButton: React.FC = () => {
                       PostgreSQL 15+
                     </span>
                   </div>
-                  <p className="text-xs text-blue-100/90">Diagnóstico de conexión, monitoreo en vivo, script SQL y sincronización</p>
+                  <p className="text-xs text-blue-100/90">Diagnóstico de conexión, monitoreo en vivo, script SQL y confirmación de guardado</p>
                 </div>
               </div>
 
@@ -196,11 +291,28 @@ export const SupabaseSmartButton: React.FC = () => {
             </div>
 
             {/* Sub-Header Tabs */}
-            <div className="flex items-center justify-between px-5 pt-3 border-b border-zinc-200 bg-zinc-50/80">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-5 pt-3 border-b border-zinc-200 bg-zinc-50/80 overflow-x-auto">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  onClick={() => setActiveTab('feedback')}
+                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'feedback'
+                      ? 'border-[#024182] text-[#024182] bg-white rounded-t-lg shadow-xs'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-800'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5" />
+                  <span>Confirmación de Guardado</span>
+                  {supabaseSaveHistory.length > 0 && (
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full bg-blue-100 text-[#024182] text-[10px] font-bold">
+                      {supabaseSaveHistory.length}
+                    </span>
+                  )}
+                </button>
+
                 <button
                   onClick={() => setActiveTab('diagnostics')}
-                  className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'diagnostics'
                       ? 'border-[#024182] text-[#024182] bg-white rounded-t-lg shadow-xs'
                       : 'border-transparent text-zinc-500 hover:text-zinc-800'
@@ -212,19 +324,19 @@ export const SupabaseSmartButton: React.FC = () => {
 
                 <button
                   onClick={() => setActiveTab('sql')}
-                  className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'sql'
                       ? 'border-[#024182] text-[#024182] bg-white rounded-t-lg shadow-xs'
                       : 'border-transparent text-zinc-500 hover:text-zinc-800'
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Script SQL Completo (Con Datos)</span>
+                  <span>Script SQL Completo</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('sync')}
-                  className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'sync'
                       ? 'border-[#024182] text-[#024182] bg-white rounded-t-lg shadow-xs'
                       : 'border-transparent text-zinc-500 hover:text-zinc-800'
@@ -239,14 +351,131 @@ export const SupabaseSmartButton: React.FC = () => {
               <button
                 onClick={handleVerifyConnection}
                 disabled={isDiagnosing}
-                className="px-3 py-1.5 mb-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                className="px-3 py-1.5 mb-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isDiagnosing ? 'animate-spin' : ''}`} />
                 <span>{isDiagnosing ? 'Comprobando...' : 'Verificar Conexión'}</span>
               </button>
             </div>
 
-            {/* TAB 1: DIAGNOSTICS & LIVE STATUS */}
+            {/* TAB 1: LIVE SAVE FEEDBACK & AUDIT COUNTERS */}
+            {activeTab === 'feedback' && (
+              <div className="p-5 space-y-4 overflow-y-auto flex-1 bg-zinc-50/50">
+                {/* Highlight banner for Last Saved Record */}
+                <div className="p-4 bg-gradient-to-r from-emerald-900 to-teal-900 rounded-2xl text-white shadow-md">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-emerald-500/30 border border-emerald-400/40 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-300">
+                          Último Registro Persistido en Supabase
+                        </span>
+                        <span className="text-xs font-mono text-emerald-200">
+                          {lastSupabaseSave ? `${lastSupabaseSave.latencyMs} ms latencia` : 'En espera de nuevo guardado'}
+                        </span>
+                      </div>
+
+                      {lastSupabaseSave ? (
+                        <div>
+                          <h4 className="text-base font-bold text-white flex items-center gap-2">
+                            <span>{lastSupabaseSave.moduleName}:</span>
+                            <span className="text-emerald-300 font-mono">{lastSupabaseSave.recordIdentifier}</span>
+                          </h4>
+                          <p className="text-xs text-emerald-100 flex items-center gap-1.5 mt-1">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                            <strong>{lastSupabaseSave.formattedDateTime}</strong>
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-emerald-100/80">
+                          Cualquier nuevo gasto, bitácora de combustible, comprobante o catálogo que registres mostrará aquí el conteo antes/después y su fecha exacta de persistencia.
+                        </p>
+                      )}
+                    </div>
+
+                    {lastSupabaseSave && (
+                      <div className="bg-white/10 backdrop-blur-xs p-3 rounded-xl border border-white/20 text-center shrink-0 min-w-[140px]">
+                        <p className="text-[10px] uppercase font-bold text-emerald-200">Conteo de Registros</p>
+                        <div className="flex items-center justify-center gap-2 mt-1">
+                          <span className="text-sm font-mono text-white/70">{lastSupabaseSave.previousCount}</span>
+                          <span className="text-xs text-emerald-300">→</span>
+                          <span className="text-lg font-black font-mono text-emerald-300">{lastSupabaseSave.newCount}</span>
+                        </div>
+                        <span className="text-[9px] font-bold text-emerald-400">Total en Módulo</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Save History Log Table */}
+                <div className="border border-zinc-200 rounded-xl bg-white overflow-hidden shadow-xs">
+                  <div className="p-3 bg-zinc-100/70 border-b border-zinc-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-800">
+                      <History className="w-4 h-4 text-[#024182]" />
+                      <span>Historial de Operaciones Guardadas en Supabase (Sesión en Vivo)</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-zinc-500">
+                      {supabaseSaveHistory.length} eventos registrados
+                    </span>
+                  </div>
+
+                  {supabaseSaveHistory.length > 0 ? (
+                    <div className="divide-y divide-zinc-100 text-xs max-h-72 overflow-y-auto">
+                      {supabaseSaveHistory.map((item) => (
+                        <div key={item.id} className="p-3 flex items-center justify-between hover:bg-zinc-50 transition-colors">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-zinc-900">{item.moduleName}</span>
+                              <span className="font-mono text-zinc-500 text-[11px]">({item.tableName})</span>
+                              <span className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold uppercase ${
+                                item.action === 'insert' ? 'bg-emerald-100 text-emerald-800' :
+                                item.action === 'update' ? 'bg-blue-100 text-blue-800' :
+                                item.action === 'delete' ? 'bg-rose-100 text-rose-800' : 'bg-purple-100 text-purple-800'
+                              }`}>
+                                {item.action}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-zinc-600 font-medium">
+                              Identificador: <strong className="text-zinc-900 font-mono">{item.recordIdentifier}</strong>
+                            </p>
+                            <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                              <Calendar className="w-3 h-3 text-zinc-400" />
+                              <span>{item.formattedDateTime}</span>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0 space-y-1">
+                            <div className="flex items-center gap-2 justify-end">
+                              <span className="text-[11px] font-mono text-zinc-500">
+                                {item.previousCount} → <strong className="text-zinc-900">{item.newCount}</strong>
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 font-mono">
+                                {item.latencyMs} ms
+                              </span>
+                            </div>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                              <CheckCircle className="w-3 h-3" />
+                              <span>Guardado sin falla</span>
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center space-y-2">
+                      <div className="p-3 bg-zinc-100 rounded-full w-fit mx-auto text-zinc-400">
+                        <Database className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-zinc-700">Aún no se han realizado operaciones en esta sesión</p>
+                      <p className="text-[11px] text-zinc-400 max-w-sm mx-auto">
+                        Crea o edita cualquier registro en cualquiera de los módulos para comprobar en tiempo real cómo se sincroniza y almacena en Supabase.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: DIAGNOSTICS & LIVE STATUS */}
             {activeTab === 'diagnostics' && (
               <div className="p-5 space-y-4 overflow-y-auto flex-1 bg-zinc-50/50">
                 {/* Live Status Cards Grid */}
@@ -289,19 +518,6 @@ export const SupabaseSmartButton: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Friendly Exception Translator Alert if any error */}
-                {diagnostic?.errorMessage && (
-                  <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl space-y-2">
-                    <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                      <span>Diagnóstico Detallado de Excepciones PostgreSQL ({diagnostic.errorCode})</span>
-                    </div>
-                    <p className="text-xs text-amber-800 font-medium">
-                      {diagnostic.friendlyExplanation || diagnostic.errorMessage}
-                    </p>
-                  </div>
-                )}
 
                 {/* Table Health Matrix */}
                 <div className="border border-zinc-200 rounded-xl bg-white overflow-hidden shadow-xs">
@@ -353,14 +569,14 @@ export const SupabaseSmartButton: React.FC = () => {
               </div>
             )}
 
-            {/* TAB 2: SQL SCRIPT & 1-CLICK COPY */}
+            {/* TAB 3: SQL SCRIPT & 1-CLICK COPY */}
             {activeTab === 'sql' && (
               <div className="p-5 space-y-4 overflow-y-auto flex-1 bg-zinc-50/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-zinc-900">Script SQL Completo e Idempotente</h4>
                     <p className="text-[11px] text-zinc-500">
-                      Incluye definición de tablas, políticas RLS, permisos y todos los registros de muestra (Cajas, Gastos, Gasolina, Comprobantes, Usuarios).
+                      Incluye definición de tablas, políticas RLS, columnas de estado activo y todos los registros de muestra.
                     </p>
                   </div>
 
@@ -403,7 +619,7 @@ export const SupabaseSmartButton: React.FC = () => {
               </div>
             )}
 
-            {/* TAB 3: SMART SYNC */}
+            {/* TAB 4: SMART SYNC */}
             {activeTab === 'sync' && (
               <div className="p-5 space-y-5 overflow-y-auto flex-1 bg-zinc-50/50">
                 <div className="p-5 bg-white border border-zinc-200 rounded-2xl shadow-xs space-y-4">
@@ -484,3 +700,4 @@ export const SupabaseSmartButton: React.FC = () => {
     </>
   );
 };
+

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Fuel, Plus, Trash2, FileText, Image as ImageIcon, Printer, Download, Search, Car, Gauge, CheckCircle2 } from 'lucide-react';
+import { Fuel, Plus, Trash2, FileText, Image as ImageIcon, Printer, Download, Search, Car, Gauge, CheckCircle2, Edit3, Power, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NivelTanque, RegistroGasolina } from '../types';
 import { FuelGaugeSVG } from './FuelGaugeSVG';
@@ -8,12 +8,15 @@ export const CustodioGasolina: React.FC = () => {
   const {
     gasolinaRecords,
     addRegistroGasolina,
+    updateRegistroGasolina,
     deleteRegistroGasolina,
+    toggleActivoGasolina,
     setPreviewEvidencia,
     setPdfGasolinaModalData,
     activeCaja
   } = useApp();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [vehiculo, setVehiculo] = useState('CAMIONETA PARTNER');
   const [fecha, setFecha] = useState(new Date().toISOString().substring(0, 10));
   const [formaPago, setFormaPago] = useState('EFECTIVO');
@@ -27,29 +30,70 @@ export const CustodioGasolina: React.FC = () => {
 
   const niveles: NivelTanque[] = ['E', '1/4', '1/2', '3/4', 'F'];
 
+  const handleResetForm = () => {
+    setEditingId(null);
+    setVehiculo('CAMIONETA PARTNER');
+    setFecha(new Date().toISOString().substring(0, 10));
+    setFormaPago('EFECTIVO');
+    setDescripcionUso('');
+    setNivelAntes('1/4');
+    setNivelDespues('F');
+    setKm('');
+    setImporte('');
+    setEvidenciaUrl('');
+  };
+
+  const handleStartEdit = (rec: RegistroGasolina) => {
+    setEditingId(rec.id);
+    setVehiculo(rec.vehiculo);
+    setFecha(rec.fecha);
+    setFormaPago(rec.formaPago);
+    setDescripcionUso(rec.descripcionUso);
+    setNivelAntes(rec.nivelAntes);
+    setNivelDespues(rec.nivelDespues);
+    setKm(rec.km);
+    setImporte(rec.importe);
+    setEvidenciaUrl(rec.evidenciaUrl || '');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!descripcionUso.trim() || !km || !importe) return;
 
-    addRegistroGasolina({
-      cajaId: activeCaja?.id || 'caja-1',
-      fecha,
-      vehiculo,
-      formaPago,
-      descripcionUso,
-      nivelAntes,
-      nivelDespues,
-      km: Number(km),
-      importe: Number(importe),
-      registradoPor: activeCaja?.responsable || 'Custodio de Caja',
-      evidenciaUrl: evidenciaUrl || undefined,
-      evidenciaType: 'image'
-    });
-
-    setDescripcionUso('');
-    setKm('');
-    setImporte('');
-    setEvidenciaUrl('');
+    if (editingId) {
+      const existing = gasolinaRecords.find(r => r.id === editingId);
+      if (existing) {
+        updateRegistroGasolina({
+          ...existing,
+          fecha,
+          vehiculo,
+          formaPago,
+          descripcionUso,
+          nivelAntes,
+          nivelDespues,
+          km: Number(km),
+          importe: Number(importe),
+          evidenciaUrl: evidenciaUrl || undefined
+        });
+      }
+      handleResetForm();
+    } else {
+      addRegistroGasolina({
+        cajaId: activeCaja?.id || 'caja-1',
+        fecha,
+        vehiculo,
+        formaPago,
+        descripcionUso,
+        nivelAntes,
+        nivelDespues,
+        km: Number(km),
+        importe: Number(importe),
+        registradoPor: activeCaja?.responsable || 'Custodio de Caja',
+        evidenciaUrl: evidenciaUrl || undefined,
+        evidenciaType: 'image'
+      });
+      handleResetForm();
+    }
   };
 
   const filteredRecords = gasolinaRecords.filter(r =>
@@ -150,10 +194,22 @@ export const CustodioGasolina: React.FC = () => {
         <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900">Registrar Carga de Combustible</h3>
+              <h3 className="text-sm font-semibold text-zinc-900">
+                {editingId ? 'Editar Carga de Combustible' : 'Registrar Carga de Combustible'}
+              </h3>
               <p className="text-[11px] text-zinc-500">Captura de datos e indicadores de nivel de tanque</p>
             </div>
-            <Car className="w-4 h-4 text-zinc-400" />
+            {editingId ? (
+              <button
+                onClick={handleResetForm}
+                className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                Cancelar
+              </button>
+            ) : (
+              <Car className="w-4 h-4 text-zinc-400" />
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -301,7 +357,7 @@ export const CustodioGasolina: React.FC = () => {
               className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span>Registrar Carga de Combustible</span>
+              <span>{editingId ? 'Guardar Cambios' : 'Registrar Carga de Combustible'}</span>
             </button>
           </form>
         </div>
@@ -345,6 +401,15 @@ export const CustodioGasolina: React.FC = () => {
                         <span className="px-2 py-0.5 rounded text-[9px] font-semibold bg-zinc-200 text-zinc-800 uppercase">
                           {rec.formaPago}
                         </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            rec.activo !== false
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-zinc-200 text-zinc-600 line-through'
+                          }`}
+                        >
+                          {rec.activo !== false ? '● Activo' : '○ Inactivo'}
+                        </span>
                       </div>
                       <p className="text-[11px] text-zinc-600 mt-1">{rec.descripcionUso}</p>
                       <span className="text-[10px] text-zinc-400 block mt-0.5">
@@ -379,7 +444,7 @@ export const CustodioGasolina: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* ACTION BUTTONS: VIEW EVIDENCIA, PRINT PDF, DELETE */}
+                  {/* ACTION BUTTONS: VIEW EVIDENCIA, PRINT PDF, EDIT, DEACTIVATE, DELETE */}
                   <div className="flex items-center justify-between pt-1 text-xs">
                     {rec.evidenciaUrl ? (
                       <button
@@ -387,20 +452,41 @@ export const CustodioGasolina: React.FC = () => {
                         className="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
                       >
                         <ImageIcon className="w-3.5 h-3.5" />
-                        <span>Ver Ticket Adjunto</span>
+                        <span>Ver Ticket</span>
                       </button>
                     ) : (
-                      <span className="text-[10px] text-zinc-400 italic">Sin ticket adjunto</span>
+                      <span className="text-[10px] text-zinc-400 italic">Sin ticket</span>
                     )}
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => toggleActivoGasolina(rec.id)}
+                        title={rec.activo !== false ? 'Desactivar Registro' : 'Activar Registro'}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold ${
+                          rec.activo !== false
+                            ? 'text-zinc-600 hover:bg-zinc-200 bg-zinc-100'
+                            : 'text-emerald-700 hover:bg-emerald-100 bg-emerald-50'
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        <span>{rec.activo !== false ? 'Desactivar' : 'Activar'}</span>
+                      </button>
+
                       <button
                         onClick={() => handlePrintSingle(rec)}
                         className="p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-medium flex items-center gap-1 cursor-pointer"
                         title="Ver Formato PDF de esta Carga"
                       >
                         <Printer className="w-3.5 h-3.5" />
-                        <span>PDF / Formato</span>
+                        <span>PDF</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleStartEdit(rec)}
+                        className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-lg transition-colors cursor-pointer"
+                        title="Editar Registro"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
                       <button

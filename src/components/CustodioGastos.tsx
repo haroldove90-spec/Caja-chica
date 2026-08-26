@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X, Printer } from 'lucide-react';
+import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X, Printer, Power, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Gasto } from '../types';
 
@@ -14,6 +14,7 @@ export const CustodioGastos: React.FC = () => {
     addGasto,
     updateGasto,
     deleteGasto,
+    toggleActivoGasto,
     setPreviewEvidencia,
     setPdfModalData
   } = useApp();
@@ -354,6 +355,15 @@ export const CustodioGastos: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-semibold text-xs text-zinc-900">{gasto.nroOrden}</span>
                       <span className="text-[10px] text-zinc-400">• {gasto.fecha}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          gasto.activo !== false
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-zinc-200 text-zinc-600 line-through'
+                        }`}
+                      >
+                        {gasto.activo !== false ? '● Activo' : '○ Inactivo'}
+                      </span>
                       {giroObj && (
                         <span
                           className="px-2 py-0.5 rounded-md text-[10px] font-medium"
@@ -397,6 +407,18 @@ export const CustodioGastos: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleActivoGasto(gasto.id)}
+                        title={gasto.activo !== false ? 'Desactivar Gasto' : 'Activar Gasto'}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold ${
+                          gasto.activo !== false
+                            ? 'text-zinc-600 hover:bg-zinc-200 bg-zinc-100'
+                            : 'text-emerald-700 hover:bg-emerald-100 bg-emerald-50'
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        <span>{gasto.activo !== false ? 'Desactivar' : 'Activar'}</span>
+                      </button>
                       <button
                         onClick={() => setPdfModalData({
                           caja: activeCaja,

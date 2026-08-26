@@ -19,8 +19,10 @@ CREATE TABLE IF NOT EXISTS public.cajas_chicas (
   saldo_actual NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   estado TEXT NOT NULL DEFAULT 'Abierta',
   ubicacion TEXT NOT NULL DEFAULT '',
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.giros (
   id TEXT PRIMARY KEY,
@@ -30,14 +32,17 @@ CREATE TABLE IF NOT EXISTS public.giros (
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.giros ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.proveedores (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
   rfc TEXT NOT NULL,
   categoria TEXT NOT NULL,
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.proveedores ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.empleados (
   id TEXT PRIMARY KEY,
@@ -47,6 +52,7 @@ CREATE TABLE IF NOT EXISTS public.empleados (
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.empleados ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.usuarios (
   id TEXT PRIMARY KEY,
@@ -84,8 +90,10 @@ CREATE TABLE IF NOT EXISTS public.gastos (
   estado TEXT NOT NULL DEFAULT 'borrador',
   nota_rechazo TEXT,
   reembolso_id TEXT,
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.gastos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.reembolsos (
   id TEXT PRIMARY KEY,
@@ -99,8 +107,10 @@ CREATE TABLE IF NOT EXISTS public.reembolsos (
   fecha_aprobacion TIMESTAMP WITH TIME ZONE,
   aprobado_por TEXT,
   firma_electronica TEXT,
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.reembolsos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.abonos (
   id TEXT PRIMARY KEY,
@@ -110,8 +120,10 @@ CREATE TABLE IF NOT EXISTS public.abonos (
   concepto TEXT NOT NULL,
   registrado_por TEXT NOT NULL,
   comprobante TEXT,
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.abonos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.audit_logs (
   id TEXT PRIMARY KEY,
@@ -138,8 +150,10 @@ CREATE TABLE IF NOT EXISTS public.registros_gasolina (
   registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
   evidencia_type TEXT DEFAULT 'image',
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.registros_gasolina ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.registro_gasolina (
   id TEXT PRIMARY KEY,
@@ -155,8 +169,10 @@ CREATE TABLE IF NOT EXISTS public.registro_gasolina (
   registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
   evidencia_type TEXT DEFAULT 'image',
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.registro_gasolina ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 -- TABLAS DE COMPROBANTES DE GASTOS Y SUS ITEMS
 CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
@@ -172,8 +188,10 @@ CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
   recibido_por TEXT,
   evidencia_url TEXT,
   evidencia_type TEXT DEFAULT 'image',
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.comprobante_gastos_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -196,8 +214,10 @@ CREATE TABLE IF NOT EXISTS public.clientes_perfil (
   empresa TEXT,
   rfc TEXT,
   direccion TEXT,
+  activo BOOLEAN DEFAULT TRUE,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE public.clientes_perfil ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.comprobantes_combustible_cliente (
   id TEXT PRIMARY KEY,
@@ -215,8 +235,10 @@ CREATE TABLE IF NOT EXISTS public.comprobantes_combustible_cliente (
   evidencia_type TEXT DEFAULT 'image',
   estado TEXT NOT NULL DEFAULT 'enviado',
   observaciones TEXT,
+  activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE public.comprobantes_combustible_cliente ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 -- TABLA DE LOGOTIPOS OFICIALES PARA PDF
 CREATE TABLE IF NOT EXISTS public.logos (

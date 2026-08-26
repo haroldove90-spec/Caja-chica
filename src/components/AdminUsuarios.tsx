@@ -4,8 +4,9 @@ import { useApp } from '../context/AppContext';
 import { RoleType, Usuario } from '../types';
 
 export const AdminUsuarios: React.FC = () => {
-  const { usuarios, addUsuario, deleteUsuario, auditLogs, cajas } = useApp();
+  const { usuarios, addUsuario, updateUsuario, deleteUsuario, toggleActivoUsuario, auditLogs, cajas } = useApp();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -21,6 +22,28 @@ export const AdminUsuarios: React.FC = () => {
 
   const appLink = window.location.origin;
 
+  const handleResetForm = () => {
+    setEditingId(null);
+    setNombre('');
+    setEmail('');
+    setTelefono('');
+    setUsername('');
+    setPassword('');
+    setRol('custodio');
+    setCajaId('');
+  };
+
+  const handleStartEdit = (u: Usuario) => {
+    setEditingId(u.id);
+    setNombre(u.nombre);
+    setEmail(u.email);
+    setTelefono(u.telefono || '');
+    setUsername(u.username || '');
+    setPassword(u.password || '');
+    setRol(u.rol);
+    setCajaId(u.cajaId || '');
+  };
+
   const handleAddUsuario = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre.trim() || !email.trim()) return;
@@ -30,33 +53,43 @@ export const AdminUsuarios: React.FC = () => {
     // Default password if empty
     const finalPassword = password.trim() || `Clave_${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const newUser: Omit<Usuario, 'id'> = {
-      nombre,
-      email,
-      telefono: telefono.trim() || undefined,
-      username: finalUsername,
-      password: finalPassword,
-      rol,
-      cajaId: (rol === 'custodio' || rol === 'cliente') ? cajaId : undefined,
-      activo: true
-    };
+    if (editingId) {
+      const existing = usuarios.find(u => u.id === editingId);
+      if (existing) {
+        updateUsuario({
+          ...existing,
+          nombre,
+          email,
+          telefono: telefono.trim() || undefined,
+          username: finalUsername,
+          password: finalPassword,
+          rol,
+          cajaId: (rol === 'custodio' || rol === 'cliente') ? cajaId : undefined,
+        });
+      }
+      handleResetForm();
+    } else {
+      const newUser: Omit<Usuario, 'id'> = {
+        nombre,
+        email,
+        telefono: telefono.trim() || undefined,
+        username: finalUsername,
+        password: finalPassword,
+        rol,
+        cajaId: (rol === 'custodio' || rol === 'cliente') ? cajaId : undefined,
+        activo: true
+      };
 
-    addUsuario(newUser);
+      addUsuario(newUser);
 
-    // Auto-open share modal for the newly created user
-    setSelectedUserShare({
-      id: `usr-${Date.now()}`,
-      ...newUser
-    });
+      // Auto-open share modal for the newly created user
+      setSelectedUserShare({
+        id: `usr-${Date.now()}`,
+        ...newUser
+      });
 
-    // Reset form
-    setNombre('');
-    setEmail('');
-    setTelefono('');
-    setUsername('');
-    setPassword('');
-    setRol('custodio');
-    setCajaId('');
+      handleResetForm();
+    }
   };
 
   const getRoleLabel = (r: RoleType) => {
@@ -116,10 +149,22 @@ Ingresa directamente al link para comenzar a operar.`;
       <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs space-y-4 h-fit">
         <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900">Crear Usuario de Sistema</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">
+              {editingId ? 'Editar Usuario de Sistema' : 'Crear Usuario de Sistema'}
+            </h3>
             <p className="text-[11px] text-zinc-500">Asignación de credenciales, contraseña y rol</p>
           </div>
-          <UserCheck className="w-4 h-4 text-zinc-500" />
+          {editingId ? (
+            <button
+              onClick={handleResetForm}
+              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              Cancelar
+            </button>
+          ) : (
+            <UserCheck className="w-4 h-4 text-zinc-500" />
+          )}
         </div>
 
         <form onSubmit={handleAddUsuario} className="space-y-3 text-xs">
@@ -228,7 +273,7 @@ Ingresa directamente al link para comenzar a operar.`;
             className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4 text-emerald-400" />
-            <span>Dar de Alta Usuario y Generar Credenciales</span>
+            <span>{editingId ? 'Guardar Cambios de Usuario' : 'Dar de Alta Usuario y Generar Credenciales'}</span>
           </button>
         </form>
 
@@ -243,25 +288,54 @@ Ingresa directamente al link para comenzar a operar.`;
             {usuarios.map((u) => (
               <div key={u.id} className="p-3 rounded-xl border border-zinc-200/80 bg-zinc-50/50 flex items-center justify-between text-xs gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-zinc-900 truncate">{u.nombre}</span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-800 font-bold uppercase shrink-0">
                       {u.rol}
                     </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                        u.activo !== false
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : 'bg-zinc-200 text-zinc-600 line-through'
+                      }`}
+                    >
+                      {u.activo !== false ? '● Activo' : '○ Inactivo'}
+                    </span>
                   </div>
-                  <div className="text-[10px] text-zinc-500 font-mono truncate">
+                  <div className="text-[10px] text-zinc-500 font-mono truncate mt-0.5">
                     Usr: <span className="font-bold text-zinc-800">{u.username || u.email}</span> • Clave: <span className="font-bold text-zinc-800">{u.password || '123'}</span>{u.telefono ? <span className="text-emerald-700"> • WA: {u.telefono}</span> : ''}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
                   <button
+                    onClick={() => toggleActivoUsuario(u.id)}
+                    title={u.activo !== false ? 'Desactivar Usuario' : 'Activar Usuario'}
+                    className={`p-1.5 rounded-lg transition-colors cursor-pointer text-[10px] font-bold ${
+                      u.activo !== false
+                        ? 'text-zinc-600 hover:bg-zinc-200 bg-zinc-100'
+                        : 'text-emerald-700 hover:bg-emerald-100 bg-emerald-50'
+                    }`}
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => handleStartEdit(u)}
+                    title="Editar Usuario"
+                    className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
                     onClick={() => setSelectedUserShare(u)}
                     title="Enviar Credenciales y Link"
-                    className="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-all text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                    className="px-2 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-all text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Enviar Acceso</span>
+                    <span>Acceso</span>
                   </button>
 
                   <button
@@ -269,7 +343,7 @@ Ingresa directamente al link para comenzar a operar.`;
                       if (confirm(`¿Eliminar usuario ${u.nombre}?`)) deleteUsuario(u.id);
                     }}
                     title="Eliminar usuario"
-                    className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                    className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

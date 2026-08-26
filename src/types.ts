@@ -8,6 +8,7 @@ export interface ClienteProfile {
   empresa: string;
   rfc: string;
   direccion: string;
+  activo?: boolean;
 }
 
 export interface ComprobanteCombustibleCliente {
@@ -26,6 +27,7 @@ export interface ComprobanteCombustibleCliente {
   evidenciaType?: 'image' | 'pdf';
   estado: 'enviado' | 'revisado' | 'aprobado' | 'rechazado';
   observaciones?: string;
+  activo?: boolean;
 }
 
 export type EstadoGasto = 'borrador' | 'aprobado' | 'rechazado';
@@ -49,6 +51,7 @@ export interface Gasto {
   estado: EstadoGasto;
   notaRechazo?: string;
   reembolsoId?: string;
+  activo?: boolean;
 }
 
 export interface ReembolsoRequest {
@@ -63,6 +66,7 @@ export interface ReembolsoRequest {
   fechaAprobacion?: string;
   aprobadoPor?: string;
   firmaElectronica?: string;
+  activo?: boolean;
 }
 
 export interface Abono {
@@ -73,6 +77,7 @@ export interface Abono {
   concepto: string;
   registradoPor: string;
   comprobante?: string;
+  activo?: boolean;
 }
 
 export interface CajaChica {
@@ -83,6 +88,7 @@ export interface CajaChica {
   saldoActual: number;
   estado: EstadoCaja;
   ubicacion: string;
+  activo?: boolean;
 }
 
 export interface Giro {
@@ -98,6 +104,7 @@ export interface Proveedor {
   nombre: string;
   rfc: string;
   categoria: string;
+  activo?: boolean;
 }
 
 export interface Empleado {
@@ -146,6 +153,7 @@ export interface RegistroGasolina {
   registradoPor: string;
   evidenciaUrl?: string;
   evidenciaType?: 'image' | 'pdf';
+  activo?: boolean;
 }
 
 export interface ComprobanteGastosItem {
@@ -171,4 +179,23 @@ export interface ComprobanteGastos {
   recibidoPor: string;
   evidenciaUrl?: string;
   evidenciaType?: 'image' | 'pdf';
+  activo?: boolean;
+}
+
+export interface SupabaseSaveTelemetry {
+  id: string;
+  tableName: string;
+  moduleName: string;
+  action: 'insert' | 'update' | 'delete' | 'toggle_active';
+  recordIdentifier: string;
+  previousCount: number;
+  newCount: number;
+  timestamp: string;
+  formattedDateTime: string;
+  dayOfWeek: string;
+  time: string;
+  date: string;
+  latencyMs: number;
+  status: 'success' | 'syncing' | 'error';
+  errorMessage?: string;
 }

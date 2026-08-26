@@ -182,9 +182,11 @@ export async function fetchSupabaseTable<T>(tableName: string): Promise<T[] | nu
   }
 }
 
-export async function insertSupabaseRecord(tableName: string, record: Record<string, any>) {
+export async function insertSupabaseRecord(tableName: string, record: Record<string, any>): Promise<{ ok: boolean; latencyMs: number; error?: any }> {
+  const start = performance.now();
   try {
     const { error } = await supabase.from(tableName).upsert([record], { onConflict: 'id' });
+    const latencyMs = Math.round(performance.now() - start);
     if (error) {
       console.warn(`Error inserting into Supabase [${tableName}]:`, error.message);
       // Fallback for usuarios if schema is missing new columns
@@ -194,20 +196,29 @@ export async function insertSupabaseRecord(tableName: string, record: Record<str
           nombre: record.nombre,
           email: record.email,
           rol: record.rol,
-          caja_id: record.caja_id
+          caja_id: record.caja_id,
+          activo: record.activo ?? true
         };
-        await supabase.from('usuarios').upsert([fallback], { onConflict: 'id' });
+        const { error: fbErr } = await supabase.from('usuarios').upsert([fallback], { onConflict: 'id' });
+        const fbLatency = Math.round(performance.now() - start);
+        return { ok: !fbErr, latencyMs: fbLatency, error: fbErr };
       }
+      return { ok: false, latencyMs, error };
     }
+    return { ok: true, latencyMs };
   } catch (err) {
+    const latencyMs = Math.round(performance.now() - start);
     console.warn(`Supabase insert error [${tableName}]:`, err);
+    return { ok: false, latencyMs, error: err };
   }
 }
 
-export async function bulkInsertSupabaseRecords(tableName: string, records: Record<string, any>[]) {
-  if (!records || records.length === 0) return;
+export async function bulkInsertSupabaseRecords(tableName: string, records: Record<string, any>[]): Promise<{ ok: boolean; count: number; latencyMs: number }> {
+  if (!records || records.length === 0) return { ok: true, count: 0, latencyMs: 0 };
+  const start = performance.now();
   try {
     const { error } = await supabase.from(tableName).upsert(records, { onConflict: 'id' });
+    const latencyMs = Math.round(performance.now() - start);
     if (error) {
       console.warn(`Error bulk inserting into Supabase [${tableName}]:`, error.message);
       if (tableName === 'usuarios') {
@@ -216,26 +227,37 @@ export async function bulkInsertSupabaseRecords(tableName: string, records: Reco
           nombre: r.nombre,
           email: r.email,
           rol: r.rol,
-          caja_id: r.caja_id
+          caja_id: r.caja_id,
+          activo: r.activo ?? true
         }));
         await supabase.from('usuarios').upsert(fallbacks, { onConflict: 'id' });
       }
+      return { ok: false, count: 0, latencyMs };
     } else {
       console.log(`Successfully synced ${records.length} records to Supabase [${tableName}]`);
+      return { ok: true, count: records.length, latencyMs };
     }
   } catch (err) {
+    const latencyMs = Math.round(performance.now() - start);
     console.warn(`Supabase bulk insert error [${tableName}]:`, err);
+    return { ok: false, count: 0, latencyMs };
   }
 }
 
-export async function deleteSupabaseRecord(tableName: string, id: string) {
+export async function deleteSupabaseRecord(tableName: string, id: string): Promise<{ ok: boolean; latencyMs: number; error?: any }> {
+  const start = performance.now();
   try {
     const { error } = await supabase.from(tableName).delete().eq('id', id);
+    const latencyMs = Math.round(performance.now() - start);
     if (error) {
       console.warn(`Error deleting from Supabase [${tableName}]:`, error.message);
+      return { ok: false, latencyMs, error };
     }
+    return { ok: true, latencyMs };
   } catch (err) {
+    const latencyMs = Math.round(performance.now() - start);
     console.warn(`Supabase delete error [${tableName}]:`, err);
+    return { ok: false, latencyMs, error: err };
   }
 }
 
@@ -277,7 +299,8 @@ export function cajaToDb(c: CajaChica) {
     fondo_base: Number(c.fondoBase || 0),
     saldo_actual: Number(c.saldoActual || 0),
     estado: c.estado || 'Abierta',
-    ubicacion: c.ubicacion || ''
+    ubicacion: c.ubicacion || '',
+    activo: c.activo ?? true
   };
 }
 
@@ -289,7 +312,8 @@ export function dbToCaja(db: any): CajaChica {
     fondoBase: Number(db.fondo_base || 0),
     saldoActual: Number(db.saldo_actual || 0),
     estado: db.estado || 'Abierta',
-    ubicacion: db.ubicacion || ''
+    ubicacion: db.ubicacion || '',
+    activo: db.activo ?? true
   };
 }
 
@@ -310,7 +334,8 @@ export function gastoToDb(g: Gasto) {
     reembolso_id: g.reembolsoId || null,
     evidencia_url: g.evidenciaUrl || null,
     evidencia_nombre: g.evidenciaNombre || null,
-    evidencia_type: g.evidenciaType || 'image'
+    evidencia_type: g.evidenciaType || 'image',
+    activo: g.activo ?? true
   };
 }
 
@@ -330,7 +355,8 @@ export function dbToGasto(db: any): Gasto {
     reembolsoId: db.reembolso_id || undefined,
     evidenciaUrl: db.evidencia_url || undefined,
     evidenciaNombre: db.evidencia_nombre || undefined,
-    evidenciaType: db.evidencia_type || 'image'
+    evidenciaType: db.evidencia_type || 'image',
+    activo: db.activo ?? true
   };
 }
 
@@ -349,7 +375,8 @@ export function gasolinaToDb(r: RegistroGasolina) {
     importe: r.importe,
     registrado_por: r.registradoPor,
     evidencia_url: r.evidenciaUrl || null,
-    evidencia_type: r.evidenciaType || 'image'
+    evidencia_type: r.evidenciaType || 'image',
+    activo: r.activo ?? true
   };
 }
 
@@ -367,7 +394,8 @@ export function dbToGasolina(db: any): RegistroGasolina {
     importe: Number(db.importe || 0),
     registradoPor: db.registrado_por,
     evidenciaUrl: db.evidencia_url || undefined,
-    evidenciaType: db.evidencia_type || 'image'
+    evidenciaType: db.evidencia_type || 'image',
+    activo: db.activo ?? true
   };
 }
 
@@ -385,7 +413,8 @@ export function comprobanteToDb(c: ComprobanteGastos) {
     autorizado_por: c.autorizadoPor || null,
     recibido_por: c.recibidoPor || null,
     evidencia_url: c.evidenciaUrl || null,
-    evidencia_type: c.evidenciaType || 'image'
+    evidencia_type: c.evidenciaType || 'image',
+    activo: c.activo ?? true
   };
 }
 
@@ -403,7 +432,8 @@ export function dbToComprobante(db: any): ComprobanteGastos {
     autorizadoPor: db.autorizado_por || '',
     recibidoPor: db.recibido_por || '',
     evidenciaUrl: db.evidencia_url || undefined,
-    evidenciaType: db.evidencia_type || 'image'
+    evidenciaType: db.evidencia_type || 'image',
+    activo: db.activo ?? true
   };
 }
 
@@ -416,7 +446,8 @@ export function abonoToDb(a: Abono) {
     monto: Number(a.monto || 0),
     concepto: a.concepto,
     registrado_por: a.registradoPor,
-    comprobante: a.comprobante || null
+    comprobante: a.comprobante || null,
+    activo: a.activo ?? true
   };
 }
 
@@ -428,7 +459,8 @@ export function dbToAbono(db: any): Abono {
     monto: Number(db.monto || 0),
     concepto: db.concepto,
     registradoPor: db.registrado_por,
-    comprobante: db.comprobante || undefined
+    comprobante: db.comprobante || undefined,
+    activo: db.activo ?? true
   };
 }
 
@@ -445,7 +477,8 @@ export function reembolsoToDb(r: ReembolsoRequest) {
     estado: r.estado || 'pendiente',
     fecha_aprobacion: r.fechaAprobacion || null,
     aprobado_por: r.aprobadoPor || null,
-    firma_electronica: r.firmaElectronica || null
+    firma_electronica: r.firmaElectronica || null,
+    activo: r.activo ?? true
   };
 }
 

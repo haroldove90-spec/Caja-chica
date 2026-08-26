@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import { FileBadge, Plus, Trash2, Printer, Image as ImageIcon, Search, FileText, CheckCircle2 } from 'lucide-react';
+import { FileBadge, Plus, Trash2, Printer, Image as ImageIcon, Search, FileText, CheckCircle2, Edit3, Power, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { ComprobanteGastosItem } from '../types';
+import { ComprobanteGastos, ComprobanteGastosItem } from '../types';
 import { numeroALetras } from '../utils/numeroALetras';
 
 export const CustodioComprobantes: React.FC = () => {
   const {
     comprobantesGastos,
     addComprobanteGastos,
+    updateComprobanteGastos,
     deleteComprobanteGastos,
+    toggleActivoComprobante,
     setPreviewEvidencia,
     setPdfComprobanteModalData,
     activeCaja
   } = useApp();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [folio, setFolio] = useState(`CG-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
   const [fecha, setFecha] = useState(new Date().toISOString().substring(0, 10));
   const [concepto, setConcepto] = useState('');
@@ -36,6 +39,37 @@ export const CustodioComprobantes: React.FC = () => {
   const importeFinal = importeManual !== '' ? Number(importeManual) : totalImporteCalculado;
   const importeLetraAuto = numeroALetras(importeFinal);
   const [importeLetra, setImporteLetra] = useState('');
+
+  const handleResetForm = () => {
+    setEditingId(null);
+    setFolio(`CG-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
+    setFecha(new Date().toISOString().substring(0, 10));
+    setConcepto('');
+    setSolicitadoA('');
+    setImporteManual('');
+    setImporteLetra('');
+    setEvidenciaUrl('');
+    setItems([
+      { noCuenta: '602-01', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Alimentos y Consumo', importe: 0 },
+      { noCuenta: '602-05', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Transporte y Casetas', importe: 0 }
+    ]);
+  };
+
+  const handleStartEdit = (comp: ComprobanteGastos) => {
+    setEditingId(comp.id);
+    setFolio(comp.folio);
+    setFecha(comp.fecha);
+    setConcepto(comp.concepto);
+    setSolicitadoA(comp.solicitadoA);
+    setImporteManual(comp.importe);
+    setImporteLetra(comp.importeLetra);
+    setAutorizadoPor(comp.autorizadoPor || 'CP. ALBERTO VARGAS');
+    setRecibidoPor(comp.recibidoPor || 'LIC. SOFÍA RODRÍGUEZ');
+    setEvidenciaUrl(comp.evidenciaUrl || '');
+    setItems(comp.items && comp.items.length > 0 ? comp.items : [
+      { noCuenta: '602-01', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'General', importe: comp.importe }
+    ]);
+  };
 
   const handleItemChange = (index: number, field: keyof ComprobanteGastosItem, value: any) => {
     const updated = [...items];
@@ -62,32 +96,41 @@ export const CustodioComprobantes: React.FC = () => {
     e.preventDefault();
     if (!concepto.trim() || !solicitadoA.trim() || importeFinal <= 0) return;
 
-    addComprobanteGastos({
-      cajaId: activeCaja?.id || 'caja-1',
-      folio,
-      fecha,
-      importe: importeFinal,
-      importeLetra: importeLetra.trim() || importeLetraAuto,
-      concepto,
-      solicitadoA,
-      items: items.filter(it => it.nombre.trim() !== '' || it.importe > 0),
-      autorizadoPor,
-      recibidoPor,
-      evidenciaUrl: evidenciaUrl || undefined,
-      evidenciaType: 'image'
-    });
-
-    // Reset form
-    setFolio(`CG-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
-    setConcepto('');
-    setSolicitadoA('');
-    setImporteManual('');
-    setImporteLetra('');
-    setEvidenciaUrl('');
-    setItems([
-      { noCuenta: '602-01', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Alimentos y Consumo', importe: 0 },
-      { noCuenta: '602-05', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Transporte y Casetas', importe: 0 }
-    ]);
+    if (editingId) {
+      const existing = comprobantesGastos.find(c => c.id === editingId);
+      if (existing) {
+        updateComprobanteGastos({
+          ...existing,
+          folio,
+          fecha,
+          importe: importeFinal,
+          importeLetra: importeLetra.trim() || importeLetraAuto,
+          concepto,
+          solicitadoA,
+          items: items.filter(it => it.nombre.trim() !== '' || it.importe > 0),
+          autorizadoPor,
+          recibidoPor,
+          evidenciaUrl: evidenciaUrl || undefined
+        });
+      }
+      handleResetForm();
+    } else {
+      addComprobanteGastos({
+        cajaId: activeCaja?.id || 'caja-1',
+        folio,
+        fecha,
+        importe: importeFinal,
+        importeLetra: importeLetra.trim() || importeLetraAuto,
+        concepto,
+        solicitadoA,
+        items: items.filter(it => it.nombre.trim() !== '' || it.importe > 0),
+        autorizadoPor,
+        recibidoPor,
+        evidenciaUrl: evidenciaUrl || undefined,
+        evidenciaType: 'image'
+      });
+      handleResetForm();
+    }
   };
 
   const filteredComprobantes = comprobantesGastos.filter(c =>
@@ -127,12 +170,25 @@ export const CustodioComprobantes: React.FC = () => {
         <div className="lg:col-span-6 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900">Nuevo Comprobante de Gastos</h3>
+              <h3 className="text-sm font-semibold text-zinc-900">
+                {editingId ? 'Editar Comprobante de Gastos' : 'Nuevo Comprobante de Gastos'}
+              </h3>
               <p className="text-[11px] text-zinc-500">Completa el desglose de cuentas y montos</p>
             </div>
-            <span className="text-xs font-mono font-bold text-[#024182] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-              {folio}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold text-[#024182] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                {folio}
+              </span>
+              {editingId && (
+                <button
+                  onClick={handleResetForm}
+                  className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Cancelar
+                </button>
+              )}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -360,7 +416,7 @@ export const CustodioComprobantes: React.FC = () => {
               className="w-full bg-[#024182] hover:bg-[#0b315b] text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span>Generar Comprobante de Gastos</span>
+              <span>{editingId ? 'Guardar Cambios' : 'Generar Comprobante de Gastos'}</span>
             </button>
           </form>
         </div>
@@ -402,6 +458,15 @@ export const CustodioComprobantes: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-xs text-[#024182]">{comp.folio}</span>
                         <span className="text-[10px] text-zinc-400">Fecha: {comp.fecha}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            comp.activo !== false
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-zinc-200 text-zinc-600 line-through'
+                          }`}
+                        >
+                          {comp.activo !== false ? '● Activo' : '○ Inactivo'}
+                        </span>
                       </div>
                       <p className="text-[11px] font-semibold text-zinc-900 mt-1">{comp.concepto}</p>
                       <span className="text-[10px] text-zinc-500 block">
@@ -447,17 +512,38 @@ export const CustodioComprobantes: React.FC = () => {
                         <span>Ver Ticket</span>
                       </button>
                     ) : (
-                      <span className="text-[10px] text-zinc-400 italic">Sin ticket adjunto</span>
+                      <span className="text-[10px] text-zinc-400 italic">Sin ticket</span>
                     )}
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => toggleActivoComprobante(comp.id)}
+                        title={comp.activo !== false ? 'Desactivar Comprobante' : 'Activar Comprobante'}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold ${
+                          comp.activo !== false
+                            ? 'text-zinc-600 hover:bg-zinc-200 bg-zinc-100'
+                            : 'text-emerald-700 hover:bg-emerald-100 bg-emerald-50'
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        <span>{comp.activo !== false ? 'Desactivar' : 'Activar'}</span>
+                      </button>
+
                       <button
                         onClick={() => setPdfComprobanteModalData(comp)}
                         className="p-1.5 rounded-lg bg-[#024182] hover:bg-[#0b315b] text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer shadow-xs"
                         title="Ver / Imprimir Comprobante Oficial PDF"
                       >
                         <Printer className="w-3.5 h-3.5" />
-                        <span>PDF / Formato</span>
+                        <span>PDF</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleStartEdit(comp)}
+                        className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-lg transition-colors cursor-pointer"
+                        title="Editar Comprobante"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
                       </button>
 
                       <button
