@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ReembolsoRequest, Gasto } from '../types';
+import { EvidenceGrid } from './EvidenceGrid';
 
 export const ContadorAuditoria: React.FC = () => {
   const {
@@ -168,76 +169,79 @@ export const ContadorAuditoria: React.FC = () => {
                     return (
                       <div
                         key={g.id}
-                        className={`p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        className={`p-3.5 rounded-xl border transition-all space-y-3 ${
                           isRechazado ? 'bg-rose-50/50 border-rose-200' : 'bg-zinc-50/60 border-zinc-200/80'
                         }`}
                       >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-semibold text-xs text-zinc-900">{g.nroOrden}</span>
-                            {giroObj && (
-                              <span
-                                className="px-2 py-0.5 rounded-md text-[10px] font-medium"
-                                style={{ backgroundColor: `${giroObj.color}15`, color: giroObj.color }}
-                              >
-                                {giroObj.nombre}
-                              </span>
-                            )}
-                            <span className="text-[10px] text-zinc-400">{g.facturado ? 'Facturado' : 'Nota Simple'}</span>
-                          </div>
-
-                          <p className="text-xs font-semibold text-zinc-900">{g.proveedor}</p>
-                          <p className="text-xs text-zinc-600 line-clamp-1">{g.concepto}</p>
-
-                          {isRechazado && (
-                            <p className="text-[11px] text-rose-600 font-medium">
-                              ⚠️ Rechazado: "{g.notaRechazo}"
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                          <div className="text-right">
-                            <span className="text-sm font-bold text-zinc-900 block">
-                              ${g.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
-
-                            {g.evidenciaUrl && (
-                              <button
-                                onClick={() => setPreviewEvidencia({
-                                  url: g.evidenciaUrl!,
-                                  type: g.evidenciaType || 'image',
-                                  title: `Evidencia - ${g.nroOrden}`
-                                })}
-                                className="inline-flex items-center gap-1 text-[10px] text-zinc-600 hover:text-zinc-900 underline cursor-pointer"
-                              >
-                                <Eye className="w-3 h-3" />
-                                <span>Ver Evidencia</span>
-                              </button>
-                            )}
-                          </div>
-
-                          {selectedReembolso.estado === 'pendiente' && (
-                            <div className="flex items-center gap-1">
-                              {isRechazado ? (
-                                <button
-                                  onClick={() => aprobarGasto(g.id)}
-                                  className="text-[10px] bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono font-semibold text-xs text-zinc-900">{g.nroOrden}</span>
+                              {giroObj && (
+                                <span
+                                  className="px-2 py-0.5 rounded-md text-[10px] font-medium"
+                                  style={{ backgroundColor: `${giroObj.color}15`, color: giroObj.color }}
                                 >
-                                  Re-Aprobar
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => setRejectingGastoId(g.id)}
-                                  className="p-1.5 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
-                                  title="Rechazar Comprobante"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </button>
+                                  {giroObj.nombre}
+                                </span>
                               )}
+                              <span className="text-[10px] text-zinc-400">{g.facturado ? 'Facturado' : 'Nota Simple'}</span>
+                              <span className="text-[10px] text-zinc-400 font-mono">Fecha: {g.fecha}</span>
                             </div>
-                          )}
+
+                            <p className="text-xs font-semibold text-zinc-900">{g.proveedor}</p>
+                            <p className="text-xs text-zinc-600 line-clamp-2">{g.concepto}</p>
+
+                            {isRechazado && (
+                              <p className="text-[11px] text-rose-600 font-medium pt-1">
+                                ⚠️ Rechazado: "{g.notaRechazo}"
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                            <div className="text-right">
+                              <span className="text-sm font-bold text-zinc-900 block">
+                                ${g.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+
+                            {selectedReembolso.estado === 'pendiente' && (
+                              <div className="flex items-center gap-1">
+                                {isRechazado ? (
+                                  <button
+                                    onClick={() => aprobarGasto(g.id)}
+                                    className="text-[10px] bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-2.5 py-1 rounded-md transition-colors cursor-pointer font-medium"
+                                  >
+                                    Re-Aprobar
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => setRejectingGastoId(g.id)}
+                                    className="p-1.5 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                                    title="Rechazar Comprobante"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
+
+                        {/* CUADRÍCULA / GRID DE EVIDENCIA AUDITABLE */}
+                        {g.evidenciaUrl && (
+                          <div className="pt-2 border-t border-zinc-200/60">
+                            <EvidenceGrid
+                              evidenciaUrl={g.evidenciaUrl}
+                              evidenciaNombre={g.evidenciaNombre || `Evidencia_${g.nroOrden}`}
+                              evidenciaType={g.evidenciaType || 'image'}
+                              recordIdentifier={g.nroOrden}
+                              title="Evidencia / Ticket Adjunto"
+                              compact={true}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Fuel, Camera, Eye, CheckCircle2, Clock, XCircle, User, Filter, AlertCircle, ExternalLink, Search, Printer } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ComprobanteCombustibleCliente } from '../types';
+import { EvidenceGrid } from './EvidenceGrid';
 
 export const CustodioCombustibleCliente: React.FC = () => {
   const {
@@ -174,37 +175,17 @@ export const CustodioCombustibleCliente: React.FC = () => {
                 {getStatusBadge(rec.estado)}
               </div>
 
-              {/* Photo Evidence Box with Zoom Trigger */}
-              <div className="p-4 bg-zinc-900/5 border-b border-zinc-100 flex flex-col items-center justify-center relative min-h-[180px]">
+              {/* Photo Evidence Box with EvidenceGrid */}
+              <div className="p-3 bg-zinc-50/80 border-b border-zinc-100 flex flex-col justify-center">
                 {rec.evidenciaUrl ? (
-                  <div className="relative group w-full flex flex-col items-center">
-                    <img
-                      src={rec.evidenciaUrl}
-                      alt={`Ticket ${rec.clienteNombre}`}
-                      className="max-h-[160px] w-auto object-contain rounded-xl border border-zinc-200 shadow-xs cursor-pointer group-hover:opacity-90 transition-opacity"
-                      onClick={() =>
-                        setPreviewEvidencia({
-                          url: rec.evidenciaUrl,
-                          type: 'image',
-                          title: `Ticket Combustible - Cliente: ${rec.clienteNombre} ($${rec.importe.toFixed(2)})`
-                        })
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPreviewEvidencia({
-                          url: rec.evidenciaUrl,
-                          type: 'image',
-                          title: `Ticket Combustible - Cliente: ${rec.clienteNombre} ($${rec.importe.toFixed(2)})`
-                        })
-                      }
-                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#024182] hover:bg-[#013266] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-all"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Ampliar Imagen / Zoom Ticket</span>
-                    </button>
-                  </div>
+                  <EvidenceGrid
+                    evidenciaUrl={rec.evidenciaUrl}
+                    evidenciaNombre={`Ticket_${rec.clienteNombre.replace(/\s+/g, '_')}`}
+                    evidenciaType="image"
+                    recordIdentifier={`Carga_${rec.vehiculo}`}
+                    title="Evidencia de Carga de Combustible"
+                    compact={true}
+                  />
                 ) : (
                   <div className="text-center p-4">
                     <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-1" />

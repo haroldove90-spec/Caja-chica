@@ -178,10 +178,12 @@ CREATE TABLE IF NOT EXISTS public.registros_gasolina (
   registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
   evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ALTER TABLE public.registros_gasolina ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.registros_gasolina ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
 
 CREATE TABLE IF NOT EXISTS public.registro_gasolina (
   id TEXT PRIMARY KEY,
@@ -197,10 +199,12 @@ CREATE TABLE IF NOT EXISTS public.registro_gasolina (
   registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
   evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ALTER TABLE public.registro_gasolina ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.registro_gasolina ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
 
 -- TABLAS DE COMPROBANTES DE GASTOS Y SUS ITEMS
 CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
@@ -216,10 +220,12 @@ CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
   recibido_por TEXT,
   evidencia_url TEXT,
   evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
 
 CREATE TABLE IF NOT EXISTS public.comprobante_gastos_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -261,12 +267,14 @@ CREATE TABLE IF NOT EXISTS public.comprobantes_combustible_cliente (
   importe NUMERIC(10,2) NOT NULL,
   evidencia_url TEXT NOT NULL,
   evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
   estado TEXT NOT NULL DEFAULT 'enviado',
   observaciones TEXT,
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.comprobantes_combustible_cliente ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.comprobantes_combustible_cliente ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
 
 -- TABLA DE LOGOTIPOS OFICIALES PARA PDF
 CREATE TABLE IF NOT EXISTS public.logos (

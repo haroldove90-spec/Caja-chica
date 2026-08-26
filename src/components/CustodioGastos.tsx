@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X, Printer, Power, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X, Printer, Power, Image as ImageIcon, Eye } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Gasto } from '../types';
+import { EvidenceGrid } from './EvidenceGrid';
 
 export const CustodioGastos: React.FC = () => {
   const {
@@ -36,12 +37,9 @@ export const CustodioGastos: React.FC = () => {
   const [evidenciaType, setEvidenciaType] = useState<'image' | 'pdf'>('image');
 
   // Handle File Upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processUploadedFile = (file: File) => {
     setEvidenciaNombre(file.name);
-    const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     setEvidenciaType(isPdf ? 'pdf' : 'image');
 
     const reader = new FileReader();
@@ -49,6 +47,11 @@ export const CustodioGastos: React.FC = () => {
       setEvidenciaUrl(event.target?.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processUploadedFile(file);
   };
 
   const handleResetForm = () => {
@@ -76,7 +79,7 @@ export const CustodioGastos: React.FC = () => {
     setGiroId(gasto.giroId);
     setFacturado(gasto.facturado);
     setEvidenciaUrl(gasto.evidenciaUrl);
-    setEvidenciaNombre(gasto.evidenciaNombre);
+    setEvidenciaNombre(gasto.evidenciaNombre || `Evidencia_${gasto.nroOrden}`);
     setEvidenciaType(gasto.evidenciaType || 'image');
   };
 
@@ -134,18 +137,20 @@ export const CustodioGastos: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* FORMULARIO RÁPIDO DE REGISTRO DE GASTO */}
-      <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs h-fit">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-100">
+      <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs h-fit space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
           <div>
             <h3 className="text-sm font-semibold text-zinc-900">
-              {editingId ? 'Editar Registro de Gasto' : 'Capturar Nuevo Gasto'}
+              {editingId ? `Editar Gasto (${nroOrden})` : 'Capturar Nuevo Gasto'}
             </h3>
-            <p className="text-[11px] text-zinc-500">Completa los campos obligatorios</p>
+            <p className="text-[11px] text-zinc-500">
+              {editingId ? 'Modifica los datos y revisa la evidencia guardada' : 'Completa los campos y adjunta tu comprobante'}
+            </p>
           </div>
           {editingId && (
             <button
               onClick={handleResetForm}
-              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1"
+              className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               Cancelar
@@ -258,7 +263,7 @@ export const CustodioGastos: React.FC = () => {
             </select>
           </div>
 
-          {/* Indicador de Facturación: Facturado vs Nota Simple */}
+          {/* Indicador de Facturación */}
           <div className="p-3 bg-zinc-50 border border-zinc-200/80 rounded-xl flex items-center justify-between">
             <div>
               <span className="text-xs font-medium text-zinc-800 block">Tipo de Comprobante</span>
@@ -270,7 +275,7 @@ export const CustodioGastos: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFacturado(true)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   facturado ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-600'
                 }`}
               >
@@ -279,7 +284,7 @@ export const CustodioGastos: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFacturado(false)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   !facturado ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-600'
                 }`}
               >
@@ -288,27 +293,21 @@ export const CustodioGastos: React.FC = () => {
             </div>
           </div>
 
-          {/* Adjuntar Evidencia (Ticket o PDF) */}
-          <div>
-            <label className="block text-zinc-600 font-medium mb-1">Adjuntar Evidencia (Foto Ticket / PDF)</label>
-            <div className="relative border-2 border-dashed border-zinc-200 hover:border-zinc-400 rounded-xl p-4 text-center transition-colors bg-zinc-50/50">
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <Upload className="w-5 h-5 text-zinc-400 mx-auto mb-1" />
-              {evidenciaNombre ? (
-                <p className="text-xs font-semibold text-emerald-600 truncate px-2">
-                  ✓ {evidenciaNombre}
-                </p>
-              ) : (
-                <p className="text-[11px] text-zinc-500">
-                  Arrastra o haz clic para subir imagen o PDF
-                </p>
-              )}
-            </div>
+          {/* GRID DE EVIDENCIAS EN EL FORMULARIO */}
+          <div className="p-3.5 bg-blue-50/30 border border-blue-100 rounded-xl space-y-2">
+            <EvidenceGrid
+              evidenciaUrl={evidenciaUrl}
+              evidenciaNombre={evidenciaNombre}
+              evidenciaType={evidenciaType}
+              isEditing={true}
+              recordIdentifier={nroOrden}
+              title={editingId ? 'Evidencia Guardada del Gasto' : 'Adjuntar Evidencia (Ticket / Factura)'}
+              onRemove={() => {
+                setEvidenciaUrl(undefined);
+                setEvidenciaNombre(undefined);
+              }}
+              onFileSelect={processUploadedFile}
+            />
           </div>
 
           {/* Submit Button */}
@@ -317,7 +316,7 @@ export const CustodioGastos: React.FC = () => {
             className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>{editingId ? 'Guardar Cambios' : 'Registrar Gasto'}</span>
+            <span>{editingId ? 'Guardar Cambios del Gasto' : 'Registrar Gasto'}</span>
           </button>
         </form>
       </div>
@@ -328,7 +327,7 @@ export const CustodioGastos: React.FC = () => {
           <div>
             <h3 className="text-sm font-semibold text-zinc-900">Borrador de Movimientos</h3>
             <p className="text-[11px] text-zinc-500">
-              Gastos editables/eliminables mientras la caja permanezca <span className="font-semibold text-emerald-600">Abierta</span>
+              Gastos con acceso directo a la <span className="font-semibold text-blue-700">cuadrícula de evidencias</span>
             </p>
           </div>
           <span className="text-xs bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-full border border-zinc-200">
@@ -349,107 +348,115 @@ export const CustodioGastos: React.FC = () => {
               return (
                 <div
                   key={gasto.id}
-                  className="p-3.5 rounded-xl border border-zinc-200/80 hover:border-zinc-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-50/40"
+                  className={`p-3.5 rounded-xl border transition-all flex flex-col gap-3 ${
+                    editingId === gasto.id
+                      ? 'border-[#024182] bg-blue-50/20 shadow-xs'
+                      : 'border-zinc-200/80 hover:border-zinc-300 bg-zinc-50/40'
+                  }`}
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-xs text-zinc-900">{gasto.nroOrden}</span>
-                      <span className="text-[10px] text-zinc-400">• {gasto.fecha}</span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          gasto.activo !== false
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : 'bg-zinc-200 text-zinc-600 line-through'
-                        }`}
-                      >
-                        {gasto.activo !== false ? '● Activo' : '○ Inactivo'}
-                      </span>
-                      {giroObj && (
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-semibold text-xs text-zinc-900">{gasto.nroOrden}</span>
+                        <span className="text-[10px] text-zinc-400">• {gasto.fecha}</span>
                         <span
-                          className="px-2 py-0.5 rounded-md text-[10px] font-medium"
-                          style={{
-                            backgroundColor: `${giroObj.color}15`,
-                            color: giroObj.color
-                          }}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            gasto.activo !== false
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-zinc-200 text-zinc-600 line-through'
+                          }`}
                         >
-                          {giroObj.nombre}
+                          {gasto.activo !== false ? '● Activo' : '○ Inactivo'}
                         </span>
-                      )}
+                        {giroObj && (
+                          <span
+                            className="px-2 py-0.5 rounded-md text-[10px] font-medium"
+                            style={{
+                              backgroundColor: `${giroObj.color}15`,
+                              color: giroObj.color
+                            }}
+                          >
+                            {giroObj.nombre}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-zinc-900">{gasto.proveedor}</p>
+                      <p className="text-xs text-zinc-600 line-clamp-1">{gasto.concepto}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                        <span>Solicitante: {gasto.solicitante}</span>
+                        <span>•</span>
+                        <span className={gasto.facturado ? 'text-zinc-700 font-medium' : 'text-zinc-500'}>
+                          {gasto.facturado ? 'Facturado' : 'Nota Simple'}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-xs font-semibold text-zinc-900">{gasto.proveedor}</p>
-                    <p className="text-xs text-zinc-600 line-clamp-1">{gasto.concepto}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-                      <span>Solicitante: {gasto.solicitante}</span>
-                      <span>•</span>
-                      <span className={gasto.facturado ? 'text-zinc-700 font-medium' : 'text-zinc-500'}>
-                        {gasto.facturado ? 'Facturado' : 'Nota Simple'}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div className="flex sm:flex-col items-end justify-between gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-200/60">
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-zinc-900 block">
-                        ${gasto.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </span>
-                      {gasto.evidenciaUrl && (
+                    <div className="flex sm:flex-col items-end justify-between gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-200/60">
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-zinc-900 block">
+                          ${gasto.importe.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setPreviewEvidencia({
-                            url: gasto.evidenciaUrl!,
-                            type: gasto.evidenciaType || 'image',
-                            title: `${gasto.nroOrden} - Evidencia`
-                          })}
-                          className="text-[10px] text-zinc-500 hover:text-zinc-900 underline cursor-pointer"
+                          onClick={() => toggleActivoGasto(gasto.id)}
+                          title={gasto.activo !== false ? 'Desactivar Gasto' : 'Activar Gasto'}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold ${
+                            gasto.activo !== false
+                              ? 'text-zinc-600 hover:bg-zinc-200 bg-zinc-100'
+                              : 'text-emerald-700 hover:bg-emerald-100 bg-emerald-50'
+                          }`}
                         >
-                          Ver comprobante
+                          <Power className="w-3.5 h-3.5" />
+                          <span>{gasto.activo !== false ? 'Desactivar' : 'Activar'}</span>
                         </button>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => toggleActivoGasto(gasto.id)}
-                        title={gasto.activo !== false ? 'Desactivar Gasto' : 'Activar Gasto'}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold ${
-                          gasto.activo !== false
-                            ? 'text-zinc-600 hover:bg-zinc-200 bg-zinc-100'
-                            : 'text-emerald-700 hover:bg-emerald-100 bg-emerald-50'
-                        }`}
-                      >
-                        <Power className="w-3.5 h-3.5" />
-                        <span>{gasto.activo !== false ? 'Desactivar' : 'Activar'}</span>
-                      </button>
-                      <button
-                        onClick={() => setPdfModalData({
-                          caja: activeCaja,
-                          gastos: [gasto]
-                        })}
-                        title="Ver PDF de este Gasto Seleccionado"
-                        className="p-1.5 text-[#024182] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>PDF</span>
-                      </button>
-                      <button
-                        onClick={() => handleStartEdit(gasto)}
-                        title="Editar Gasto"
-                        className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`¿Eliminar gasto ${gasto.nroOrden}?`)) {
-                            deleteGasto(gasto.id);
-                          }
-                        }}
-                        title="Eliminar Gasto"
-                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <button
+                          onClick={() => setPdfModalData({
+                            caja: activeCaja,
+                            gastos: [gasto]
+                          })}
+                          title="Ver PDF de este Gasto Seleccionado"
+                          className="p-1.5 text-[#024182] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          <span>PDF</span>
+                        </button>
+                        <button
+                          onClick={() => handleStartEdit(gasto)}
+                          title="Editar Gasto"
+                          className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Eliminar gasto ${gasto.nroOrden}?`)) {
+                              deleteGasto(gasto.id);
+                            }
+                          }}
+                          title="Eliminar Gasto"
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
+
+                  {/* GRID DE EVIDENCIA EN LA TARJETA */}
+                  {gasto.evidenciaUrl && (
+                    <div className="pt-2 border-t border-zinc-200/60">
+                      <EvidenceGrid
+                        evidenciaUrl={gasto.evidenciaUrl}
+                        evidenciaNombre={gasto.evidenciaNombre || `Ticket_${gasto.nroOrden}`}
+                        evidenciaType={gasto.evidenciaType || 'image'}
+                        recordIdentifier={gasto.nroOrden}
+                        title="Evidencia Adjunta"
+                        compact={true}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

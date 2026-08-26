@@ -3,6 +3,7 @@ import { Fuel, Plus, Trash2, FileText, Image as ImageIcon, Printer, Download, Se
 import { useApp } from '../context/AppContext';
 import { NivelTanque, RegistroGasolina } from '../types';
 import { FuelGaugeSVG } from './FuelGaugeSVG';
+import { EvidenceGrid } from './EvidenceGrid';
 
 export const CustodioGasolina: React.FC = () => {
   const {
@@ -26,9 +27,19 @@ export const CustodioGasolina: React.FC = () => {
   const [km, setKm] = useState<number | ''>('');
   const [importe, setImporte] = useState<number | ''>('');
   const [evidenciaUrl, setEvidenciaUrl] = useState('');
+  const [evidenciaNombre, setEvidenciaNombre] = useState<string | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
 
   const niveles: NivelTanque[] = ['E', '1/4', '1/2', '3/4', 'F'];
+
+  const handleFileUpload = (file: File) => {
+    setEvidenciaNombre(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setEvidenciaUrl(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleResetForm = () => {
     setEditingId(null);
@@ -41,6 +52,7 @@ export const CustodioGasolina: React.FC = () => {
     setKm('');
     setImporte('');
     setEvidenciaUrl('');
+    setEvidenciaNombre(undefined);
   };
 
   const handleStartEdit = (rec: RegistroGasolina) => {
@@ -54,6 +66,7 @@ export const CustodioGasolina: React.FC = () => {
     setKm(rec.km);
     setImporte(rec.importe);
     setEvidenciaUrl(rec.evidenciaUrl || '');
+    setEvidenciaNombre(`Ticket_${rec.vehiculo}_${rec.fecha}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -142,60 +155,61 @@ export const CustodioGasolina: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrintAll}
-            className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+            className="inline-flex items-center gap-2 bg-[#024182] hover:bg-[#013266] text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs"
           >
             <Printer className="w-4 h-4" />
-            <span>Ver Formato PDF Completo</span>
+            <span>Generar Formato Oficial PDF</span>
           </button>
         </div>
       </div>
 
-      {/* METRICS SUMMARY BENTO GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Total Invertido Combustible
-          </span>
-          <span className="text-xl font-bold text-zinc-900">
-            ${totalInvertido.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-          </span>
+      {/* KPI METRIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-zinc-500 block uppercase">Total Combustible</span>
+            <span className="text-xl font-black text-zinc-900 mt-0.5 block font-mono">
+              ${totalInvertido.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#024182] flex items-center justify-center font-bold">
+            $
+          </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Total Cargas Registradas
-          </span>
-          <span className="text-xl font-bold text-zinc-900">
-            {totalCargas} Cargas
-          </span>
+        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-zinc-500 block uppercase">Total Cargas / Tickets</span>
+            <span className="text-xl font-black text-zinc-900 mt-0.5 block font-mono">
+              {totalCargas}
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            #
+          </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Último KM Registrado
-          </span>
-          <span className="text-xl font-bold text-zinc-900">
-            {totalKm > 0 ? `${totalKm.toLocaleString()} KM` : 'N/D'}
-          </span>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 block mb-1">
-            Promedio por Carga
-          </span>
-          <span className="text-xl font-bold text-emerald-600">
-            ${totalCargas > 0 ? (totalInvertido / totalCargas).toLocaleString('es-MX', { minimumFractionDigits: 2 }) : '$0.00'}
-          </span>
+        <div className="bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-semibold text-zinc-500 block uppercase">Último Odómetro Registrado</span>
+            <span className="text-xl font-black text-zinc-900 mt-0.5 block font-mono">
+              {totalKm.toLocaleString()} KM
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <Gauge className="w-5 h-5" />
+          </div>
         </div>
       </div>
 
+      {/* MAIN TWO COLUMN WORKSPACE: REGISTRATION FORM + HISTORY TABLE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* FORM TO REGISTER GASOLINE ENTRY */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs space-y-4">
+        {/* FORMULARIO DE REGISTRO */}
+        <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs h-fit space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
             <div>
               <h3 className="text-sm font-semibold text-zinc-900">
-                {editingId ? 'Editar Carga de Combustible' : 'Registrar Carga de Combustible'}
+                {editingId ? `Editar Carga (${vehiculo})` : 'Nueva Carga de Combustible'}
               </h3>
               <p className="text-[11px] text-zinc-500">Captura de datos e indicadores de nivel de tanque</p>
             </div>
@@ -341,14 +355,20 @@ export const CustodioGasolina: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-zinc-600 font-medium mb-1">URL Evidencia / Foto Ticket (Opcional)</label>
-              <input
-                type="url"
-                placeholder="https://... (Foto del ticket de gasolina u odómetro)"
-                value={evidenciaUrl}
-                onChange={(e) => setEvidenciaUrl(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900"
+            {/* GRID DE EVIDENCIAS EN EL FORMULARIO DE GASOLINA */}
+            <div className="p-3.5 bg-blue-50/30 border border-blue-100 rounded-xl space-y-2">
+              <EvidenceGrid
+                evidenciaUrl={evidenciaUrl}
+                evidenciaNombre={evidenciaNombre}
+                evidenciaType="image"
+                isEditing={true}
+                recordIdentifier={vehiculo}
+                title={editingId ? 'Ticket Guardado' : 'Adjuntar Foto Ticket Gasolina / Odómetro'}
+                onRemove={() => {
+                  setEvidenciaUrl('');
+                  setEvidenciaNombre(undefined);
+                }}
+                onFileSelect={handleFileUpload}
               />
             </div>
 
@@ -367,7 +387,7 @@ export const CustodioGasolina: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-zinc-100">
             <div>
               <h3 className="text-sm font-semibold text-zinc-900">Historial de Registros de Combustible</h3>
-              <p className="text-[11px] text-zinc-500">Consulta de bitácora e indicadores por fecha y unidad</p>
+              <p className="text-[11px] text-zinc-500">Consulta de bitácora con cuadrícula de evidencias</p>
             </div>
 
             <div className="relative w-full sm:w-48">
@@ -392,11 +412,15 @@ export const CustodioGasolina: React.FC = () => {
               filteredRecords.map((rec) => (
                 <div
                   key={rec.id}
-                  className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/50 hover:bg-white hover:shadow-xs transition-all space-y-3"
+                  className={`p-4 rounded-xl border transition-all space-y-3 ${
+                    editingId === rec.id
+                      ? 'border-[#024182] bg-blue-50/20 shadow-xs'
+                      : 'border-zinc-200/80 bg-zinc-50/50 hover:bg-white hover:shadow-xs'
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-xs text-zinc-900">{rec.vehiculo}</span>
                         <span className="px-2 py-0.5 rounded text-[9px] font-semibold bg-zinc-200 text-zinc-800 uppercase">
                           {rec.formaPago}
@@ -444,21 +468,23 @@ export const CustodioGasolina: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* GRID DE EVIDENCIAS GUARDADAS */}
+                  {rec.evidenciaUrl && (
+                    <div className="pt-2 border-t border-zinc-200/60">
+                      <EvidenceGrid
+                        evidenciaUrl={rec.evidenciaUrl}
+                        evidenciaNombre={`Ticket_${rec.vehiculo}_${rec.fecha}`}
+                        evidenciaType={rec.evidenciaType || 'image'}
+                        recordIdentifier={rec.vehiculo}
+                        title="Evidencia de Carga / Ticket"
+                        compact={true}
+                      />
+                    </div>
+                  )}
+
                   {/* ACTION BUTTONS: VIEW EVIDENCIA, PRINT PDF, EDIT, DEACTIVATE, DELETE */}
                   <div className="flex items-center justify-between pt-1 text-xs">
-                    {rec.evidenciaUrl ? (
-                      <button
-                        onClick={() => setPreviewEvidencia({ url: rec.evidenciaUrl!, type: 'image', title: `Ticket de Combustible - ${rec.vehiculo}` })}
-                        className="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <ImageIcon className="w-3.5 h-3.5" />
-                        <span>Ver Ticket</span>
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-zinc-400 italic">Sin ticket</span>
-                    )}
-
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 ml-auto">
                       <button
                         onClick={() => toggleActivoGasolina(rec.id)}
                         title={rec.activo !== false ? 'Desactivar Registro' : 'Activar Registro'}
@@ -495,7 +521,7 @@ export const CustodioGasolina: React.FC = () => {
                             deleteRegistroGasolina(rec.id);
                           }
                         }}
-                        className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Eliminar Registro"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

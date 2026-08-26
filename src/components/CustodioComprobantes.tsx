@@ -3,6 +3,7 @@ import { FileBadge, Plus, Trash2, Printer, Image as ImageIcon, Search, FileText,
 import { useApp } from '../context/AppContext';
 import { ComprobanteGastos, ComprobanteGastosItem } from '../types';
 import { numeroALetras } from '../utils/numeroALetras';
+import { EvidenceGrid } from './EvidenceGrid';
 
 export const CustodioComprobantes: React.FC = () => {
   const {
@@ -24,6 +25,8 @@ export const CustodioComprobantes: React.FC = () => {
   const [autorizadoPor, setAutorizadoPor] = useState('CP. ALBERTO VARGAS');
   const [recibidoPor, setRecibidoPor] = useState('LIC. SOFÍA RODRÍGUEZ');
   const [evidenciaUrl, setEvidenciaUrl] = useState('');
+  const [evidenciaNombre, setEvidenciaNombre] = useState<string | undefined>();
+  const [evidenciaType, setEvidenciaType] = useState<'image' | 'pdf'>('image');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Items breakdown (default 2 items, up to 4)
@@ -40,6 +43,18 @@ export const CustodioComprobantes: React.FC = () => {
   const importeLetraAuto = numeroALetras(importeFinal);
   const [importeLetra, setImporteLetra] = useState('');
 
+  const handleFileUpload = (file: File) => {
+    setEvidenciaNombre(file.name);
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    setEvidenciaType(isPdf ? 'pdf' : 'image');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setEvidenciaUrl(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleResetForm = () => {
     setEditingId(null);
     setFolio(`CG-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`);
@@ -49,6 +64,7 @@ export const CustodioComprobantes: React.FC = () => {
     setImporteManual('');
     setImporteLetra('');
     setEvidenciaUrl('');
+    setEvidenciaNombre(undefined);
     setItems([
       { noCuenta: '602-01', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Alimentos y Consumo', importe: 0 },
       { noCuenta: '602-05', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'Transporte y Casetas', importe: 0 }
@@ -66,6 +82,8 @@ export const CustodioComprobantes: React.FC = () => {
     setAutorizadoPor(comp.autorizadoPor || 'CP. ALBERTO VARGAS');
     setRecibidoPor(comp.recibidoPor || 'LIC. SOFÍA RODRÍGUEZ');
     setEvidenciaUrl(comp.evidenciaUrl || '');
+    setEvidenciaNombre(comp.evidenciaNombre || `Evidencia_${comp.folio}`);
+    setEvidenciaType(comp.evidenciaType || 'image');
     setItems(comp.items && comp.items.length > 0 ? comp.items : [
       { noCuenta: '602-01', noOrden: '', noCotizacion: '', nombreProyecto: '', nombre: 'General', importe: comp.importe }
     ]);
@@ -110,7 +128,9 @@ export const CustodioComprobantes: React.FC = () => {
           items: items.filter(it => it.nombre.trim() !== '' || it.importe > 0),
           autorizadoPor,
           recibidoPor,
-          evidenciaUrl: evidenciaUrl || undefined
+          evidenciaUrl: evidenciaUrl || undefined,
+          evidenciaNombre: evidenciaNombre || undefined,
+          evidenciaType
         });
       }
       handleResetForm();
@@ -127,7 +147,8 @@ export const CustodioComprobantes: React.FC = () => {
         autorizadoPor,
         recibidoPor,
         evidenciaUrl: evidenciaUrl || undefined,
-        evidenciaType: 'image'
+        evidenciaNombre: evidenciaNombre || undefined,
+        evidenciaType
       });
       handleResetForm();
     }
@@ -400,14 +421,20 @@ export const CustodioComprobantes: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-zinc-600 font-medium mb-1">URL Evidencia / Foto Comprobante (Opcional)</label>
-              <input
-                type="url"
-                placeholder="https://... (Foto del ticket o factura)"
-                value={evidenciaUrl}
-                onChange={(e) => setEvidenciaUrl(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900"
+            {/* GRID DE EVIDENCIAS EN EL FORMULARIO DE COMPROBANTES */}
+            <div className="p-3.5 bg-blue-50/30 border border-blue-100 rounded-xl space-y-2">
+              <EvidenceGrid
+                evidenciaUrl={evidenciaUrl}
+                evidenciaNombre={evidenciaNombre}
+                evidenciaType={evidenciaType}
+                isEditing={true}
+                recordIdentifier={folio}
+                title={editingId ? 'Evidencia del Comprobante Guardada' : 'Adjuntar Evidencia (Foto / Factura / PDF)'}
+                onRemove={() => {
+                  setEvidenciaUrl('');
+                  setEvidenciaNombre(undefined);
+                }}
+                onFileSelect={handleFileUpload}
               />
             </div>
 
@@ -426,7 +453,7 @@ export const CustodioComprobantes: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-zinc-100">
             <div>
               <h3 className="text-sm font-semibold text-zinc-900">Historial de Comprobantes de Gastos</h3>
-              <p className="text-[11px] text-zinc-500">Visualización de formatos emitidos e impresiones</p>
+              <p className="text-[11px] text-zinc-500">Visualización de formatos con cuadrícula de evidencias</p>
             </div>
 
             <div className="relative w-full sm:w-48">
@@ -451,11 +478,15 @@ export const CustodioComprobantes: React.FC = () => {
               filteredComprobantes.map((comp) => (
                 <div
                   key={comp.id}
-                  className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50/50 hover:bg-white hover:shadow-xs transition-all space-y-2.5"
+                  className={`p-4 rounded-xl border transition-all space-y-2.5 ${
+                    editingId === comp.id
+                      ? 'border-[#024182] bg-blue-50/20 shadow-xs'
+                      : 'border-zinc-200/80 bg-zinc-50/50 hover:bg-white hover:shadow-xs'
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-bold text-xs text-[#024182]">{comp.folio}</span>
                         <span className="text-[10px] text-zinc-400">Fecha: {comp.fecha}</span>
                         <span
@@ -501,21 +532,23 @@ export const CustodioComprobantes: React.FC = () => {
                     ))}
                   </div>
 
+                  {/* GRID DE EVIDENCIAS */}
+                  {comp.evidenciaUrl && (
+                    <div className="pt-2 border-t border-zinc-200/60">
+                      <EvidenceGrid
+                        evidenciaUrl={comp.evidenciaUrl}
+                        evidenciaNombre={comp.evidenciaNombre || `Evidencia_${comp.folio}`}
+                        evidenciaType={comp.evidenciaType || 'image'}
+                        recordIdentifier={comp.folio}
+                        title="Evidencia Adjunta"
+                        compact={true}
+                      />
+                    </div>
+                  )}
+
                   {/* ACTION BUTTONS */}
                   <div className="flex items-center justify-between pt-1 text-xs">
-                    {comp.evidenciaUrl ? (
-                      <button
-                        onClick={() => setPreviewEvidencia({ url: comp.evidenciaUrl!, type: 'image', title: `Ticket Comprobante - ${comp.folio}` })}
-                        className="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <ImageIcon className="w-3.5 h-3.5" />
-                        <span>Ver Ticket</span>
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-zinc-400 italic">Sin ticket</span>
-                    )}
-
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 ml-auto">
                       <button
                         onClick={() => toggleActivoComprobante(comp.id)}
                         title={comp.activo !== false ? 'Desactivar Comprobante' : 'Activar Comprobante'}
@@ -552,7 +585,7 @@ export const CustodioComprobantes: React.FC = () => {
                             deleteComprobanteGastos(comp.id);
                           }
                         }}
-                        className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Eliminar Comprobante"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
