@@ -3,7 +3,6 @@ import { X, Printer, FileBadge, Download, Star, Camera } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LogoSelector } from './LogoSelector';
 import { LOGOS_DISPONIBLES, LogoOption } from '../constants/logos';
-import { getPdfRowColor } from '../utils/pdfColors';
 import { ComprobanteGastosItem } from '../types';
 
 export const PDFComprobanteReportModal: React.FC = () => {
@@ -184,12 +183,10 @@ export const PDFComprobanteReportModal: React.FC = () => {
               <tbody className="divide-y divide-black text-xs font-bold">
                 {tableRows.map((row, idx) => {
                   const isFilled = Boolean(row.nombre?.trim() || (Number(row.importe) || 0) > 0 || row.nombreProyecto?.trim() || row.noOrden?.trim() || row.noCotizacion?.trim());
-                  const style = getPdfRowColor(row.nombreProyecto || row.nombre || (row.importe ? 'COTEYUC' : null), idx);
                   return (
                     <tr
                       key={idx}
-                      style={isFilled ? { backgroundColor: style.bg, color: style.text } : { backgroundColor: '#FFFFFF', color: '#000000' }}
-                      className="h-9 border-b border-black"
+                      className="h-9 border-b border-black bg-white text-black"
                     >
                       <td className="p-2 border-r border-black font-mono font-black text-center text-[11px]">
                         {row.noCuenta || (isFilled ? `602-0${idx + 1}` : '')}
