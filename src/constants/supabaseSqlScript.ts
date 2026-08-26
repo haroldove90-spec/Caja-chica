@@ -10,6 +10,34 @@ export const FULL_SUPABASE_SQL_SCRIPT = `-- ====================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- CONVERSIÓN SEGURA DE COLUMNAS UUID A TEXT (Para bases de datos existentes)
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'clientes_perfil' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.clientes_perfil ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobantes_combustible_cliente' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobantes_combustible_cliente ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobantes_combustible_cliente' AND column_name = 'cliente_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobantes_combustible_cliente ALTER COLUMN cliente_id TYPE TEXT USING cliente_id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobantes_gastos' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobantes_gastos ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobante_gastos_items' AND column_name = 'comprobante_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobante_gastos_items ALTER COLUMN comprobante_id TYPE TEXT USING comprobante_id::text;
+  END IF;
+  
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'audit_logs' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.audit_logs ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+END $$;
+
 -- 2. TABLAS PRINCIPALES DEL SISTEMA
 CREATE TABLE IF NOT EXISTS public.cajas_chicas (
   id TEXT PRIMARY KEY,
