@@ -14,7 +14,156 @@ import {
   AuditLog
 } from '../types';
 
-// Async Supabase Sync Helpers
+// Diagnostic and Heartbeat Helpers
+export interface DiagnosticResult {
+  latencyMs: number;
+  isConnected: boolean;
+  status: 'connected' | 'degraded' | 'disconnected';
+  errorMessage?: string;
+  errorCode?: string;
+  friendlyExplanation?: string;
+  tableHealth: Record<string, { ok: boolean; status: 'ok' | 'missing_table' | 'rls_blocked' | 'error'; message?: string; count?: number }>;
+  timestamp: string;
+}
+
+export function translatePostgreSQLError(error: any): { friendly: string; code?: string; action: string } {
+  if (!error) return { friendly: 'Sin errores registrados.', action: 'Todo en orden.' };
+
+  const message = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+  const code = error.code || '';
+
+  if (code === '42P01' || message.includes('relation') || message.includes('does not exist')) {
+    return {
+      code: '42P01 (relation_not_found)',
+      friendly: 'Una o más tablas aún no han sido creadas en tu base de datos de Supabase.',
+      action: 'Abre la pestaña "Script SQL", copia el código y ejecútalo en el SQL Editor de tu panel de Supabase.'
+    };
+  }
+
+  if (code === '42501' || message.includes('permission denied') || message.includes('policy') || message.includes('row-level security')) {
+    return {
+      code: '42501 (insufficient_privilege)',
+      friendly: 'Políticas de Seguridad por Fila (RLS) bloquean la lectura/escritura anónima.',
+      action: 'Ejecuta el bloque de Políticas RLS del script SQL para permitir el acceso a tu aplicación.'
+    };
+  }
+
+  if (code === '23505' || message.includes('unique constraint') || message.includes('duplicate key')) {
+    return {
+      code: '23505 (unique_violation)',
+      friendly: 'Conflicto de clave duplicada. El sistema utiliza UPSERT automáticamente para resolverlo.',
+      action: 'No requiere acción manual; el sincronizador maneja conflictos automáticamente.'
+    };
+  }
+
+  if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('CORS') || message.includes('fetch failed')) {
+    return {
+      code: 'NETWORK_TIMEOUT',
+      friendly: 'No se pudo contactar al servidor de Supabase (falla de red o URL bloqueada).',
+      action: 'Verifica tu conexión a internet o revisa las variables de entorno de Supabase.'
+    };
+  }
+
+  return {
+    code: code || 'PG_GENERIC',
+    friendly: `Aviso del servidor PostgreSQL: ${message}`,
+    action: 'Verifica el estado del servicio en tu dashboard de Supabase.'
+  };
+}
+
+export async function pingSupabase(): Promise<{ ok: boolean; latencyMs: number; error?: any }> {
+  const start = performance.now();
+  try {
+    const { data, error } = await supabase.from('cajas_chicas').select('id').limit(1);
+    const latency = Math.round(performance.now() - start);
+
+    if (error) {
+      // If cajas_chicas is missing, try logos
+      if (error.code === '42P01') {
+        const { error: logoErr } = await supabase.from('logos').select('id').limit(1);
+        const secondLatency = Math.round(performance.now() - start);
+        if (!logoErr) {
+          return { ok: true, latencyMs: secondLatency };
+        }
+        return { ok: false, latencyMs: secondLatency, error };
+      }
+      return { ok: false, latencyMs: latency, error };
+    }
+
+    return { ok: true, latencyMs: latency };
+  } catch (err) {
+    const latency = Math.round(performance.now() - start);
+    return { ok: false, latencyMs: latency, error: err };
+  }
+}
+
+export async function runFullSupabaseDiagnostic(): Promise<DiagnosticResult> {
+  const ping = await pingSupabase();
+  const tablesToCheck = [
+    'cajas_chicas',
+    'gastos',
+    'registros_gasolina',
+    'comprobantes_gastos',
+    'comprobantes_combustible_cliente',
+    'usuarios',
+    'giros',
+    'proveedores',
+    'empleados',
+    'logos',
+    'reembolsos',
+    'abonos',
+    'audit_logs'
+  ];
+
+  const tableHealth: DiagnosticResult['tableHealth'] = {};
+  let totalErrors = 0;
+  let primaryError: any = null;
+
+  for (const table of tablesToCheck) {
+    try {
+      const { data, error, count } = await supabase.from(table).select('*', { count: 'exact', head: false }).limit(10);
+      if (error) {
+        totalErrors++;
+        if (!primaryError) primaryError = error;
+
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          tableHealth[table] = { ok: false, status: 'missing_table', message: 'Tabla inexistente en Supabase' };
+        } else if (error.code === '42501' || error.message?.includes('policy') || error.message?.includes('permission')) {
+          tableHealth[table] = { ok: false, status: 'rls_blocked', message: 'Bloqueado por políticas RLS' };
+        } else {
+          tableHealth[table] = { ok: false, status: 'error', message: error.message };
+        }
+      } else {
+        tableHealth[table] = { ok: true, status: 'ok', count: data?.length || 0 };
+      }
+    } catch (err: any) {
+      totalErrors++;
+      if (!primaryError) primaryError = err;
+      tableHealth[table] = { ok: false, status: 'error', message: err?.message || 'Error de conexión' };
+    }
+  }
+
+  const isConnected = ping.ok || totalErrors < tablesToCheck.length;
+  const status: DiagnosticResult['status'] = !isConnected
+    ? 'disconnected'
+    : totalErrors > 0
+    ? 'degraded'
+    : 'connected';
+
+  const friendly = primaryError ? translatePostgreSQLError(primaryError) : undefined;
+
+  return {
+    latencyMs: ping.latencyMs,
+    isConnected,
+    status,
+    errorMessage: primaryError?.message,
+    errorCode: friendly?.code,
+    friendlyExplanation: friendly?.friendly ? `${friendly.friendly} — ${friendly.action}` : undefined,
+    tableHealth,
+    timestamp: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  };
+}
+
 
 export async function fetchSupabaseTable<T>(tableName: string): Promise<T[] | null> {
   try {
