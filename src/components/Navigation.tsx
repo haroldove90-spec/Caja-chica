@@ -15,11 +15,14 @@ import {
   FileBadge,
   User,
   Camera,
-  Database
+  Database,
+  ShieldCheck,
+  Shield
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SupabaseSqlModal } from './SupabaseSqlModal';
 import { SupabaseSmartButton } from './SupabaseSmartButton';
+import { RoleType } from '../types';
 
 interface NavItem {
   id: string;
@@ -28,7 +31,17 @@ interface NavItem {
 }
 
 export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { role, setRole, activeModule, setActiveModule, cajas, activeCajaId, setActiveCajaId, currentUser } = useApp();
+  const {
+    role,
+    setRole,
+    activeModule,
+    setActiveModule,
+    cajas,
+    activeCajaId,
+    setActiveCajaId,
+    currentUser,
+    clienteProfile
+  } = useApp();
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
 
   // Define modules according to active role
@@ -52,9 +65,9 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         ];
       case 'admin':
         return [
+          { id: 'usuarios', label: 'Usuarios y Seguridad', icon: Users },
           { id: 'multicajas', label: 'Multi-Cajas', icon: Building2 },
-          { id: 'catalogos', label: 'Catálogos', icon: Tags },
-          { id: 'usuarios', label: 'Usuarios y Seguridad', icon: Users }
+          { id: 'catalogos', label: 'Catálogos', icon: Tags }
         ];
       case 'cliente':
         return [
@@ -68,65 +81,94 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const navItems = getNavItems();
 
-  const getRoleName = () => {
-    switch (role) {
-      case 'custodio': return 'Custodio de Caja';
-      case 'contador': return 'Contador / Auditor';
-      case 'admin': return 'Super Administrador';
-      case 'cliente': return 'Cliente / Usuario';
-      default: return '';
-    }
+  const handleRoleChange = (newRole: RoleType) => {
+    setRole(newRole);
+    if (newRole === 'admin') setActiveModule('usuarios');
+    else if (newRole === 'custodio') setActiveModule('gastos');
+    else if (newRole === 'contador') setActiveModule('auditoria');
+    else if (newRole === 'cliente') setActiveModule('perfil');
   };
+
+  const currentPhoto = role === 'cliente' ? clienteProfile?.fotoUrl : currentUser?.fotoUrl;
+  const currentDisplayName = role === 'cliente' ? (clienteProfile?.nombre || 'Cliente') : (currentUser?.nombre || 'Administrador');
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row antialiased text-zinc-900 selection:bg-zinc-900 selection:text-white">
       {/* FULLSCREEN DESKTOP SIDEBAR (md:flex) */}
       <aside className="hidden md:flex flex-col w-64 border-r border-zinc-200/80 bg-white sticky top-0 h-screen shrink-0 z-30 select-none print:hidden">
         {/* Top Role Header */}
-        <div className="p-5 border-b border-zinc-100 flex flex-col gap-3">
+        <div className="p-4 border-b border-zinc-100 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-200">
-              {getRoleName()}
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+              Rol Activo
             </span>
             <button
               onClick={() => setRole('home')}
-              title="Cerrar Sesión / Cambiar de Rol"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
+              title="Cerrar Sesión / Ir al Menú Principal"
+              className="p-1 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Inicio</span>
             </button>
           </div>
 
-          {currentUser && (
-            <div className="bg-zinc-50/80 rounded-xl p-2.5 border border-zinc-200/80 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-zinc-900 text-white font-semibold text-xs flex items-center justify-center shrink-0">
-                {currentUser.nombre ? currentUser.nombre.charAt(0).toUpperCase() : 'U'}
+          {/* Quick Role Switcher */}
+          <div className="relative">
+            <select
+              value={role}
+              onChange={(e) => handleRoleChange(e.target.value as RoleType)}
+              className="w-full appearance-none bg-zinc-900 text-white text-xs font-semibold py-2 pl-3 pr-8 rounded-xl focus:outline-none cursor-pointer shadow-xs"
+            >
+              <option value="admin">🛡️ Super Administrador</option>
+              <option value="custodio">💼 Custodio de Caja</option>
+              <option value="contador">📊 Contador / Auditor</option>
+              <option value="cliente">👤 Cliente / Facturación</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-zinc-300 absolute right-2.5 top-2.5 pointer-events-none" />
+          </div>
+
+          {/* User Profile Avatar Card */}
+          <div className="bg-zinc-50 rounded-xl p-2.5 border border-zinc-200/80 flex items-center gap-2.5">
+            {currentPhoto ? (
+              <img
+                src={currentPhoto}
+                alt="Avatar"
+                className="w-9 h-9 rounded-full object-cover border border-emerald-500 shrink-0"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-[#024182] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                {currentDisplayName ? currentDisplayName.charAt(0).toUpperCase() : 'U'}
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-zinc-900 truncate">{currentUser.nombre}</p>
-                <p className="text-[10px] text-zinc-500 truncate">{currentUser.username ? `@${currentUser.username}` : currentUser.email}</p>
-              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-zinc-900 truncate">{currentDisplayName}</p>
+              <p className="text-[10px] text-zinc-500 truncate">
+                {role === 'cliente' ? 'Acceso Cliente' : (currentUser?.username ? `@${currentUser.username}` : currentUser?.email || 'admin')}
+              </p>
+            </div>
+          </div>
+
+          {/* Active Caja Selector Dropdown */}
+          {(role === 'custodio' || role === 'contador' || role === 'admin') && (
+            <div className="relative">
+              <label className="block text-[10px] font-semibold text-zinc-400 mb-1">Caja Seleccionada:</label>
+              <select
+                value={activeCajaId}
+                onChange={(e) => setActiveCajaId(e.target.value)}
+                className="w-full appearance-none bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-800 py-1.5 pl-2.5 pr-7 rounded-lg focus:outline-none focus:border-zinc-900 transition-colors cursor-pointer"
+              >
+                {cajas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3 h-3 text-zinc-400 absolute right-2.5 top-6 pointer-events-none" />
             </div>
           )}
 
-          {/* Active Caja Selector Dropdown */}
-          <div className="relative">
-            <select
-              value={activeCajaId}
-              onChange={(e) => setActiveCajaId(e.target.value)}
-              className="w-full appearance-none bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-800 py-2 pl-3 pr-8 rounded-lg focus:outline-none focus:border-zinc-900 transition-colors cursor-pointer"
-            >
-              {cajas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-2.5 pointer-events-none" />
-          </div>
-
           {/* Supabase Smart Status & Diagnostic Button (All roles except 'cliente') */}
-          <div className="pt-1">
+          <div className="pt-0.5">
             <SupabaseSmartButton />
           </div>
         </div>
@@ -154,14 +196,33 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           })}
         </nav>
 
+        {/* Shortcut to Usuarios y Seguridad if in another role */}
+        {role !== 'admin' && (
+          <div className="px-3 pb-2">
+            <button
+              onClick={() => {
+                setRole('admin');
+                setActiveModule('usuarios');
+              }}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+            >
+              <div className="flex items-center gap-2">
+                <Users className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Usuarios y Seguridad</span>
+              </div>
+              <span className="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold">Admin</span>
+            </button>
+          </div>
+        )}
+
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-zinc-100 space-y-2">
+        <div className="p-3 border-t border-zinc-100 space-y-2">
           <button
             onClick={() => setRole('home')}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-600 border border-zinc-200 hover:border-zinc-900 hover:text-zinc-900 transition-all cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Cambiar Rol</span>
+            <span>Pantalla de Inicio</span>
           </button>
         </div>
       </aside>
@@ -175,9 +236,12 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
+          {currentPhoto ? (
+            <img src={currentPhoto} alt="Avatar" className="w-7 h-7 rounded-full object-cover shrink-0 border" />
+          ) : null}
           <div className="min-w-0">
             <span className="text-xs font-semibold text-zinc-900 block leading-none truncate">
-              {currentUser?.nombre || getRoleName()}
+              {currentDisplayName}
             </span>
             <span className="text-[10px] text-zinc-500 truncate block">
               {cajas.find(c => c.id === activeCajaId)?.nombre}
@@ -187,15 +251,14 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
 
         <div className="flex items-center gap-1.5 shrink-0">
           <select
-            value={activeCajaId}
-            onChange={(e) => setActiveCajaId(e.target.value)}
-            className="bg-zinc-100 text-[11px] font-medium text-zinc-800 px-2 py-1 rounded-md border border-zinc-200 focus:outline-none max-w-[110px] truncate"
+            value={role}
+            onChange={(e) => handleRoleChange(e.target.value as RoleType)}
+            className="bg-zinc-900 text-white text-[11px] font-semibold px-2 py-1 rounded-lg focus:outline-none"
           >
-            {cajas.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre.split('-')[1] || c.nombre}
-              </option>
-            ))}
+            <option value="admin">Admin</option>
+            <option value="custodio">Custodio</option>
+            <option value="contador">Contador</option>
+            <option value="cliente">Cliente</option>
           </select>
           <SupabaseSmartButton />
         </div>

@@ -8,6 +8,7 @@ export interface ClienteProfile {
   empresa: string;
   rfc: string;
   direccion: string;
+  fotoUrl?: string;
   activo?: boolean;
 }
 
@@ -124,6 +125,7 @@ export interface Usuario {
   password?: string;
   rol: RoleType;
   cajaId?: string;
+  fotoUrl?: string;
   activo: boolean;
 }
 
@@ -153,6 +155,8 @@ export interface RegistroGasolina {
   registradoPor: string;
   evidenciaUrl?: string;
   evidenciaType?: 'image' | 'pdf';
+  evidenciaNombre?: string;
+  evidencias?: { id?: string; url: string; tipo: 'imagen' | 'pdf' | 'factura' | 'comprobante'; nombre?: string }[];
   activo?: boolean;
 }
 
@@ -179,6 +183,8 @@ export interface ComprobanteGastos {
   recibidoPor: string;
   evidenciaUrl?: string;
   evidenciaType?: 'image' | 'pdf';
+  evidenciaNombre?: string;
+  evidencias?: { id?: string; url: string; tipo: 'imagen' | 'pdf' | 'factura' | 'comprobante'; nombre?: string }[];
   activo?: boolean;
 }
 

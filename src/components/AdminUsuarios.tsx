@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { ShieldCheck, UserCheck, History, Plus, Trash2, Key, Send, Copy, Check, MessageSquare, Mail, Share2, X, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ShieldCheck, UserCheck, History, Plus, Trash2, Key, Send, Copy, Check, MessageSquare, Mail, Share2, X, Eye, EyeOff, Camera, Upload, User, Power, Edit3 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RoleType, Usuario } from '../types';
 
 export const AdminUsuarios: React.FC = () => {
   const { usuarios, addUsuario, updateUsuario, deleteUsuario, toggleActivoUsuario, auditLogs, cajas } = useApp();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nombre, setNombre] = useState('');
@@ -15,6 +16,7 @@ export const AdminUsuarios: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rol, setRol] = useState<RoleType>('custodio');
   const [cajaId, setCajaId] = useState('');
+  const [fotoUrl, setFotoUrl] = useState<string | undefined>(undefined);
 
   // Modal / Toast state for sharing credentials
   const [selectedUserShare, setSelectedUserShare] = useState<Usuario | null>(null);
@@ -31,6 +33,8 @@ export const AdminUsuarios: React.FC = () => {
     setPassword('');
     setRol('custodio');
     setCajaId('');
+    setFotoUrl(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleStartEdit = (u: Usuario) => {
@@ -42,6 +46,18 @@ export const AdminUsuarios: React.FC = () => {
     setPassword(u.password || '');
     setRol(u.rol);
     setCajaId(u.cajaId || '');
+    setFotoUrl(u.fotoUrl);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFotoUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAddUsuario = (e: React.FormEvent) => {
@@ -65,6 +81,7 @@ export const AdminUsuarios: React.FC = () => {
           password: finalPassword,
           rol,
           cajaId: (rol === 'custodio' || rol === 'cliente') ? cajaId : undefined,
+          fotoUrl: fotoUrl || undefined
         });
       }
       handleResetForm();
@@ -77,6 +94,7 @@ export const AdminUsuarios: React.FC = () => {
         password: finalPassword,
         rol,
         cajaId: (rol === 'custodio' || rol === 'cliente') ? cajaId : undefined,
+        fotoUrl: fotoUrl || undefined,
         activo: true
       };
 
@@ -168,6 +186,59 @@ Ingresa directamente al link para comenzar a operar.`;
         </div>
 
         <form onSubmit={handleAddUsuario} className="space-y-3 text-xs">
+          {/* FOTOGRAFÍA DE PERFIL DEL USUARIO */}
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              {fotoUrl ? (
+                <img
+                  src={fotoUrl}
+                  alt="Foto usuario"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500 shadow-xs"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-zinc-200 text-zinc-600 flex items-center justify-center font-bold text-xs">
+                  {nombre ? nombre.charAt(0).toUpperCase() : <User className="w-4 h-4 text-zinc-400" />}
+                </div>
+              )}
+              <div>
+                <p className="text-[11px] font-semibold text-zinc-800">Fotografía de Usuario</p>
+                <p className="text-[10px] text-zinc-400">Opcional para avatar y perfil</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-2.5 py-1.5 bg-white border border-zinc-300 hover:bg-zinc-100 text-zinc-700 text-[11px] font-medium rounded-lg transition-all cursor-pointer flex items-center gap-1"
+              >
+                <Camera className="w-3 h-3 text-zinc-500" />
+                <span>{fotoUrl ? 'Cambiar' : 'Subir Foto'}</span>
+              </button>
+
+              {fotoUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFotoUrl(undefined);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                  title="Quitar foto"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
           <div>
             <label className="block text-zinc-600 font-medium mb-1">Nombre Completo *</label>
             <input
@@ -287,24 +358,38 @@ Ingresa directamente al link para comenzar a operar.`;
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
             {usuarios.map((u) => (
               <div key={u.id} className="p-3 rounded-xl border border-zinc-200/80 bg-zinc-50/50 flex items-center justify-between text-xs gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-semibold text-zinc-900 truncate">{u.nombre}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-800 font-bold uppercase shrink-0">
-                      {u.rol}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                        u.activo !== false
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-zinc-200 text-zinc-600 line-through'
-                      }`}
-                    >
-                      {u.activo !== false ? '● Activo' : '○ Inactivo'}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-zinc-500 font-mono truncate mt-0.5">
-                    Usr: <span className="font-bold text-zinc-800">{u.username || u.email}</span> • Clave: <span className="font-bold text-zinc-800">{u.password || '123'}</span>{u.telefono ? <span className="text-emerald-700"> • WA: {u.telefono}</span> : ''}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {u.fotoUrl ? (
+                    <img
+                      src={u.fotoUrl}
+                      alt={u.nombre}
+                      className="w-8 h-8 rounded-full object-cover border border-emerald-500 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-zinc-200 text-zinc-700 font-bold text-xs flex items-center justify-center shrink-0">
+                      {u.nombre ? u.nombre.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-zinc-900 truncate">{u.nombre}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-800 font-bold uppercase shrink-0">
+                        {u.rol}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                          u.activo !== false
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-zinc-200 text-zinc-600 line-through'
+                        }`}
+                      >
+                        {u.activo !== false ? '● Activo' : '○ Inactivo'}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 font-mono truncate mt-0.5">
+                      Usr: <span className="font-bold text-zinc-800">{u.username || u.email}</span> • Clave: <span className="font-bold text-zinc-800">{u.password || '123'}</span>{u.telefono ? <span className="text-emerald-700"> • WA: {u.telefono}</span> : ''}
+                    </div>
                   </div>
                 </div>
 

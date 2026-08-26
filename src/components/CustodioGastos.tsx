@@ -321,11 +321,11 @@ export const CustodioGastos: React.FC = () => {
         </form>
       </div>
 
-      {/* BORRADOR DE MOVIMIENTOS (TABLA MODIFICABLE) */}
+      {/* REGISTRO DE GASTOS (TABLA MODIFICABLE) */}
       <div className="lg:col-span-7 bg-white rounded-2xl border border-zinc-200/80 p-5 shadow-xs">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-zinc-100">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900">Borrador de Movimientos</h3>
+            <h3 className="text-sm font-semibold text-zinc-900">Registro de Gastos</h3>
             <p className="text-[11px] text-zinc-500">
               Gastos con acceso directo a la <span className="font-semibold text-blue-700">cuadrícula de evidencias</span>
             </p>
@@ -338,8 +338,8 @@ export const CustodioGastos: React.FC = () => {
         {activeCajaGastos.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-zinc-200 rounded-xl">
             <FileText className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-            <p className="text-xs font-medium text-zinc-600">No hay borradores en esta caja</p>
-            <p className="text-[11px] text-zinc-400">Usa el formulario para agregar movimientos</p>
+            <p className="text-xs font-medium text-zinc-600">No hay gastos registrados en esta caja</p>
+            <p className="text-[11px] text-zinc-400">Usa el formulario para capturar nuevos gastos</p>
           </div>
         ) : (
           <div className="space-y-3">

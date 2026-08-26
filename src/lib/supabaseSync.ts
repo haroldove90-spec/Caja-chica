@@ -272,6 +272,7 @@ export function usuarioToDb(u: Usuario) {
     password: u.password || null,
     rol: u.rol,
     caja_id: u.cajaId || null,
+    foto_url: u.fotoUrl || null,
     activo: u.activo ?? true
   };
 }
@@ -286,6 +287,7 @@ export function dbToUsuario(db: any): Usuario {
     password: db.password || undefined,
     rol: db.rol || 'custodio',
     cajaId: db.caja_id || undefined,
+    fotoUrl: db.foto_url || undefined,
     activo: db.activo ?? true
   };
 }
@@ -593,7 +595,8 @@ export async function syncAllDataToSupabase(state: {
       telefono: state.clienteProfile.telefono || '',
       empresa: state.clienteProfile.empresa || '',
       rfc: state.clienteProfile.rfc || '',
-      direccion: state.clienteProfile.direccion || ''
+      direccion: state.clienteProfile.direccion || '',
+      foto_url: state.clienteProfile.fotoUrl || null
     }]);
   }
 

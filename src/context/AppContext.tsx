@@ -1163,7 +1163,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!target) return;
     const updated = { ...target, activo: target.activo === false ? true : false };
     const prevCount = comprobantesGastos.length;
-    setComprobantesGastos(prev => prev.map(c => c.id === id ? updated : g));
+    setComprobantesGastos(prev => prev.map(c => c.id === id ? updated : c));
     const res = await insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(updated));
     recordSupabaseTelemetry('comprobantes_gastos', 'Comprobante de Gastos', 'toggle_active', `${target.folio} (${updated.activo ? 'Activado' : 'Desactivado'})`, prevCount, prevCount, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
   };
