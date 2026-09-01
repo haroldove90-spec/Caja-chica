@@ -69,7 +69,8 @@ export const AdminUsuarios: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-  const appLink = window.location.origin;
+  // Production URL for easy employee onboarding
+  const appLink = 'https://caja-chica-eight.vercel.app/';
 
   const handleResetForm = () => {
     setEditingId(null);
@@ -223,19 +224,25 @@ export const AdminUsuarios: React.FC = () => {
   const formatShareMessage = (user: Usuario) => {
     const usrName = user.username || user.email.split('@')[0];
     const pass = user.password || '123';
-    const telStr = user.telefono ? `\n📱 WhatsApp / Tel: ${user.telefono}` : '';
-    return `🔑 ACCESO AL SISTEMA DE CAJA CHICA
+    const assignedCajaObj = cajas.find(c => c.id === user.cajaId);
+    const cajaStr = assignedCajaObj ? `\n🏢 *Caja Asignada:* ${assignedCajaObj.nombre}` : '';
 
-¡Hola ${user.nombre}! Se han generado tus credenciales para ingresar a la plataforma:
+    return `🔐 *CREDENCIALES DE ACCESO - SISTEMA DE CONTROL DE CAJA CHICA*
 
-🌐 Link de la Aplicación:
+Hola *${user.nombre}*, se ha configurado tu acceso al sistema con tu perfil y rol correspondiente:
+
+🌐 *Enlace directo al sistema:*
 ${appLink}
 
-👤 Usuario o Correo: ${usrName} (${user.email})${telStr}
-🔒 Contraseña / Clave: ${pass}
-🎭 Rol Asignado: ${getRoleLabel(user.rol)}
+👤 *Usuario:* \`${usrName}\`
+📧 *Correo:* \`${user.email}\`
+🔑 *Contraseña:* \`${pass}\`
+🎭 *Rol:* *${getRoleLabel(user.rol)}*${cajaStr}
 
-Ingresa directamente con tu usuario o correo electrónico para acceder automáticamente a tu módulo asignado.`;
+📌 *Pasos para ingresar:*
+1. Abre el enlace: ${appLink}
+2. Ingresa tu usuario (\`${usrName}\`) o correo y tu contraseña.
+3. El sistema te dirigirá de inmediato a tu módulo de trabajo asignado.`;
   };
 
   const handleCopyCredentials = (user: Usuario) => {
@@ -734,12 +741,20 @@ Ingresa directamente con tu usuario o correo electrónico para acceder automáti
                         </button>
 
                         <button
-                          onClick={() => setSelectedUserShare(u)}
-                          title="Compartir Credenciales (WhatsApp / Email)"
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 transition-all text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          onClick={() => handleSendWhatsApp(u)}
+                          title={u.telefono ? `Enviar credenciales por WhatsApp a ${u.telefono}` : "Enviar credenciales por WhatsApp"}
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all text-xs font-bold flex items-center gap-1 cursor-pointer shadow-2xs"
                         >
-                          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Credenciales</span>
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">WhatsApp</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedUserShare(u)}
+                          title="Ver y Copiar Credenciales"
+                          className="p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-all cursor-pointer"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
                         </button>
 
                         <button

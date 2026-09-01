@@ -195,83 +195,81 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // State collections
   const [cajas, setCajas] = useState<CajaChica[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_cajas`);
-    return saved ? JSON.parse(saved) : INITIAL_CAJAS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_CAJAS;
   });
 
   const [giros, setGiros] = useState<Giro[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_giros`);
-    return saved ? JSON.parse(saved) : INITIAL_GIROS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_GIROS;
   });
 
   const [proveedores, setProveedores] = useState<Proveedor[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_proveedores`);
-    return saved ? JSON.parse(saved) : INITIAL_PROVEEDORES;
+    return saved !== null ? JSON.parse(saved) : INITIAL_PROVEEDORES;
   });
 
   const [empleados, setEmpleados] = useState<Empleado[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_empleados`);
-    if (!saved) return INITIAL_EMPLEADOS;
-    try {
-      const parsed: Empleado[] = JSON.parse(saved);
-      const existingIds = new Set(parsed.map(p => p.id));
-      const missingInitial = INITIAL_EMPLEADOS.filter(i => !existingIds.has(i.id));
-      return [...parsed, ...missingInitial];
-    } catch {
-      return INITIAL_EMPLEADOS;
+    if (saved !== null) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return INITIAL_EMPLEADOS;
+      }
     }
+    return INITIAL_EMPLEADOS;
   });
 
   const [usuarios, setUsuarios] = useState<Usuario[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_usuarios`);
-    if (!saved) return INITIAL_USUARIOS;
-    try {
-      const parsed: Usuario[] = JSON.parse(saved);
-      const existingIds = new Set(parsed.map(p => p.id));
-      const missingInitial = INITIAL_USUARIOS.filter(i => !existingIds.has(i.id));
-      return [...parsed, ...missingInitial];
-    } catch {
-      return INITIAL_USUARIOS;
+    if (saved !== null) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return INITIAL_USUARIOS;
+      }
     }
+    return INITIAL_USUARIOS;
   });
 
   const [gastos, setGastos] = useState<Gasto[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_gastos`);
-    return saved ? JSON.parse(saved) : INITIAL_GASTOS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_GASTOS;
   });
 
   const [reembolsos, setReembolsos] = useState<ReembolsoRequest[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_reembolsos`);
-    return saved ? JSON.parse(saved) : INITIAL_REEMBOLSOS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_REEMBOLSOS;
   });
 
   const [abonos, setAbonos] = useState<Abono[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_abonos`);
-    return saved ? JSON.parse(saved) : INITIAL_ABONOS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_ABONOS;
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_auditLogs`);
-    return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
+    return saved !== null ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
   });
 
   const [gasolinaRecords, setGasolinaRecords] = useState<RegistroGasolina[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_gasolinaRecords`);
-    return saved ? JSON.parse(saved) : INITIAL_GASOLINA;
+    return saved !== null ? JSON.parse(saved) : INITIAL_GASOLINA;
   });
 
   const [comprobantesGastos, setComprobantesGastos] = useState<ComprobanteGastos[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_comprobantesGastos`);
-    return saved ? JSON.parse(saved) : INITIAL_COMPROBANTES;
+    return saved !== null ? JSON.parse(saved) : INITIAL_COMPROBANTES;
   });
 
   const [clienteProfile, setClienteProfile] = useState<ClienteProfile>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_clienteProfile`);
-    return saved ? JSON.parse(saved) : INITIAL_CLIENTE_PROFILE;
+    return saved !== null ? JSON.parse(saved) : INITIAL_CLIENTE_PROFILE;
   });
 
   const [comprobantesCombustibleCliente, setComprobantesCombustibleCliente] = useState<ComprobanteCombustibleCliente[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_comprobantesCombustibleCliente`);
-    return saved ? JSON.parse(saved) : INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE;
+    return saved !== null ? JSON.parse(saved) : INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE;
   });
 
   // Modal preview state
@@ -288,114 +286,59 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       // Fetch gastos
       const dbGastos = await fetchSupabaseTable('gastos');
-      if (dbGastos && dbGastos.length > 0 && isMounted) {
+      if (dbGastos && isMounted) {
         const mapped = dbGastos.map(dbToGasto);
-        setGastos(prev => {
-          const dbIds = new Set(mapped.map(m => m.id));
-          const localOnly = prev.filter(p => !dbIds.has(p.id));
-          localOnly.forEach(item => insertSupabaseRecord('gastos', gastoToDb(item)));
-          return [...mapped, ...localOnly];
-        });
-      } else if (dbGastos && dbGastos.length === 0 && isMounted) {
-        gastos.forEach(item => insertSupabaseRecord('gastos', gastoToDb(item)));
+        setGastos(mapped);
       }
 
       // Fetch gasolina
       const dbGasolina = await fetchSupabaseTable('registros_gasolina');
-      if (dbGasolina && dbGasolina.length > 0 && isMounted) {
+      if (dbGasolina && isMounted) {
         const mapped = dbGasolina.map(dbToGasolina);
-        setGasolinaRecords(prev => {
-          const dbIds = new Set(mapped.map(m => m.id));
-          const localOnly = prev.filter(p => !dbIds.has(p.id));
-          localOnly.forEach(item => {
-            insertSupabaseRecord('registros_gasolina', gasolinaToDb(item));
-            insertSupabaseRecord('registro_gasolina', gasolinaToDb(item));
-          });
-          return [...mapped, ...localOnly];
-        });
-      } else if (dbGasolina && dbGasolina.length === 0 && isMounted) {
-        gasolinaRecords.forEach(item => {
-          insertSupabaseRecord('registros_gasolina', gasolinaToDb(item));
-          insertSupabaseRecord('registro_gasolina', gasolinaToDb(item));
-        });
+        setGasolinaRecords(mapped);
       }
 
       // Fetch comprobantes
       const dbComprobantes = await fetchSupabaseTable('comprobantes_gastos');
-      if (dbComprobantes && dbComprobantes.length > 0 && isMounted) {
+      if (dbComprobantes && isMounted) {
         const mapped = dbComprobantes.map(dbToComprobante);
-        setComprobantesGastos(prev => {
-          const merged = mapped.map(item => {
-            const local = prev.find(p => p.id === item.id);
-            const preservedItems = (item.items && item.items.length > 0)
-              ? item.items
-              : (local?.items && local.items.length > 0 ? local.items : []);
-            return {
-              ...item,
-              items: preservedItems
-            };
-          });
-          const dbIds = new Set(merged.map(m => m.id));
-          const localOnly = prev.filter(p => !dbIds.has(p.id));
-          localOnly.forEach(item => insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(item)));
-          return [...merged, ...localOnly];
-        });
-      } else if (dbComprobantes && dbComprobantes.length === 0 && isMounted) {
-        comprobantesGastos.forEach(item => insertSupabaseRecord('comprobantes_gastos', comprobanteToDb(item)));
+        setComprobantesGastos(mapped);
       }
 
       // Fetch comprobantes combustible cliente
       const dbClienteComb = await fetchSupabaseTable('comprobantes_combustible_cliente');
-      if (dbClienteComb && dbClienteComb.length > 0 && isMounted) {
+      if (dbClienteComb && isMounted) {
         const mapped = dbClienteComb.map(dbToClienteCombustible);
-        setComprobantesCombustibleCliente(prev => {
-          const dbIds = new Set(mapped.map(m => m.id));
-          const localOnly = prev.filter(p => !dbIds.has(p.id));
-          localOnly.forEach(item => {
-            insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(item));
-          });
-          const combined = [...mapped, ...localOnly];
-          combined.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-          return combined;
-        });
-      } else if (dbClienteComb && dbClienteComb.length === 0 && isMounted) {
-        comprobantesCombustibleCliente.forEach(item => {
-          insertSupabaseRecord('comprobantes_combustible_cliente', clienteCombustibleToDb(item));
-        });
+        mapped.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        setComprobantesCombustibleCliente(mapped);
       }
 
       // Fetch cajas
       const dbCajas = await fetchSupabaseTable('cajas_chicas');
-      if (dbCajas && dbCajas.length > 0 && isMounted) {
+      if (dbCajas && isMounted) {
         const mapped = dbCajas.map(dbToCaja);
         setCajas(mapped);
-      } else if (dbCajas && dbCajas.length === 0 && isMounted) {
-        cajas.forEach(item => insertSupabaseRecord('cajas_chicas', cajaToDb(item)));
       }
 
       // Fetch abonos
       const dbAbonos = await fetchSupabaseTable('abonos');
-      if (dbAbonos && dbAbonos.length > 0 && isMounted) {
+      if (dbAbonos && isMounted) {
         const mapped = dbAbonos.map(dbToAbono);
         setAbonos(mapped);
-      } else if (dbAbonos && dbAbonos.length === 0 && isMounted) {
-        abonos.forEach(item => insertSupabaseRecord('abonos', abonoToDb(item)));
       }
 
       // Fetch reembolsos
       const dbReembolsos = await fetchSupabaseTable('reembolsos');
-      if (dbReembolsos && dbReembolsos.length > 0 && isMounted) {
+      if (dbReembolsos && isMounted) {
         const mapped = dbReembolsos.map(dbToReembolso);
         setReembolsos(mapped);
-      } else if (dbReembolsos && dbReembolsos.length === 0 && isMounted) {
-        reembolsos.forEach(item => insertSupabaseRecord('reembolsos', reembolsoToDb(item)));
       }
 
       // Fetch usuarios
       const dbUsuarios = await fetchSupabaseTable<any>('usuarios');
-      if (dbUsuarios && dbUsuarios.length > 0 && isMounted) {
+      if (dbUsuarios && isMounted) {
         setUsuarios(prev => {
-          const mapped = dbUsuarios.map(dbRow => {
+          return dbUsuarios.map(dbRow => {
             const parsed = dbToUsuario(dbRow);
             const localMatch = prev.find(p => p.id === parsed.id || (p.email && p.email.toLowerCase() === parsed.email.toLowerCase()));
             return {
@@ -405,13 +348,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               telefono: parsed.telefono || localMatch?.telefono,
             };
           });
-          const dbIds = new Set(mapped.map(m => m.id));
-          const localOnly = prev.filter(p => !dbIds.has(p.id));
-          localOnly.forEach(item => insertSupabaseRecord('usuarios', usuarioToDb(item)));
-          return [...mapped, ...localOnly];
         });
-      } else if (dbUsuarios && dbUsuarios.length === 0 && isMounted) {
-        usuarios.forEach(item => insertSupabaseRecord('usuarios', usuarioToDb(item)));
+      }
+
+      // Fetch empleados
+      const dbEmpleados = await fetchSupabaseTable<any>('empleados');
+      if (dbEmpleados && isMounted) {
+        setEmpleados(dbEmpleados.map(db => ({
+          id: db.id,
+          nombre: db.nombre,
+          puesto: db.puesto,
+          departamento: db.departamento,
+          activo: db.activo ?? true
+        })));
+      }
+
+      // Fetch proveedores
+      const dbProveedores = await fetchSupabaseTable<any>('proveedores');
+      if (dbProveedores && isMounted) {
+        setProveedores(dbProveedores.map(db => ({
+          id: db.id,
+          nombre: db.nombre,
+          rfc: db.rfc,
+          categoria: db.categoria,
+          activo: db.activo ?? true
+        })));
       }
     }
 
