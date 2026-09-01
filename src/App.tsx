@@ -24,6 +24,7 @@ import { ContadorReportes } from './components/ContadorReportes';
 import { AdminMultiCajas } from './components/AdminMultiCajas';
 import { AdminCatalogos } from './components/AdminCatalogos';
 import { AdminUsuarios } from './components/AdminUsuarios';
+import { UserProfileModule } from './components/UserProfileModule';
 
 // Shared Modals
 import { EvidenceModal } from './components/EvidenceModal';
@@ -41,6 +42,11 @@ function MainAppContent() {
 
   // Active module view renderer
   const renderModuleView = () => {
+    // If active module is perfil, display UserProfileModule for all roles
+    if (activeModule === 'perfil') {
+      return <UserProfileModule />;
+    }
+
     switch (role) {
       case 'custodio':
         if (activeModule === 'gastos') return <CustodioGastos />;
@@ -62,7 +68,7 @@ function MainAppContent() {
 
       case 'cliente':
         if (activeModule === 'comprobantes_combustible') return <ClienteCombustible />;
-        return <ClientePerfil />;
+        return <UserProfileModule />;
 
       default:
         return <CustodioMovimientos />;

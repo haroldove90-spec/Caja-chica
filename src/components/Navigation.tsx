@@ -54,20 +54,23 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           { id: 'gasolina', label: 'Control de Gasolina', icon: Fuel },
           { id: 'combustible_clientes', label: 'Comprobantes Clientes', icon: Camera },
           { id: 'comprobantes', label: 'Comprobante Gastos', icon: FileBadge },
-          { id: 'cierre', label: 'Cierre y Reembolso', icon: Lock }
+          { id: 'cierre', label: 'Cierre y Reembolso', icon: Lock },
+          { id: 'perfil', label: 'Mi Perfil', icon: User }
         ];
 
       case 'contador':
         return [
           { id: 'auditoria', label: 'Auditoría', icon: FileCheck2 },
           { id: 'inyecciones', label: 'Inyecciones Fondo', icon: TrendingUp },
-          { id: 'reportes', label: 'Reportes y PDF', icon: FileText }
+          { id: 'reportes', label: 'Reportes y PDF', icon: FileText },
+          { id: 'perfil', label: 'Mi Perfil', icon: User }
         ];
       case 'admin':
         return [
-          { id: 'usuarios', label: 'Usuarios y Seguridad', icon: Users },
+          { id: 'usuarios', label: 'Personal y Roles', icon: Users },
           { id: 'multicajas', label: 'Multi-Cajas', icon: Building2 },
-          { id: 'catalogos', label: 'Catálogos', icon: Tags }
+          { id: 'catalogos', label: 'Catálogos', icon: Tags },
+          { id: 'perfil', label: 'Mi Perfil', icon: User }
         ];
       case 'cliente':
         return [
@@ -128,7 +131,12 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           </div>
 
           {/* User Profile Avatar Card */}
-          <div className="bg-zinc-50 rounded-xl p-2.5 border border-zinc-200/80 flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setActiveModule('perfil')}
+            className="w-full bg-zinc-50 hover:bg-zinc-100/90 rounded-xl p-2.5 border border-zinc-200/80 flex items-center gap-2.5 text-left transition-colors cursor-pointer group"
+            title="Ver y editar Mi Perfil"
+          >
             {currentPhoto ? (
               <img
                 src={currentPhoto}
@@ -136,17 +144,19 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
                 className="w-9 h-9 rounded-full object-cover border border-emerald-500 shrink-0"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-[#024182] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+              <div className="w-9 h-9 rounded-full bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                 {currentDisplayName ? currentDisplayName.charAt(0).toUpperCase() : 'U'}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-zinc-900 truncate">{currentDisplayName}</p>
+              <p className="text-xs font-bold text-zinc-900 truncate group-hover:text-emerald-700 transition-colors">
+                {currentDisplayName}
+              </p>
               <p className="text-[10px] text-zinc-500 truncate">
-                {role === 'cliente' ? 'Acceso Cliente' : (currentUser?.username ? `@${currentUser.username}` : currentUser?.email || 'admin')}
+                {role === 'cliente' ? 'Acceso Cliente' : (currentUser?.username ? `@${currentUser.username}` : currentUser?.email || 'admin')} • <span className="text-emerald-600 font-medium">Editar Perfil</span>
               </p>
             </div>
-          </div>
+          </button>
 
           {/* Active Caja Selector Dropdown */}
           {(role === 'custodio' || role === 'contador' || role === 'admin') && (

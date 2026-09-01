@@ -210,12 +210,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [empleados, setEmpleados] = useState<Empleado[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_empleados`);
-    return saved ? JSON.parse(saved) : INITIAL_EMPLEADOS;
+    if (!saved) return INITIAL_EMPLEADOS;
+    try {
+      const parsed: Empleado[] = JSON.parse(saved);
+      const existingIds = new Set(parsed.map(p => p.id));
+      const missingInitial = INITIAL_EMPLEADOS.filter(i => !existingIds.has(i.id));
+      return [...parsed, ...missingInitial];
+    } catch {
+      return INITIAL_EMPLEADOS;
+    }
   });
 
   const [usuarios, setUsuarios] = useState<Usuario[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_usuarios`);
-    return saved ? JSON.parse(saved) : INITIAL_USUARIOS;
+    if (!saved) return INITIAL_USUARIOS;
+    try {
+      const parsed: Usuario[] = JSON.parse(saved);
+      const existingIds = new Set(parsed.map(p => p.id));
+      const missingInitial = INITIAL_USUARIOS.filter(i => !existingIds.has(i.id));
+      return [...parsed, ...missingInitial];
+    } catch {
+      return INITIAL_USUARIOS;
+    }
   });
 
   const [gastos, setGastos] = useState<Gasto[]>(() => {

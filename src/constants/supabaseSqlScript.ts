@@ -419,6 +419,8 @@ SET nombre = EXCLUDED.nombre,
 -- EMPLEADOS
 INSERT INTO public.empleados (id, nombre, puesto, departamento, activo)
 VALUES 
+  ('emp-reyna', 'Reyna Pino', 'Custodia de Caja Chica Matriz', 'Administración', true),
+  ('emp-harold', 'Harold Anguiano Morales', 'Super Administrador General', 'Dirección General', true),
   ('emp-1', 'Lic. Sofía Rodríguez', 'Custodio de Caja Matriz', 'Administración', true),
   ('emp-2', 'Ing. Carlos Mendoza', 'Jefe de Taller', 'Mantenimiento', true),
   ('emp-3', 'CP. Alberto Vargas', 'Contador General', 'Finanzas', true),
@@ -433,6 +435,8 @@ SET nombre = EXCLUDED.nombre,
 -- USUARIOS DEL SISTEMA
 INSERT INTO public.usuarios (id, nombre, email, telefono, username, password, rol, caja_id, activo)
 VALUES 
+  ('usr-harold', 'Harold Anguiano Morales', 'haroldove90@gmail.com', '9991234567', 'haroldo90', 'Chevropar#1970', 'admin', NULL, true),
+  ('usr-reyna', 'Reyna Pino', 'reyna_pino@hotmail.com', '9992345678', 'reyna_pino', 'Reyna*Caja2026!', 'custodio', 'caja-1', true),
   ('usr-admin1', 'Super Administrador Principal', 'admin1@empresa.com', '9991234567', 'admin1', 'Admin_123', 'admin', NULL, true),
   ('usr-1', 'Sofía Rodríguez', 'sofia.rodriguez@empresa.com', '9992345678', 'custodio1', '123', 'custodio', 'caja-1', true),
   ('usr-2', 'CP. Alberto Vargas', 'alberto.vargas@empresa.com', '9993456789', 'contador1', '123', 'contador', NULL, true),
