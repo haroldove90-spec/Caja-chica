@@ -6,7 +6,15 @@ export const CustodioMovimientos: React.FC = () => {
   const { activeCaja, activeCajaGastos, activeCajaGastosAcumulados, activeCajaSaldoDisponible, giros, setPreviewEvidencia, setActiveModule } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
 
-  if (!activeCaja) return null;
+  const safeCaja = activeCaja || {
+    id: 'caja-1',
+    nombre: 'Caja Chica - Matriz',
+    responsable: 'Lic. Sofía Rodríguez',
+    fondoBase: 15000,
+    saldoActual: 15000,
+    estado: 'Abierta',
+    ubicacion: 'Oficina Central'
+  };
 
   const filteredGastos = activeCajaGastos.filter(g =>
     g.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,7 +33,7 @@ export const CustodioMovimientos: React.FC = () => {
             <Wallet className="w-4 h-4 text-zinc-400" />
           </div>
           <div className="text-2xl font-semibold text-zinc-900 tracking-tight">
-            ${activeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            ${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-zinc-400 mt-1">Límite asignado</p>
         </div>

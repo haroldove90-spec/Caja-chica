@@ -220,7 +220,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
                 onChange={(e) => setActiveCajaId(e.target.value)}
                 className="w-full appearance-none bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-800 py-1.5 pl-2.5 pr-7 rounded-lg focus:outline-none focus:border-zinc-900 transition-colors cursor-pointer"
               >
-                {cajas.map((c) => (
+                {(cajas && cajas.length > 0 ? cajas : [{ id: 'caja-1', nombre: 'Caja Chica - Reina Pino (Matriz)' }]).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nombre}
                   </option>

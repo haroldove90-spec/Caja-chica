@@ -12,13 +12,21 @@ export const ContadorInyecciones: React.FC = () => {
     updateFondoBase
   } = useApp();
 
+  const safeCaja = activeCaja || {
+    id: activeCajaId || 'caja-1',
+    nombre: 'Caja Chica - Matriz',
+    responsable: 'Lic. Sofía Rodríguez',
+    fondoBase: 15000,
+    saldoActual: 15000,
+    estado: 'Abierta',
+    ubicacion: 'Oficina Central'
+  };
+
   const [montoAbono, setMontoAbono] = useState<string>('');
   const [conceptoAbono, setConceptoAbono] = useState<string>('');
-  const [nuevoFondoBase, setNuevoFondoBase] = useState<string>(activeCaja ? activeCaja.fondoBase.toString() : '');
+  const [nuevoFondoBase, setNuevoFondoBase] = useState<string>(safeCaja.fondoBase.toString());
 
-  if (!activeCaja) return null;
-
-  const cajaAbonos = abonos.filter(a => a.cajaId === activeCajaId);
+  const cajaAbonos = abonos.filter(a => a.cajaId === safeCaja.id);
 
   const handleAddAbono = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +37,7 @@ export const ContadorInyecciones: React.FC = () => {
     }
 
     addAbono({
-      cajaId: activeCajaId,
+      cajaId: safeCaja.id,
       fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
       monto: val,
       concepto: conceptoAbono,
@@ -48,7 +56,7 @@ export const ContadorInyecciones: React.FC = () => {
       return;
     }
 
-    updateFondoBase(activeCajaId, val);
+    updateFondoBase(safeCaja.id, val);
     alert(`Límite de fondo base actualizado a $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`);
   };
 

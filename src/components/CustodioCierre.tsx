@@ -18,7 +18,15 @@ export const CustodioCierre: React.FC = () => {
   const [observaciones, setObservaciones] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  if (!activeCaja) return null;
+  const safeCaja = activeCaja || {
+    id: activeCajaId || 'caja-1',
+    nombre: 'Caja Chica - Matriz',
+    responsable: 'Lic. Sofía Rodríguez',
+    fondoBase: 15000,
+    saldoActual: 15000,
+    estado: 'Abierta',
+    ubicacion: 'Oficina Central'
+  };
 
   // Group active unsubmitted expenses by Giro
   const breakdownByGiro = giros.map(giro => {
@@ -32,7 +40,7 @@ export const CustodioCierre: React.FC = () => {
     };
   }).filter(item => item.count > 0);
 
-  const pendingReembolso = reembolsos.find(r => r.cajaId === activeCajaId && r.estado === 'pendiente');
+  const pendingReembolso = reembolsos.find(r => r.cajaId === safeCaja.id && r.estado === 'pendiente');
 
   const handleSolicitar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +48,7 @@ export const CustodioCierre: React.FC = () => {
       alert('No hay gastos acumulados para solicitar reembolso.');
       return;
     }
-    solicitarReembolso(activeCajaId, observaciones);
+    solicitarReembolso(safeCaja.id, observaciones);
     setSubmitted(true);
   };
 
@@ -84,7 +92,7 @@ export const CustodioCierre: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
               <div>
                 <h3 className="text-sm font-semibold text-zinc-900">Resumen para Solicitud de Reembolso</h3>
-                <p className="text-xs text-zinc-500">{activeCaja.nombre}</p>
+                <p className="text-xs text-zinc-500">{safeCaja.nombre}</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-semibold text-zinc-700 bg-zinc-100 px-3 py-1 rounded-full border border-zinc-200">
@@ -93,7 +101,7 @@ export const CustodioCierre: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setPdfModalData({
-                    caja: activeCaja,
+                    caja: safeCaja,
                     gastos: activeCajaGastos
                   })}
                   className="bg-[#024182] hover:bg-[#013266] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-95"
@@ -115,7 +123,7 @@ export const CustodioCierre: React.FC = () => {
               <div>
                 <span className="text-[11px] text-zinc-500 block">Fondo Base Asignado</span>
                 <span className="text-lg font-semibold text-zinc-700">
-                  ${activeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  ${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

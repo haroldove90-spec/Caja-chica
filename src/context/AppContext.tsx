@@ -316,8 +316,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Fetch cajas
       const dbCajas = await fetchSupabaseTable('cajas_chicas');
       if (dbCajas && isMounted) {
-        const mapped = dbCajas.map(dbToCaja);
-        setCajas(mapped);
+        if (dbCajas.length > 0) {
+          const mapped = dbCajas.map(dbToCaja);
+          setCajas(mapped);
+        } else {
+          // If table exists but has 0 rows, use INITIAL_CAJAS as base so system is always functional
+          setCajas(prev => prev.length > 0 ? prev : INITIAL_CAJAS);
+        }
+      }
+
+      // Fetch giros
+      const dbGiros = await fetchSupabaseTable<any>('giros');
+      if (dbGiros && isMounted) {
+        if (dbGiros.length > 0) {
+          setGiros(dbGiros.map(db => ({
+            id: db.id,
+            nombre: db.nombre,
+            color: db.color || '#024182',
+            activo: db.activo ?? true
+          })));
+        } else {
+          setGiros(prev => prev.length > 0 ? prev : INITIAL_GIROS);
+        }
       }
 
       // Fetch abonos
@@ -561,11 +581,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSupabaseSaveHistory(prev => [telemetry, ...prev.slice(0, 29)]);
   };
 
-  // Helper calculations for active caja
-  const activeCaja = cajas.find(c => c.id === activeCajaId) || cajas[0];
-  const activeCajaGastos = gastos.filter(g => g.cajaId === activeCajaId && !g.reembolsoId);
+  // Helper fallback caja
+  const defaultFallbackCaja: CajaChica = {
+    id: 'caja-1',
+    nombre: 'Caja Chica - Matriz',
+    responsable: 'Lic. Sofía Rodríguez',
+    fondoBase: 15000,
+    saldoActual: 15000,
+    estado: 'Abierta',
+    ubicacion: 'Oficina Central'
+  };
+
+  // Helper calculations for active caja - guaranteed to always return a valid CajaChica object
+  const activeCaja: CajaChica = cajas.find(c => c.id === activeCajaId) || cajas[0] || defaultFallbackCaja;
+  const activeCajaGastos = gastos.filter(g => g.cajaId === activeCaja.id && !g.reembolsoId && g.activo !== false);
   const activeCajaGastosAcumulados = activeCajaGastos.reduce((acc, curr) => acc + curr.importe, 0);
-  const activeCajaSaldoDisponible = activeCaja ? activeCaja.fondoBase - activeCajaGastosAcumulados : 0;
+  const activeCajaSaldoDisponible = activeCaja ? (activeCaja.fondoBase - activeCajaGastosAcumulados) : 0;
 
   // Actions: GASTOS (CRUD + Desactivar)
   const addGasto = async (gastoData: Omit<Gasto, 'id' | 'estado'>) => {
