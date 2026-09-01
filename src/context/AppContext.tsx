@@ -334,6 +334,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setReembolsos(mapped);
       }
 
+      // Fetch audit logs
+      const dbAudit = await fetchSupabaseTable('audit_logs');
+      if (dbAudit && isMounted) {
+        const mapped = dbAudit.map(dbToAudit);
+        setAuditLogs(mapped);
+      }
+
       // Fetch usuarios
       const dbUsuarios = await fetchSupabaseTable<any>('usuarios');
       if (dbUsuarios && isMounted) {
