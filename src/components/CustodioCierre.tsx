@@ -16,6 +16,11 @@ export const CustodioCierre: React.FC = () => {
   } = useApp();
 
   const [observaciones, setObservaciones] = useState('');
+  const [folioReembolso, setFolioReembolso] = useState(() => {
+    const year = new Date().getFullYear();
+    const count = (reembolsos.length + 1).toString().padStart(3, '0');
+    return `REEMB-${year}-${count}`;
+  });
   const [submitted, setSubmitted] = useState(false);
 
   const safeCaja = activeCaja || {
@@ -25,8 +30,11 @@ export const CustodioCierre: React.FC = () => {
     fondoBase: 15000,
     saldoActual: 15000,
     estado: 'Abierta',
-    ubicacion: 'Oficina Central'
+    ubicacion: 'Oficina Central',
+    tipoFondo: 'fijo'
   };
+
+  const isSinFondo = safeCaja.tipoFondo === 'sin_fondo' || safeCaja.fondoBase === 0;
 
   // Group active unsubmitted expenses by Giro
   const breakdownByGiro = giros.map(giro => {
@@ -48,7 +56,8 @@ export const CustodioCierre: React.FC = () => {
       alert('No hay gastos acumulados para solicitar reembolso.');
       return;
     }
-    solicitarReembolso(safeCaja.id, observaciones);
+    const finalFolio = folioReembolso.trim() || `REEMB-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    solicitarReembolso(safeCaja.id, observaciones, finalFolio);
     setSubmitted(true);
   };
 
@@ -121,9 +130,11 @@ export const CustodioCierre: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-zinc-500 block">Fondo Base Asignado</span>
+                <span className="text-[11px] text-zinc-500 block">
+                  {isSinFondo ? 'Modalidad de Caja' : 'Fondo Base Asignado'}
+                </span>
                 <span className="text-lg font-semibold text-zinc-700">
-                  ${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  {isSinFondo ? 'Flujo Semanal (Sin Fondo Fijo)' : `$${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
                 </span>
               </div>
             </div>
@@ -169,8 +180,39 @@ export const CustodioCierre: React.FC = () => {
               )}
             </div>
 
-            {/* Registro de Observaciones */}
+            {/* Registro de Folio y Observaciones */}
             <form onSubmit={handleSolicitar} className="space-y-4 pt-3 border-t border-zinc-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-800 mb-1">
+                    Número / Folio de Reembolso *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={folioReembolso}
+                    onChange={(e) => setFolioReembolso(e.target.value)}
+                    placeholder="Ej: REEMB-2026-001 o CORTE-SEM-35"
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:outline-none focus:border-zinc-900"
+                  />
+                  <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                    Puedes personalizar este folio con tu propia nomenclatura interna.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-800 mb-1">
+                    Caja Destino
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={safeCaja.nombre}
+                    className="w-full bg-zinc-100 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-medium text-zinc-700"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-zinc-700 mb-1">
                   Registro de Observaciones Operativas

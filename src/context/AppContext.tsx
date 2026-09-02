@@ -98,7 +98,7 @@ interface AppContextType {
   deleteGasto: (id: string) => void;
   toggleActivoGasto: (id: string) => void;
   
-  solicitarReembolso: (cajaId: string, observaciones: string) => void;
+  solicitarReembolso: (cajaId: string, observaciones: string, folioPersonalizado?: string) => void;
   aprobarReembolso: (reembolsoId: string, firma: string) => void;
   rechazarGasto: (gastoId: string, motivo: string) => void;
   aprobarGasto: (gastoId: string) => void;
@@ -318,10 +318,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dbCajas && isMounted) {
         if (dbCajas.length > 0) {
           const mapped = dbCajas.map(dbToCaja);
-          setCajas(mapped);
+          // Merge missing initial cajas so all standard company cajas are available
+          const missingDefaults = INITIAL_CAJAS.filter(ic => !mapped.some(m => m.id === ic.id));
+          setCajas([...mapped, ...missingDefaults]);
         } else {
           // If table exists but has 0 rows, use INITIAL_CAJAS as base so system is always functional
-          setCajas(prev => prev.length > 0 ? prev : INITIAL_CAJAS);
+          setCajas(INITIAL_CAJAS);
         }
       }
 
@@ -677,14 +679,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     logAudit('CAMBIAR_ESTADO_GASTO', 'Registro de Gastos', `${updated.activo ? 'Activó' : 'Desactivó'} gasto ${target.nroOrden}`);
   };
 
-  const solicitarReembolso = async (cajaId: string, observaciones: string) => {
+  const solicitarReembolso = async (cajaId: string, observaciones: string, folioPersonalizado?: string) => {
     const unsubmittedGastos = gastos.filter(g => g.cajaId === cajaId && !g.reembolsoId && g.activo !== false);
     if (unsubmittedGastos.length === 0) return;
 
     const prevCount = reembolsos.length;
     const total = unsubmittedGastos.reduce((a, b) => a + b.importe, 0);
     const rmbId = `rmb-${Date.now().toString().slice(-4)}`;
-    const nro = `REEMB-${Math.floor(100 + Math.random() * 900)}`;
+    const nro = (folioPersonalizado && folioPersonalizado.trim())
+      ? folioPersonalizado.trim()
+      : `REEMB-${Math.floor(100 + Math.random() * 900)}`;
 
     const newRequest: ReembolsoRequest = {
       id: rmbId,

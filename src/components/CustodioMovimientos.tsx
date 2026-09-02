@@ -23,27 +23,31 @@ export const CustodioMovimientos: React.FC = () => {
     g.solicitante.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const isSinFondo = safeCaja.tipoFondo === 'sin_fondo' || safeCaja.fondoBase === 0;
+
   return (
     <div className="space-y-6">
       {/* Visual Dashboard Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-xs">
           <div className="flex items-center justify-between text-zinc-500 mb-2">
-            <span className="text-xs font-medium">Fondo Total</span>
+            <span className="text-xs font-medium">{isSinFondo ? 'Modalidad Operativa' : 'Fondo Total'}</span>
             <Wallet className="w-4 h-4 text-zinc-400" />
           </div>
-          <div className="text-2xl font-semibold text-zinc-900 tracking-tight">
-            ${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          <div className="text-xl font-bold text-zinc-900 tracking-tight">
+            {isSinFondo ? 'Flujo Semanal' : `$${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
           </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Límite asignado</p>
+          <p className="text-[11px] text-zinc-400 mt-1">
+            {isSinFondo ? 'Sin fondo fijo • Captura semanal' : 'Límite de fondo asignado'}
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-xs">
           <div className="flex items-center justify-between text-zinc-500 mb-2">
-            <span className="text-xs font-medium">Gastos Acumulados</span>
+            <span className="text-xs font-medium">{isSinFondo ? 'Gastos de la Semana' : 'Gastos Acumulados'}</span>
             <ArrowDownRight className="w-4 h-4 text-rose-500" />
           </div>
-          <div className="text-2xl font-semibold text-rose-600 tracking-tight">
+          <div className="text-2xl font-bold text-rose-600 tracking-tight">
             ${activeCajaGastosAcumulados.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
           </div>
           <p className="text-[11px] text-zinc-400 mt-1">{activeCajaGastos.length} comprobantes registrados</p>
@@ -51,13 +55,17 @@ export const CustodioMovimientos: React.FC = () => {
 
         <div className="bg-white rounded-2xl p-5 border border-zinc-200/80 shadow-xs">
           <div className="flex items-center justify-between text-zinc-500 mb-2">
-            <span className="text-xs font-medium">Saldo Disponible</span>
+            <span className="text-xs font-medium">{isSinFondo ? 'Total por Reembolsar' : 'Saldo Disponible'}</span>
             <RefreshCw className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-2xl font-semibold text-emerald-600 tracking-tight">
-            ${activeCajaSaldoDisponible.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+          <div className="text-2xl font-bold text-emerald-600 tracking-tight">
+            {isSinFondo 
+              ? `$${activeCajaGastosAcumulados.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+              : `$${activeCajaSaldoDisponible.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
           </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Efectivo/Bancos en caja</p>
+          <p className="text-[11px] text-zinc-400 mt-1">
+            {isSinFondo ? 'Monto a solicitar en corte' : 'Efectivo/Bancos en caja'}
+          </p>
         </div>
       </div>
 

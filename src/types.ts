@@ -81,6 +81,8 @@ export interface Abono {
   activo?: boolean;
 }
 
+export type TipoFondoCaja = 'fijo' | 'sin_fondo';
+
 export interface CajaChica {
   id: string;
   nombre: string;
@@ -89,6 +91,7 @@ export interface CajaChica {
   saldoActual: number;
   estado: EstadoCaja;
   ubicacion: string;
+  tipoFondo?: TipoFondoCaja;
   activo?: boolean;
 }
 

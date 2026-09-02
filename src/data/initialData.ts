@@ -15,16 +15,18 @@ export const INITIAL_CAJAS: CajaChica[] = [
     fondoBase: 15000,
     saldoActual: 15000,
     estado: 'Abierta',
-    ubicacion: 'Oficina Central'
+    ubicacion: 'Oficina Central',
+    tipoFondo: 'fijo'
   },
   {
     id: 'caja-2',
     nombre: 'Caja Chica - Taller Proyecta',
     responsable: 'Ing. Carlos Mendoza',
-    fondoBase: 20000,
-    saldoActual: 20000,
+    fondoBase: 0,
+    saldoActual: 0,
     estado: 'Abierta',
-    ubicacion: 'Sucursal Taller'
+    ubicacion: 'Sucursal Taller',
+    tipoFondo: 'sin_fondo'
   },
   {
     id: 'caja-3',
@@ -33,7 +35,8 @@ export const INITIAL_CAJAS: CajaChica[] = [
     fondoBase: 10000,
     saldoActual: 10000,
     estado: 'Abierta',
-    ubicacion: 'Planta Sur'
+    ubicacion: 'Planta Sur',
+    tipoFondo: 'fijo'
   }
 ];
 

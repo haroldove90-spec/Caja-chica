@@ -303,6 +303,7 @@ export function cajaToDb(c: CajaChica) {
     saldo_actual: Number(c.saldoActual || 0),
     estado: c.estado || 'Abierta',
     ubicacion: c.ubicacion || '',
+    tipo_fondo: c.tipoFondo || (c.fondoBase === 0 ? 'sin_fondo' : 'fijo'),
     activo: c.activo ?? true
   };
 }
@@ -316,6 +317,7 @@ export function dbToCaja(db: any): CajaChica {
     saldoActual: Number(db.saldo_actual || 0),
     estado: db.estado || 'Abierta',
     ubicacion: db.ubicacion || '',
+    tipoFondo: db.tipo_fondo || (Number(db.fondo_base || 0) === 0 ? 'sin_fondo' : 'fijo'),
     activo: db.activo ?? true
   };
 }
