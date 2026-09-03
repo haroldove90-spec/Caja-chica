@@ -299,22 +299,22 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
       </aside>
 
       {/* MOBILE / TABLET TOP COMPACT STRIP (< md) */}
-      <div className="md:hidden bg-white border-b border-zinc-200/80 px-3 py-2 sticky top-0 z-20 flex items-center justify-between gap-2 print:hidden">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="md:hidden bg-white border-b border-zinc-200/80 px-2.5 sm:px-3 py-2 sticky top-0 z-20 flex items-center justify-between gap-1.5 sm:gap-2 print:hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <button
             onClick={() => setRole('home')}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 shrink-0"
-            title="Cerrar Sesión"
+            className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 shrink-0 cursor-pointer"
+            title="Cerrar Sesión / Menú Principal"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <img
             src={PROYECTA_LOGO_URL}
             alt="Proyecta Digital"
-            className="h-7 w-auto max-w-[110px] object-contain shrink-0 select-none"
+            className="h-7 w-auto max-w-[125px] object-contain shrink-0 select-none"
             referrerPolicy="no-referrer"
           />
-          <div className="min-w-0 hidden sm:block">
+          <div className="min-w-0 hidden lg:block">
             <span className="text-[11px] font-semibold text-zinc-900 block leading-none truncate">
               {currentDisplayName}
             </span>
@@ -330,7 +330,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
             <select
               value={role}
               onChange={(e) => handleRoleChange(e.target.value as RoleType)}
-              className="bg-zinc-900 text-white text-[11px] font-semibold px-2 py-1 rounded-lg focus:outline-none"
+              className="bg-zinc-900 text-white text-xs font-semibold px-2 py-1.5 rounded-lg focus:outline-none cursor-pointer border border-zinc-800"
             >
               <option value="admin">Admin</option>
               <option value="custodio">Custodio</option>
@@ -338,11 +338,11 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
               <option value="cliente">Cliente</option>
             </select>
           ) : (
-            <span className="bg-zinc-100 text-zinc-800 text-[10px] font-bold px-2 py-1 rounded-md border border-zinc-200">
+            <span className="bg-zinc-100 text-zinc-800 text-[10px] font-bold px-2 py-1.5 rounded-md border border-zinc-200">
               {role === 'custodio' ? 'Custodio' : role === 'contador' ? 'Contador' : role === 'cliente' ? 'Cliente' : 'Usuario'}
             </span>
           )}
-          <SupabaseSmartButton />
+          <SupabaseSmartButton compact />
         </div>
       </div>
 

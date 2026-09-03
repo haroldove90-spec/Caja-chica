@@ -27,7 +27,11 @@ import { useApp } from '../context/AppContext';
 import { pingSupabase, runFullSupabaseDiagnostic, DiagnosticResult } from '../lib/supabaseSync';
 import { FULL_SUPABASE_SQL_SCRIPT } from '../constants/supabaseSqlScript';
 
-export const SupabaseSmartButton: React.FC = () => {
+interface SupabaseSmartButtonProps {
+  compact?: boolean;
+}
+
+export const SupabaseSmartButton: React.FC<SupabaseSmartButtonProps> = ({ compact = false }) => {
   const {
     role,
     syncWithSupabaseNow,
@@ -156,8 +160,12 @@ export const SupabaseSmartButton: React.FC = () => {
       <button
         id="btn-supabase-smart"
         onClick={handleOpenModal}
-        title="Estado de conexión Supabase y Diagnóstico en Tiempo Real"
-        className={`group relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer border shadow-xs select-none ${
+        title={`Supabase: ${isConnected ? 'Conectado (ONLINE)' : 'Desconectado (OFFLINE)'} - ${latencyMs}ms. Clic para diagnóstico.`}
+        className={`group relative flex items-center ${
+          compact
+            ? 'gap-1.5 px-2 py-1 rounded-lg'
+            : 'gap-2.5 px-3 py-2 rounded-xl'
+        } text-xs font-semibold transition-all duration-200 cursor-pointer border shadow-xs select-none shrink-0 ${
           isConnected
             ? 'bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-900 border-emerald-300/80 hover:border-emerald-400'
             : 'bg-rose-50/90 hover:bg-rose-100/90 text-rose-900 border-rose-300/80 hover:border-rose-400'
@@ -166,32 +174,46 @@ export const SupabaseSmartButton: React.FC = () => {
         {/* SEMÁFORO EN VIVO (🟢 / 🔴) con animación de pulso */}
         <div className="relative flex items-center justify-center shrink-0">
           <span
-            className={`absolute inline-flex h-3 w-3 rounded-full opacity-75 ${
+            className={`absolute inline-flex ${compact ? 'h-2.5 w-2.5' : 'h-3 w-3'} rounded-full opacity-75 ${
               isConnected ? 'animate-ping bg-emerald-400' : 'animate-ping bg-rose-500'
             }`}
           />
           <span
-            className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+            className={`relative inline-flex rounded-full ${compact ? 'h-2 w-2' : 'h-2.5 w-2.5'} ${
               isConnected ? 'bg-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-rose-600 shadow-[0_0_8px_rgba(239,68,68,0.8)]'
             }`}
           />
         </div>
 
-        {/* ETIQUETA Y LATENCIA EN MS */}
-        <div className="flex flex-col items-start leading-none text-left">
-          <div className="flex items-center gap-1.5 font-bold tracking-tight text-[11px]">
-            <Database className="w-3 h-3 text-[#024182]" />
-            <span>Supabase</span>
-            <span className={`text-[10px] font-mono px-1 py-0.2 rounded font-black ${isConnected ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'}`}>
-              {isConnected ? 'ONLINE' : 'OFFLINE'}
+        {compact ? (
+          /* VISTA COMPACTA MÓVIL: Ícono + DB OK */
+          <div className="flex items-center gap-1">
+            <Database className="w-3.5 h-3.5 text-[#024182] shrink-0" />
+            <span className={`text-[9px] font-mono px-1 py-0.5 rounded font-black tracking-tight leading-none ${
+              isConnected ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'
+            }`}>
+              {isConnected ? 'OK' : 'OFF'}
             </span>
           </div>
-          <span className="text-[10px] text-zinc-500 font-mono mt-0.5 font-medium">
-            {isPinging ? 'Verificando...' : `${latencyMs} ms · Heartbeat 25s`}
-          </span>
-        </div>
+        ) : (
+          /* VISTA COMPLETA ESCRITORIO */
+          <>
+            <div className="flex flex-col items-start leading-none text-left">
+              <div className="flex items-center gap-1.5 font-bold tracking-tight text-[11px]">
+                <Database className="w-3 h-3 text-[#024182]" />
+                <span>Supabase</span>
+                <span className={`text-[10px] font-mono px-1 py-0.2 rounded font-black ${isConnected ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'}`}>
+                  {isConnected ? 'ONLINE' : 'OFFLINE'}
+                </span>
+              </div>
+              <span className="text-[10px] text-zinc-500 font-mono mt-0.5 font-medium">
+                {isPinging ? 'Verificando...' : `${latencyMs} ms · Heartbeat 25s`}
+              </span>
+            </div>
 
-        <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+          </>
+        )}
       </button>
 
       {/* FLOATING REAL-TIME SAVE FEEDBACK TOAST / BANNER */}
