@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Database, Copy, Check, Download, X, AlertTriangle, Terminal, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Database, Copy, Check, Download, X, AlertTriangle, Terminal, ShieldCheck, RefreshCw, ShieldAlert, Layers } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { FULL_SUPABASE_SQL_SCRIPT } from '../constants/supabaseSqlScript';
+import { STRUCTURE_ONLY_SQL_SCRIPT, FULL_SUPABASE_SQL_SCRIPT } from '../constants/supabaseSqlScript';
 
 interface SupabaseSqlModalProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [mode, setMode] = useState<'structure' | 'full'>('structure');
   const { syncWithSupabaseNow } = useApp();
 
   if (!isOpen) return null;
@@ -30,7 +31,7 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
     }
   };
 
-  const sqlScript = FULL_SUPABASE_SQL_SCRIPT;
+  const sqlScript = mode === 'structure' ? STRUCTURE_ONLY_SQL_SCRIPT : FULL_SUPABASE_SQL_SCRIPT;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(sqlScript);
@@ -39,10 +40,11 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
   };
 
   const handleDownload = () => {
+    const filename = mode === 'structure' ? 'supabase_schema_solo_estructura.sql' : 'supabase_schema_completo.sql';
     const element = document.createElement('a');
     const file = new Blob([sqlScript], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = 'supabase_schema_caja_chica.sql';
+    element.download = filename;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -58,8 +60,8 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
               <Database className="w-6 h-6 text-emerald-300" />
             </div>
             <div>
-              <h3 className="text-base font-bold">Script SQL Correcto para Supabase</h3>
-              <p className="text-xs text-blue-100">Solución al error ERROR: 42P01 (relation does not exist)</p>
+              <h3 className="text-base font-bold">Script SQL para Supabase (100% Sin Pérdida de Datos)</h3>
+              <p className="text-xs text-blue-100">Protección garantizada: no borra ni sobreescribe registros existentes</p>
             </div>
           </div>
           <button
@@ -97,16 +99,65 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
             </button>
           </div>
 
-          {/* Explanation Alert */}
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="text-xs text-amber-900 space-y-1">
-              <p className="font-bold">¿Por qué ocurrió el error en Supabase?</p>
-              <p>
-                El error <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-amber-900">42P01: relation "registros_gasolina" does not exist</code> sucede cuando intentas ejecutar una instrucción <code className="font-mono font-bold">ALTER TABLE</code> antes de haber ejecutado el <code className="font-mono font-bold">CREATE TABLE</code> inicial.
+          {/* Mode Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setMode('structure')}
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                mode === 'structure'
+                  ? 'bg-blue-50/80 border-[#024182] shadow-xs'
+                  : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100/70'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-[#024182] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Opción 1: Solo Estructura (Recomendado)
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                  CERO RIESGO
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-600 mt-1.5">
+                Crea tablas y columnas faltantes con <code className="font-mono text-zinc-800">IF NOT EXISTS</code>. <strong>NO toca ni borra ningún dato</strong> que hayas registrado en tu base de datos.
               </p>
-              <p className="font-medium text-emerald-800">
-                ✓ Este script crea automáticamente todas las tablas si no existen (<code className="font-mono">CREATE TABLE IF NOT EXISTS</code>), agrega las columnas de evidencia y configura los permisos RLS.
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode('full')}
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                mode === 'full'
+                  ? 'bg-blue-50/80 border-[#024182] shadow-xs'
+                  : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100/70'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs text-zinc-900 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-[#024182]" />
+                  Opción 2: Estructura + Semillas Base
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                  ON CONFLICT DO NOTHING
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-600 mt-1.5">
+                Crea tablas y solo inserta catálogos si están vacíos. Si ya existe cualquier registro, <strong>NO lo sobreescribe ni lo altera</strong>.
+              </p>
+            </button>
+          </div>
+
+          {/* Explanation Alert */}
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-emerald-950 space-y-1">
+              <p className="font-bold">Garantía de Preservación de Datos</p>
+              <p>
+                ✓ <strong>Sin sentencias destructivas:</strong> Se eliminaron todas las operaciones de borrado (<code className="font-mono font-bold">DELETE</code>, <code className="font-mono font-bold">DROP</code>, <code className="font-mono font-bold">TRUNCATE</code>).
+              </p>
+              <p>
+                ✓ <strong>Protección contra sobreescritura:</strong> Todas las inserciones usan <code className="font-mono font-bold bg-emerald-100 px-1 py-0.2 rounded">ON CONFLICT (id) DO NOTHING</code>, protegiendo al 100% tus saldos, cajas, gastos y comprobantes creados.
               </p>
             </div>
           </div>
@@ -114,7 +165,9 @@ export const SupabaseSqlModal: React.FC<SupabaseSqlModalProps> = ({ isOpen, onCl
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center gap-2 text-xs font-bold text-zinc-700">
               <Terminal className="w-4 h-4 text-[#024182]" />
-              <span>Código SQL completo (12 Tablas + RLS):</span>
+              <span>
+                {mode === 'structure' ? 'Código SQL: Solo Estructura (Sin Datos)' : 'Código SQL: Estructura + Catálogos Base'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <button

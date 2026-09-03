@@ -1,9 +1,10 @@
 // SCRIPT SQL COMPLETO E IDEMPOTENTE PARA SUPABASE
-// Incluye tablas, RLS, permisos y todos los registros de muestra
+// Incluye tablas, RLS, permisos y registros base seguros (ON CONFLICT DO NOTHING)
 
-export const FULL_SUPABASE_SQL_SCRIPT = `-- ====================================================================
--- SCRIPT COMPLETO E IDEMPOTENTE PARA SUPABASE (100% SIN ERRORES)
--- Control de Cajas Chicas, Gastos, Combustible y Registros de Muestra
+export const STRUCTURE_ONLY_SQL_SCRIPT = `-- ====================================================================
+-- SCRIPT DE ESTRUCTURA PURA (100% SEGURO: CERO RIESGO DE BORRADO DE DATOS)
+-- Solo crea tablas si no existen, añade columnas y configura RLS/permisos.
+-- NO INSERTA, NO MODIFICA Y NO BORRA NINGÚN DATO REGISTRADO POR EL USUARIO.
 -- ====================================================================
 
 -- 1. EXTENSIONES REQUERIDAS
@@ -356,9 +357,11 @@ CREATE POLICY "Acceso lectura/escritura logos" ON public.logos FOR ALL USING (tr
 -- 5. PERMISOS Y ROLES PÚBLICOS
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, postgres;
+`;
 
--- ====================================================================
--- 6. CARGA DE REGISTROS DE MUESTRA COMPLETOS (UPSERT / IDEMPOTENTE)
+export const SEED_DATA_SQL_SCRIPT = `-- ====================================================================
+-- 6. CARGA DE REGISTROS BASE INICIALES (100% SEGURO: NO SOBREESCRIBE NI BORRA NADA)
+-- Todos usan ON CONFLICT (id) DO NOTHING para proteger los datos ya registrados
 -- ====================================================================
 
 -- LOGOS
@@ -366,26 +369,18 @@ INSERT INTO public.logos (id, nombre, url)
 VALUES 
   ('coteyuc', 'Coteyuc', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'),
   ('jscontadores', 'JS Contadores', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/jscontadores.png'),
-  ('proyecta', 'Proyecta Digital', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyecta.jpeg'),
+  ('proyecta', 'Proyecta Digital', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyectalogo.png'),
   ('publicrea', 'Publicrea', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'),
   ('sin_logo', 'Sin Logo', NULL)
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    url = EXCLUDED.url;
+ON CONFLICT (id) DO NOTHING;
 
--- CAJAS CHICAS
+-- CAJAS CHICAS (Solo inserta si no existen; jamás sobreescribe saldos o nombres)
 INSERT INTO public.cajas_chicas (id, nombre, responsable, fondo_base, saldo_actual, estado, ubicacion)
 VALUES 
   ('caja-1', 'Caja Chica - Reina Pino (Matriz)', 'Lic. Sofía Rodríguez', 15000.00, 8420.50, 'Abierta', 'Oficina Central'),
   ('caja-2', 'Caja Chica - Taller Proyecta', 'Ing. Carlos Mendoza', 20000.00, 4150.00, 'Pendiente', 'Sucursal Taller'),
   ('caja-3', 'Caja Chica - Coteyuc Sur', 'Alejandro Torres', 10000.00, 10000.00, 'Abierta', 'Planta Sur')
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    responsable = EXCLUDED.responsable,
-    fondo_base = EXCLUDED.fondo_base,
-    saldo_actual = EXCLUDED.saldo_actual,
-    estado = EXCLUDED.estado,
-    ubicacion = EXCLUDED.ubicacion;
+ON CONFLICT (id) DO NOTHING;
 
 -- GIROS / CATEGORÍAS
 INSERT INTO public.giros (id, nombre, codigo, color, activo)
@@ -396,11 +391,7 @@ VALUES
   ('giro-4', 'Despacho', 'DES-04', '#8b5cf6', true),
   ('giro-5', 'Mantenimiento General', 'MAN-05', '#ec4899', true),
   ('giro-6', 'Servicios Básicos', 'SER-06', '#64748b', true)
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    codigo = EXCLUDED.codigo,
-    color = EXCLUDED.color,
-    activo = EXCLUDED.activo;
+ON CONFLICT (id) DO NOTHING;
 
 -- PROVEEDORES
 INSERT INTO public.proveedores (id, nombre, rfc, categoria)
@@ -411,10 +402,7 @@ VALUES
   ('prov-4', 'Papelería Yza', 'PYZ990112CC8', 'Papelería y Oficina'),
   ('prov-5', 'Ferretería El Candado', 'FCA010515DD2', 'Herramientas y Refacciones'),
   ('prov-6', 'Teléfonos de México S.A.B.', 'TME840315KT6', 'Telecomunicaciones')
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    rfc = EXCLUDED.rfc,
-    categoria = EXCLUDED.categoria;
+ON CONFLICT (id) DO NOTHING;
 
 -- EMPLEADOS
 INSERT INTO public.empleados (id, nombre, puesto, departamento, activo)
@@ -426,13 +414,9 @@ VALUES
   ('emp-3', 'CP. Alberto Vargas', 'Contador General', 'Finanzas', true),
   ('emp-4', 'Alejandro Torres', 'Encargado de Compras', 'Operaciones', true),
   ('emp-5', 'Beatriz Hernández', 'Auxiliar Administrativo', 'Administración', true)
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    puesto = EXCLUDED.puesto,
-    departamento = EXCLUDED.departamento,
-    activo = EXCLUDED.activo;
+ON CONFLICT (id) DO NOTHING;
 
--- USUARIOS DEL SISTEMA
+-- USUARIOS DEL SISTEMA (No sobreescribe credenciales existentes)
 INSERT INTO public.usuarios (id, nombre, email, telefono, username, password, rol, caja_id, activo)
 VALUES 
   ('usr-harold', 'Harold Anguiano Morales', 'haroldove90@gmail.com', '9991234567', 'haroldo90', 'Chevropar#1970', 'admin', NULL, true),
@@ -441,17 +425,9 @@ VALUES
   ('usr-1', 'Sofía Rodríguez', 'sofia.rodriguez@empresa.com', '9992345678', 'custodio1', '123', 'custodio', 'caja-1', true),
   ('usr-2', 'CP. Alberto Vargas', 'alberto.vargas@empresa.com', '9993456789', 'contador1', '123', 'contador', NULL, true),
   ('usr-3', 'Cliente Usuario', 'cliente@empresa.com', '9994567890', 'cliente1', '123', 'cliente', NULL, true)
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    email = EXCLUDED.email,
-    telefono = EXCLUDED.telefono,
-    username = EXCLUDED.username,
-    password = EXCLUDED.password,
-    rol = EXCLUDED.rol,
-    caja_id = EXCLUDED.caja_id,
-    activo = EXCLUDED.activo;
+ON CONFLICT (id) DO NOTHING;
 
--- GASTOS REGISTRADOS
+-- GASTOS REGISTRADOS (Solo inserta si no existen)
 INSERT INTO public.gastos (id, caja_id, nro_orden, fecha, proveedor, concepto, importe, solicitante, giro_id, facturado, evidencia_url, evidencia_type, evidencia_nombre, estado, reembolso_id)
 VALUES 
   ('gst-101', 'caja-1', 'ORD-2026-001', '2026-07-28', 'Servicio Pemex No. 4812', 'Gasolina para camioneta de entregas Publikrea', 1250.00, 'Alejandro Torres', 'giro-1', true, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image', 'Factura_Pemex_4812.pdf', 'borrador', NULL),
@@ -461,45 +437,20 @@ VALUES
   ('gst-105', 'caja-1', 'ORD-2026-005', '2026-07-29', 'Super Willys', 'Jabón líquido, papel higiénico y sanitizante', 600.00, 'Lic. Sofía Rodríguez', 'giro-5', false, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image', 'Nota_Willys_Limpieza.jpg', 'borrador', NULL),
   ('gst-201', 'caja-2', 'ORD-TAL-188', '2026-07-26', 'Ferretería El Candado', 'Repuesto de brocas y aceite industrial Taller', 8450.00, 'Ing. Carlos Mendoza', 'giro-2', true, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image', 'Factura_Brocas_Taller.pdf', 'borrador', 'rmb-239'),
   ('gst-202', 'caja-2', 'ORD-TAL-189', '2026-07-27', 'Servicio Pemex No. 4812', 'Diesel para grúa de traslado', 7400.00, 'Ing. Carlos Mendoza', 'giro-2', true, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image', 'Factura_Diesel.pdf', 'borrador', 'rmb-239')
-ON CONFLICT (id) DO UPDATE 
-SET nro_orden = EXCLUDED.nro_orden,
-    fecha = EXCLUDED.fecha,
-    proveedor = EXCLUDED.proveedor,
-    concepto = EXCLUDED.concepto,
-    importe = EXCLUDED.importe,
-    solicitante = EXCLUDED.solicitante,
-    giro_id = EXCLUDED.giro_id,
-    facturado = EXCLUDED.facturado,
-    evidencia_url = EXCLUDED.evidencia_url,
-    evidencia_type = EXCLUDED.evidencia_type,
-    evidencia_nombre = EXCLUDED.evidencia_nombre,
-    estado = EXCLUDED.estado,
-    reembolso_id = EXCLUDED.reembolso_id;
+ON CONFLICT (id) DO NOTHING;
 
 -- REEMBOLSOS
 INSERT INTO public.reembolsos (id, nro_reembolso, caja_id, fecha_solicitud, total_gastos, cant_gastos, observaciones, estado)
 VALUES 
   ('rmb-239', 'REEMB-239', 'caja-2', '2026-07-27 18:30:00+00', 15850.00, 2, 'Se entrega documentación física completa con tickets fiscales adheridos.', 'pendiente')
-ON CONFLICT (id) DO UPDATE 
-SET nro_reembolso = EXCLUDED.nro_reembolso,
-    caja_id = EXCLUDED.caja_id,
-    fecha_solicitud = EXCLUDED.fecha_solicitud,
-    total_gastos = EXCLUDED.total_gastos,
-    cant_gastos = EXCLUDED.cant_gastos,
-    observaciones = EXCLUDED.observaciones,
-    estado = EXCLUDED.estado;
+ON CONFLICT (id) DO NOTHING;
 
 -- ABONOS / INYECCIONES DE FONDO
 INSERT INTO public.abonos (id, caja_id, fecha, monto, concepto, registrado_por)
 VALUES 
   ('abn-1', 'caja-1', '2026-07-21 10:15:00+00', 10000.00, 'CP. Alberto entregó $10,000.00 por transferencia para apertura mensual', 'CP. Alberto Vargas'),
   ('abn-2', 'caja-1', '2026-07-25 14:00:00+00', 5000.00, 'Reembolso complementario en cheque #4912', 'CP. Alberto Vargas')
-ON CONFLICT (id) DO UPDATE 
-SET caja_id = EXCLUDED.caja_id,
-    fecha = EXCLUDED.fecha,
-    monto = EXCLUDED.monto,
-    concepto = EXCLUDED.concepto,
-    registrado_por = EXCLUDED.registrado_por;
+ON CONFLICT (id) DO NOTHING;
 
 -- REGISTROS DE GASOLINA (AMBAS TABLAS)
 INSERT INTO public.registros_gasolina (id, caja_id, fecha, vehiculo, forma_pago, descripcion_uso, nivel_antes, nivel_despues, km, importe, registrado_por, evidencia_url, evidencia_type)
@@ -507,99 +458,55 @@ VALUES
   ('gas-101', 'caja-1', '2026-07-28', 'CAMIONETA PARTNER', 'EFECTIVO', 'Surtido de prendas y entregas a clientes en zona norte', '1/4', 'F', 142850, 850.00, 'Lic. Sofía Rodríguez', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image'),
   ('gas-102', 'caja-1', '2026-07-25', 'CAMIONETA PARTNER', 'TARJETA DE CAJA', 'Ruta de cobro y traslado de material publicitario Taller', 'E', '3/4', 142410, 720.00, 'Alejandro Torres', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image'),
   ('gas-103', 'caja-1', '2026-07-20', 'CAMIONETA PARTNER', 'TRANSFERENCIA', 'Mantenimiento preventivo y carga de combustible en Pemex 4812', '1/4', '1/2', 141980, 500.00, 'Lic. Sofía Rodríguez', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image')
-ON CONFLICT (id) DO UPDATE 
-SET caja_id = EXCLUDED.caja_id,
-    fecha = EXCLUDED.fecha,
-    vehiculo = EXCLUDED.vehiculo,
-    forma_pago = EXCLUDED.forma_pago,
-    descripcion_uso = EXCLUDED.descripcion_uso,
-    nivel_antes = EXCLUDED.nivel_antes,
-    nivel_despues = EXCLUDED.nivel_despues,
-    km = EXCLUDED.km,
-    importe = EXCLUDED.importe,
-    registrado_por = EXCLUDED.registrado_por,
-    evidencia_url = EXCLUDED.evidencia_url,
-    evidencia_type = EXCLUDED.evidencia_type;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.registro_gasolina (id, caja_id, fecha, vehiculo, forma_pago, descripcion_uso, nivel_antes, nivel_despues, km, importe, registrado_por, evidencia_url, evidencia_type)
 VALUES 
   ('gas-101', 'caja-1', '2026-07-28', 'CAMIONETA PARTNER', 'EFECTIVO', 'Surtido de prendas y entregas a clientes en zona norte', '1/4', 'F', 142850, 850.00, 'Lic. Sofía Rodríguez', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image'),
   ('gas-102', 'caja-1', '2026-07-25', 'CAMIONETA PARTNER', 'TARJETA DE CAJA', 'Ruta de cobro y traslado de material publicitario Taller', 'E', '3/4', 142410, 720.00, 'Alejandro Torres', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image'),
   ('gas-103', 'caja-1', '2026-07-20', 'CAMIONETA PARTNER', 'TRANSFERENCIA', 'Mantenimiento preventivo y carga de combustible en Pemex 4812', '1/4', '1/2', 141980, 500.00, 'Lic. Sofía Rodríguez', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image')
-ON CONFLICT (id) DO UPDATE 
-SET caja_id = EXCLUDED.caja_id,
-    fecha = EXCLUDED.fecha,
-    vehiculo = EXCLUDED.vehiculo,
-    forma_pago = EXCLUDED.forma_pago,
-    descripcion_uso = EXCLUDED.descripcion_uso,
-    nivel_antes = EXCLUDED.nivel_antes,
-    nivel_despues = EXCLUDED.nivel_despues,
-    km = EXCLUDED.km,
-    importe = EXCLUDED.importe,
-    registrado_por = EXCLUDED.registrado_por,
-    evidencia_url = EXCLUDED.evidencia_url,
-    evidencia_type = EXCLUDED.evidencia_type;
+ON CONFLICT (id) DO NOTHING;
 
 -- COMPROBANTES DE GASTOS
 INSERT INTO public.comprobantes_gastos (id, caja_id, folio, fecha, importe, importe_letra, concepto, solicitado_a, autorizado_por, recibido_por, evidencia_url, evidencia_type)
 VALUES 
   ('cmp-101', 'caja-1', 'CG-2026-001', '2026-07-28', 1250.00, 'UN MIL DOSCIENTOS CINCUENTA PESOS 00/100 M.N.', 'Pago de viáticos, alimentos y casetas por viaje de entregas express', 'Ing. Carlos Mendoza', 'CP. Alberto Vargas', 'Ing. Carlos Mendoza', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image'),
   ('cmp-102', 'caja-1', 'CG-2026-002', '2026-07-26', 890.00, 'OCHO CIENTOS NOVENTA PESOS 00/100 M.N.', 'Compra urgente de papelería y consumibles de impresión', 'Beatriz Hernández', 'Lic. Sofía Rodríguez', 'Beatriz Hernández', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image')
-ON CONFLICT (id) DO UPDATE 
-SET caja_id = EXCLUDED.caja_id,
-    folio = EXCLUDED.folio,
-    fecha = EXCLUDED.fecha,
-    importe = EXCLUDED.importe,
-    importe_letra = EXCLUDED.importe_letra,
-    concepto = EXCLUDED.concepto,
-    solicitado_a = EXCLUDED.solicitado_a,
-    autorizado_por = EXCLUDED.autorizado_por,
-    recibido_por = EXCLUDED.recibido_por,
-    evidencia_url = EXCLUDED.evidencia_url,
-    evidencia_type = EXCLUDED.evidencia_type;
+ON CONFLICT (id) DO NOTHING;
 
--- ITEMS DE COMPROBANTES DE GASTOS
-DELETE FROM public.comprobante_gastos_items WHERE comprobante_id IN ('cmp-101', 'cmp-102');
+-- ITEMS DE COMPROBANTES DE GASTOS (SEGURO: Solo inserta si no existe el item para el comprobante)
 INSERT INTO public.comprobante_gastos_items (comprobante_id, no_cuenta, no_orden, no_cotizacion, nombre_proyecto, nombre, importe)
-VALUES 
-  ('cmp-101', '602-01', 'ORD-101', 'COT-201', 'Publikrea Norte', 'Alimentos y Comida en Ruta', 450.00),
-  ('cmp-101', '602-05', 'ORD-102', 'COT-202', 'Publikrea Norte', 'Peajes y Casetas de Autopista', 380.00),
-  ('cmp-101', '602-09', 'ORD-103', 'COT-203', 'Planta Sur', 'Estacionamiento y Valet', 420.00),
-  ('cmp-102', '501-12', 'ORD-201', 'COT-301', 'Oficinas Centrales', 'Papelería General y Cartuchos', 650.00),
-  ('cmp-102', '501-15', 'ORD-202', 'COT-302', 'Oficinas Centrales', 'Encuadernación de Manuales', 240.00);
+SELECT 'cmp-101', '602-01', 'ORD-101', 'COT-201', 'Publikrea Norte', 'Alimentos y Comida en Ruta', 450.00
+WHERE NOT EXISTS (SELECT 1 FROM public.comprobante_gastos_items WHERE comprobante_id = 'cmp-101' AND no_cuenta = '602-01');
+
+INSERT INTO public.comprobante_gastos_items (comprobante_id, no_cuenta, no_orden, no_cotizacion, nombre_proyecto, nombre, importe)
+SELECT 'cmp-101', '602-05', 'ORD-102', 'COT-202', 'Publikrea Norte', 'Peajes y Casetas de Autopista', 380.00
+WHERE NOT EXISTS (SELECT 1 FROM public.comprobante_gastos_items WHERE comprobante_id = 'cmp-101' AND no_cuenta = '602-05');
+
+INSERT INTO public.comprobante_gastos_items (comprobante_id, no_cuenta, no_orden, no_cotizacion, nombre_proyecto, nombre, importe)
+SELECT 'cmp-101', '602-09', 'ORD-103', 'COT-203', 'Planta Sur', 'Estacionamiento y Valet', 420.00
+WHERE NOT EXISTS (SELECT 1 FROM public.comprobante_gastos_items WHERE comprobante_id = 'cmp-101' AND no_cuenta = '602-09');
+
+INSERT INTO public.comprobante_gastos_items (comprobante_id, no_cuenta, no_orden, no_cotizacion, nombre_proyecto, nombre, importe)
+SELECT 'cmp-102', '501-12', 'ORD-201', 'COT-301', 'Oficinas Centrales', 'Papelería General y Cartuchos', 650.00
+WHERE NOT EXISTS (SELECT 1 FROM public.comprobante_gastos_items WHERE comprobante_id = 'cmp-102' AND no_cuenta = '501-12');
+
+INSERT INTO public.comprobante_gastos_items (comprobante_id, no_cuenta, no_orden, no_cotizacion, nombre_proyecto, nombre, importe)
+SELECT 'cmp-102', '501-15', 'ORD-202', 'COT-302', 'Oficinas Centrales', 'Encuadernación de Manuales', 240.00
+WHERE NOT EXISTS (SELECT 1 FROM public.comprobante_gastos_items WHERE comprobante_id = 'cmp-102' AND no_cuenta = '501-15');
 
 -- PERFIL CLIENTE
 INSERT INTO public.clientes_perfil (id, nombre, email, telefono, empresa, rfc, direccion)
 VALUES 
   ('cli-001', 'Distribuciones Peninsulares S.A. de C.V.', 'contacto@distribucionespeninsulares.com', '9999123456', 'Distribuidora Peninsular', 'DPE180412KJ8', 'Calle 60 #340 x 43 y 45, Centro, Mérida, Yucatán')
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    email = EXCLUDED.email,
-    telefono = EXCLUDED.telefono,
-    empresa = EXCLUDED.empresa,
-    rfc = EXCLUDED.rfc,
-    direccion = EXCLUDED.direccion;
+ON CONFLICT (id) DO NOTHING;
 
 -- COMPROBANTES DE COMBUSTIBLE ENVIADOS POR CLIENTES
 INSERT INTO public.comprobantes_combustible_cliente (id, caja_id, cliente_id, cliente_nombre, fecha, vehiculo, placas, estacion, tipo_combustible, litros, importe, evidencia_url, evidencia_type, estado, observaciones)
 VALUES 
   ('cc-001', 'caja-1', 'cli-001', 'Distribuciones Peninsulares S.A. de C.V.', '2026-07-28 09:30:00+00', 'Nissan NP300 Chasis', 'YS-4891-B', 'Hidrosina Montejo', 'Diesel', 45.50, 1120.00, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image', 'aprobado', 'Ticket validado correctamente en la estación'),
   ('cc-002', 'caja-1', 'cli-001', 'Distribuciones Peninsulares S.A. de C.V.', '2026-07-29 11:15:00+00', 'Tsuru Sedán Utilitario', 'ZAM-104-A', 'Pemex Circuito Colonias', 'Magna', 32.00, 780.00, 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80', 'image', 'enviado', 'Carga semanal para supervisión')
-ON CONFLICT (id) DO UPDATE 
-SET caja_id = EXCLUDED.caja_id,
-    cliente_id = EXCLUDED.cliente_id,
-    cliente_nombre = EXCLUDED.cliente_nombre,
-    fecha = EXCLUDED.fecha,
-    vehiculo = EXCLUDED.vehiculo,
-    placas = EXCLUDED.placas,
-    estacion = EXCLUDED.estacion,
-    tipo_combustible = EXCLUDED.tipo_combustible,
-    litros = EXCLUDED.litros,
-    importe = EXCLUDED.importe,
-    evidencia_url = EXCLUDED.evidencia_url,
-    evidencia_type = EXCLUDED.evidencia_type,
-    estado = EXCLUDED.estado,
-    observaciones = EXCLUDED.observaciones;
+ON CONFLICT (id) DO NOTHING;
 
 -- BITÁCORA DE AUDITORÍA INICIAL
 INSERT INTO public.audit_logs (id, fecha, usuario, rol, accion, modulo, detalles)
@@ -609,3 +516,6 @@ VALUES
   ('aud-3', '2026-07-28 14:00:00+00', 'CP. Alberto Vargas', 'contador', 'APROBAR_REEMBOLSO', 'Auditoría', 'Aprobó solicitud de reembolso REEMB-239')
 ON CONFLICT (id) DO NOTHING;
 `;
+
+export const FULL_SUPABASE_SQL_SCRIPT = `${STRUCTURE_ONLY_SQL_SCRIPT}\n\n${SEED_DATA_SQL_SCRIPT}`;
+
