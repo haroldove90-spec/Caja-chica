@@ -69,8 +69,8 @@ export const INITIAL_EMPLEADOS: Empleado[] = [
 ];
 
 export const INITIAL_USUARIOS: Usuario[] = [
-  { id: 'usr-harold', nombre: 'Harold Anguiano Morales', email: 'haroldove90@gmail.com', username: 'haroldo90', password: 'Chevropar#1970', rol: 'admin', telefono: '9991234567', activo: true },
-  { id: 'usr-reyna', nombre: 'Reyna Pino', email: 'reyna_pino@hotmail.com', username: 'reyna_pino', password: 'Reyna*Caja2026!', rol: 'custodio', cajaId: 'caja-1', telefono: '9992345678', activo: true },
+  { id: 'usr-harold', nombre: 'Harold Anguiano Morales', email: 'haroldove90@gmail.com', username: 'haroldo90', password: 'Chevropar#1970', rol: 'admin', telefono: '+52 999 123 4567', activo: true },
+  { id: 'usr-reyna', nombre: 'Reyna Pino', email: 'reyna_pino@hotmail.com', username: 'reyna_pino', password: 'Reyna*Caja2026!', rol: 'custodio', cajaId: 'caja-1', telefono: '+52 999 234 5678', activo: true },
   { id: 'usr-admin1', nombre: 'Super Administrador Principal', email: 'admin1@empresa.com', username: 'admin1', password: 'Admin_123', rol: 'admin', activo: true },
   { id: 'usr-1', nombre: 'Sofía Rodríguez', email: 'sofia.rodriguez@empresa.com', username: 'custodio1', password: '123', rol: 'custodio', cajaId: 'caja-1', activo: true },
   { id: 'usr-2', nombre: 'CP. Alberto Vargas', email: 'alberto.vargas@empresa.com', username: 'contador1', password: '123', rol: 'contador', activo: true },

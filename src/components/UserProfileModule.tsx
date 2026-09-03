@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { User, Mail, Phone, Lock, Save, CheckCircle2, Camera, Trash2, Shield, Key, Eye, EyeOff, Building, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Usuario } from '../types';
+import { normalizeMexicanPhone } from '../utils/phoneUtils';
 
 export const UserProfileModule: React.FC = () => {
   const { currentUser, setCurrentUser, usuarios, updateUsuario, role, cajas } = useApp();
@@ -98,7 +99,7 @@ export const UserProfileModule: React.FC = () => {
       nombre: formData.nombre.trim(),
       email: formData.email.trim(),
       username: formData.username.trim() || formData.email.split('@')[0],
-      telefono: formData.telefono.trim() || undefined,
+      telefono: normalizeMexicanPhone(formData.telefono) || undefined,
       fotoUrl: formData.fotoUrl || undefined,
       password: finalPassword
     };
@@ -301,20 +302,36 @@ export const UserProfileModule: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 mb-1.5">
-                  WhatsApp / Teléfono
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-zinc-700">
+                    WhatsApp / Teléfono
+                  </label>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
+                    🇲🇽 +52 automático
+                  </span>
+                </div>
                 <div className="relative">
                   <input
                     type="tel"
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleChange}
-                    placeholder="Ej: +52 999 123 4567"
+                    onBlur={() => {
+                      if (formData.telefono.trim()) {
+                        setFormData(prev => ({
+                          ...prev,
+                          telefono: normalizeMexicanPhone(prev.telefono)
+                        }));
+                      }
+                    }}
+                    placeholder="Ej: 999 123 4567 o +52 999 123 4567"
                     className="w-full bg-zinc-50 border border-zinc-300 rounded-xl pl-9 pr-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-colors"
                   />
                   <Phone className="w-4 h-4 text-zinc-400 absolute left-3 top-3 pointer-events-none" />
                 </div>
+                <p className="text-[10px] text-zinc-500 mt-1">
+                  Si no incluyes el +52, el sistema lo agregará automáticamente para envíos de WhatsApp.
+                </p>
               </div>
             </div>
 

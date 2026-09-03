@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { RoleType, Usuario } from '../types';
+import { normalizeMexicanPhone, getWhatsAppCleanNumber } from '../utils/phoneUtils';
 
 export const AdminUsuarios: React.FC = () => {
   const { 
@@ -138,6 +139,8 @@ export const AdminUsuarios: React.FC = () => {
     const finalUsername = username.trim() || email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
     // Clean password
     const finalPassword = password.trim() || `Clave_${Math.floor(1000 + Math.random() * 9000)}`;
+    // Clean and normalize phone ensuring +52 if no international code was entered
+    const finalPhone = normalizeMexicanPhone(telefono) || undefined;
 
     if (editingId) {
       const existing = usuarios.find(u => u.id === editingId);
@@ -146,7 +149,7 @@ export const AdminUsuarios: React.FC = () => {
           ...existing,
           nombre: nombre.trim(),
           email: email.trim(),
-          telefono: telefono.trim() || undefined,
+          telefono: finalPhone,
           username: finalUsername,
           password: finalPassword,
           rol,
@@ -161,6 +164,7 @@ export const AdminUsuarios: React.FC = () => {
           updateEmpleado({
             ...emp,
             nombre: nombre.trim(),
+            telefono: finalPhone || emp.telefono,
             puesto: puesto.trim() || emp.puesto,
             departamento: departamento.trim() || emp.departamento
           });
@@ -174,7 +178,7 @@ export const AdminUsuarios: React.FC = () => {
       const newUser: Omit<Usuario, 'id'> = {
         nombre: nombre.trim(),
         email: email.trim(),
-        telefono: telefono.trim() || undefined,
+        telefono: finalPhone,
         username: finalUsername,
         password: finalPassword,
         rol,
@@ -193,6 +197,8 @@ export const AdminUsuarios: React.FC = () => {
       addEmpleado({
         id: `emp-${Date.now()}`,
         nombre: nombre.trim(),
+        telefono: finalPhone,
+        email: email.trim(),
         puesto: puesto.trim() || (rol === 'custodio' ? 'Custodio de Caja' : rol === 'contador' ? 'Contador / Auditor' : 'Personal Administrativo'),
         departamento: departamento.trim() || 'Administración',
         activo: true
@@ -254,7 +260,8 @@ ${appLink}
 
   const handleSendWhatsApp = (user: Usuario) => {
     const text = encodeURIComponent(formatShareMessage(user));
-    const cleanPhone = user.telefono ? user.telefono.replace(/[^0-9]/g, '') : '';
+    // getWhatsAppCleanNumber agrega automáticamente el prefijo 52 si el número tiene 10 dígitos
+    const cleanPhone = getWhatsAppCleanNumber(user.telefono);
     if (cleanPhone) {
       window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
     } else {
@@ -490,14 +497,27 @@ ${appLink}
                 </div>
 
                 <div>
-                  <label className="block text-zinc-700 font-bold mb-1">WhatsApp / Teléfono</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-zinc-700 font-bold">WhatsApp / Teléfono</label>
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                      🇲🇽 +52 automático
+                    </span>
+                  </div>
                   <input
                     type="tel"
-                    placeholder="Ej: +52 999 123 4567"
+                    placeholder="Ej: 999 123 4567 o +52 999 123 4567"
                     value={telefono}
                     onChange={(e) => setTelefono(e.target.value)}
+                    onBlur={() => {
+                      if (telefono.trim()) {
+                        setTelefono(normalizeMexicanPhone(telefono));
+                      }
+                    }}
                     className="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-colors"
                   />
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    Si ingresas solo los 10 dígitos, el sistema le añadirá <strong className="text-zinc-700 font-semibold">+52</strong> automáticamente para que WhatsApp lo reconozca.
+                  </p>
                 </div>
               </div>
 
@@ -829,6 +849,31 @@ ${appLink}
               </button>
             </div>
 
+            {/* Destinatario WhatsApp info badge */}
+            {selectedUserShare.telefono ? (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-emerald-950">
+                  <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="text-[10px] text-emerald-700 block uppercase font-bold tracking-wider">Destinatario WhatsApp:</span>
+                    <span className="font-bold text-emerald-900 font-mono text-xs">
+                      {normalizeMexicanPhone(selectedUserShare.telefono)}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold bg-emerald-100 border border-emerald-300 text-emerald-800 px-2 py-0.5 rounded-full">
+                  ✓ +52 Verificado
+                </span>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-900">
+                <MessageSquare className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="text-[11px]">
+                  Sin teléfono asignado. Al pulsar <strong>WhatsApp</strong> podrás elegir el contacto directamente en tu aplicación.
+                </span>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-zinc-700">
                 Mensaje de invitación y link de acceso:
@@ -856,6 +901,7 @@ ${appLink}
 
               <button
                 onClick={() => handleSendWhatsApp(selectedUserShare)}
+                title={selectedUserShare.telefono ? `Enviar por WhatsApp a ${normalizeMexicanPhone(selectedUserShare.telefono)}` : 'Abrir WhatsApp'}
                 className="px-3 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <MessageSquare className="w-4 h-4" />

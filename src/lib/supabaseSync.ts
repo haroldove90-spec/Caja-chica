@@ -14,6 +14,7 @@ import {
   Usuario,
   AuditLog
 } from '../types';
+import { normalizeMexicanPhone } from '../utils/phoneUtils';
 
 // Diagnostic and Heartbeat Helpers
 export interface DiagnosticResult {
@@ -268,7 +269,7 @@ export function usuarioToDb(u: Usuario) {
     id: u.id,
     nombre: u.nombre,
     email: u.email,
-    telefono: u.telefono || null,
+    telefono: u.telefono ? normalizeMexicanPhone(u.telefono) : null,
     username: u.username || null,
     password: u.password || null,
     rol: u.rol,
@@ -283,7 +284,7 @@ export function dbToUsuario(db: any): Usuario {
     id: db.id,
     nombre: db.nombre || '',
     email: db.email || '',
-    telefono: db.telefono || undefined,
+    telefono: db.telefono ? normalizeMexicanPhone(db.telefono) : undefined,
     username: db.username || undefined,
     password: db.password || undefined,
     rol: db.rol || 'custodio',
@@ -610,7 +611,7 @@ export async function syncAllDataToSupabase(state: {
       id: 'cli-001',
       nombre: state.clienteProfile.nombre,
       email: state.clienteProfile.email,
-      telefono: state.clienteProfile.telefono || '',
+      telefono: state.clienteProfile.telefono ? normalizeMexicanPhone(state.clienteProfile.telefono) : '',
       empresa: state.clienteProfile.empresa || '',
       rfc: state.clienteProfile.rfc || '',
       direccion: state.clienteProfile.direccion || '',

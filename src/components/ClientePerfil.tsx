@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { User, Building, Mail, Phone, MapPin, FileCheck, Save, CheckCircle2, Camera, Trash2, Upload, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { normalizeMexicanPhone } from '../utils/phoneUtils';
 
 export const ClientePerfil: React.FC = () => {
   const { clienteProfile, updateClienteProfile } = useApp();
@@ -45,7 +46,11 @@ export const ClientePerfil: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateClienteProfile(formData);
+    const finalData = {
+      ...formData,
+      telefono: normalizeMexicanPhone(formData.telefono)
+    };
+    updateClienteProfile(finalData);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 4000);
   };
@@ -192,16 +197,26 @@ export const ClientePerfil: React.FC = () => {
 
             {/* Teléfono */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5 flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-zinc-400" />
-                Teléfono de Contacto
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-zinc-700 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-zinc-400" />
+                  Teléfono de Contacto
+                </label>
+                <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
+                  🇲🇽 +52 automático
+                </span>
+              </div>
               <input
                 type="text"
                 name="telefono"
                 value={formData.telefono}
                 onChange={handleChange}
-                placeholder="Ej. 9931234567"
+                onBlur={() => {
+                  if (formData.telefono.trim()) {
+                    setFormData(prev => ({ ...prev, telefono: normalizeMexicanPhone(prev.telefono) }));
+                  }
+                }}
+                placeholder="Ej. 993 123 4567 o +52 993 123 4567"
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all"
               />
             </div>
