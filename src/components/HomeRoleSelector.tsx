@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Lock, LogIn, Key, AlertCircle, Eye, EyeOff, User, Mail, Shield, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Usuario } from '../types';
+import { PROYECTA_LOGO_URL } from '../constants/logos';
+import { PwaInstallButton } from './PwaInstallButton';
 
 export const HomeRoleSelector: React.FC = () => {
   const { setRole, usuarios } = useApp();
@@ -131,6 +133,16 @@ export const HomeRoleSelector: React.FC = () => {
   return (
     <div className="min-h-screen bg-zinc-100/70 flex items-center justify-center p-4 sm:p-6 md:p-10">
       <div className="w-full max-w-md space-y-6">
+        {/* Unencapsulated Proyecta Digital Logo */}
+        <div className="flex flex-col items-center justify-center pt-2">
+          <img
+            src={PROYECTA_LOGO_URL}
+            alt="Proyecta Digital"
+            className="h-20 sm:h-24 w-auto object-contain select-none filter drop-shadow-xs"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900 text-white text-xs font-semibold tracking-wide shadow-xs">
@@ -138,12 +150,15 @@ export const HomeRoleSelector: React.FC = () => {
             <span>Sistema de Control y Gestión de Caja Chica</span>
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
-            Acceso al Sistema
+            Proyecta Digital
           </h1>
           <p className="text-xs text-zinc-600 max-w-xs mx-auto">
             Ingrese con su nombre de usuario o correo electrónico registrado. El sistema lo dirigirá a su rol asignado.
           </p>
         </div>
+
+        {/* PWA Install Button on Home */}
+        <PwaInstallButton variant="home" />
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6 sm:p-8 space-y-5">

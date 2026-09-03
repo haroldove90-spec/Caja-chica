@@ -1,6 +1,6 @@
 {
-  "name": "Control de caja",
-  "description": "Sistema minimalista de gestión y control de caja chica con arquitectura por roles (Custodio, Contador y Super Administrador)",
+  "name": "Proyecta Digital",
+  "description": "Sistema de gestión y control de caja chica, comprobantes y reembolsos con arquitectura por roles - Proyecta Digital",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

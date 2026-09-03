@@ -23,6 +23,8 @@ import { useApp } from '../context/AppContext';
 import { SupabaseSqlModal } from './SupabaseSqlModal';
 import { SupabaseSmartButton } from './SupabaseSmartButton';
 import { RoleType } from '../types';
+import { PROYECTA_LOGO_URL } from '../constants/logos';
+import { PwaInstallButton } from './PwaInstallButton';
 
 interface NavItem {
   id: string;
@@ -118,12 +120,15 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
     <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row antialiased text-zinc-900 selection:bg-zinc-900 selection:text-white">
       {/* FULLSCREEN DESKTOP SIDEBAR (md:flex) */}
       <aside className="hidden md:flex flex-col w-64 border-r border-zinc-200/80 bg-white sticky top-0 h-screen shrink-0 z-30 select-none print:hidden">
-        {/* Top Role Header */}
+        {/* Top Header with Proyecta Digital Logo */}
         <div className="p-4 border-b border-zinc-100 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-              Rol Activo
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <img
+              src={PROYECTA_LOGO_URL}
+              alt="Proyecta Digital"
+              className="h-8 w-auto max-w-[145px] object-contain select-none"
+              referrerPolicy="no-referrer"
+            />
             <button
               onClick={() => setRole('home')}
               title="Cerrar Sesión / Ir al Menú Principal"
@@ -133,6 +138,9 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
               <span>Inicio</span>
             </button>
           </div>
+
+          {/* PWA Install Action */}
+          <PwaInstallButton variant="nav" />
 
           {/* Role Header / Switcher */}
           {isAdminUser ? (
@@ -291,7 +299,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
       </aside>
 
       {/* MOBILE / TABLET TOP COMPACT STRIP (< md) */}
-      <div className="md:hidden bg-white border-b border-zinc-200/80 px-3 py-2.5 sticky top-0 z-20 flex items-center justify-between gap-2 print:hidden">
+      <div className="md:hidden bg-white border-b border-zinc-200/80 px-3 py-2 sticky top-0 z-20 flex items-center justify-between gap-2 print:hidden">
         <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={() => setRole('home')}
@@ -300,20 +308,24 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          {currentPhoto ? (
-            <img src={currentPhoto} alt="Avatar" className="w-7 h-7 rounded-full object-cover shrink-0 border" />
-          ) : null}
-          <div className="min-w-0">
-            <span className="text-xs font-semibold text-zinc-900 block leading-none truncate">
+          <img
+            src={PROYECTA_LOGO_URL}
+            alt="Proyecta Digital"
+            className="h-7 w-auto max-w-[110px] object-contain shrink-0 select-none"
+            referrerPolicy="no-referrer"
+          />
+          <div className="min-w-0 hidden sm:block">
+            <span className="text-[11px] font-semibold text-zinc-900 block leading-none truncate">
               {currentDisplayName}
             </span>
-            <span className="text-[10px] text-zinc-500 truncate block">
+            <span className="text-[9px] text-zinc-500 truncate block">
               {cajas.find(c => c.id === activeCajaId)?.nombre}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          <PwaInstallButton variant="compact" />
           {isAdminUser ? (
             <select
               value={role}
