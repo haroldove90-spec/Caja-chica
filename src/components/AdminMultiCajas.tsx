@@ -101,7 +101,7 @@ export const AdminMultiCajas: React.FC = () => {
             const isSinFondo = caja.tipoFondo === 'sin_fondo' || caja.fondoBase === 0;
             const cajaGastos = gastos.filter(g => g.cajaId === caja.id && !g.reembolsoId && g.activo !== false);
             const totalGastado = cajaGastos.reduce((a, b) => a + b.importe, 0);
-            const disponible = isSinFondo ? 0 : Math.max(0, caja.fondoBase - totalGastado);
+            const disponible = isSinFondo ? 0 : (caja.saldoActual !== undefined ? caja.saldoActual : Math.max(0, caja.fondoBase - totalGastado));
             const isActive = activeCajaId === caja.id;
 
             return (

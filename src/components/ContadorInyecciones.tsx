@@ -27,8 +27,13 @@ export const ContadorInyecciones: React.FC = () => {
   const [montoAbono, setMontoAbono] = useState<string>('');
   const [conceptoAbono, setConceptoAbono] = useState<string>('');
   const [cajaDestinoId, setCajaDestinoId] = useState<string>(safeCaja.id);
+  const [cajaAjusteId, setCajaAjusteId] = useState<string>(safeCaja.id);
   const [nuevoFondoBase, setNuevoFondoBase] = useState<string>(safeCaja.fondoBase.toString());
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  const selectedCaja = cajas.find(c => c.id === cajaDestinoId) || safeCaja;
+  const cajaAjuste = cajas.find(c => c.id === cajaAjusteId) || safeCaja;
+  const numMontoAbono = parseFloat(montoAbono) || 0;
 
   // Filters for Monthly Report
   const [filterMonth, setFilterMonth] = useState<string>('all');
@@ -69,7 +74,35 @@ export const ContadorInyecciones: React.FC = () => {
     return cajas.find(c => c.id === cajaId)?.nombre || cajaId;
   };
 
-  const handleAddAbono = (e: React.FormEvent) => {
+  // Currency input handler (no arrows, only digits and decimals)
+  const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    // Keep only numbers and dots
+    val = val.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) {
+      val = parts[0] + '.' + parts.slice(1).join('');
+    }
+    if (parts[1] && parts[1].length > 2) {
+      val = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    setMontoAbono(val);
+  };
+
+  const handleNuevoFondoBaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    val = val.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) {
+      val = parts[0] + '.' + parts.slice(1).join('');
+    }
+    if (parts[1] && parts[1].length > 2) {
+      val = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    setNuevoFondoBase(val);
+  };
+
+  const handleAddAbono = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(montoAbono);
     if (isNaN(val) || val <= 0 || !conceptoAbono.trim()) {
@@ -78,8 +111,9 @@ export const ContadorInyecciones: React.FC = () => {
     }
 
     const targetCaja = cajas.find(c => c.id === cajaDestinoId) || safeCaja;
+    const nuevoSaldo = Number(((targetCaja.saldoActual || 0) + val).toFixed(2));
 
-    addAbono({
+    await addAbono({
       cajaId: targetCaja.id,
       fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
       monto: val,
@@ -87,10 +121,10 @@ export const ContadorInyecciones: React.FC = () => {
       registradoPor: 'CP. Alberto Vargas'
     });
 
-    setFeedbackMsg(`¡Inyección de $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })} aplicada automáticamente al saldo de ${targetCaja.nombre}!`);
+    setFeedbackMsg(`¡Inyección de $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })} aplicada con éxito! El fondo actual de "${targetCaja.nombre}" ahora es de $${nuevoSaldo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}.`);
     setMontoAbono('');
     setConceptoAbono('');
-    setTimeout(() => setFeedbackMsg(null), 5000);
+    setTimeout(() => setFeedbackMsg(null), 6000);
   };
 
   const handleUpdateFondoBase = (e: React.FormEvent) => {
@@ -101,8 +135,8 @@ export const ContadorInyecciones: React.FC = () => {
       return;
     }
 
-    updateFondoBase(safeCaja.id, val);
-    alert(`Límite estructural de fondo base actualizado a $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })} para ${safeCaja.nombre}`);
+    updateFondoBase(cajaAjuste.id, val);
+    alert(`Límite estructural de fondo base actualizado a $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })} para ${cajaAjuste.nombre}`);
   };
 
   return (
@@ -144,28 +178,83 @@ export const ContadorInyecciones: React.FC = () => {
               <select
                 value={cajaDestinoId}
                 onChange={(e) => setCajaDestinoId(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-zinc-900"
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-zinc-900 cursor-pointer"
               >
                 {cajas.map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.nombre} {c.tipoFondo === 'sin_fondo' ? '(Flujo Semanal)' : `($${c.fondoBase.toLocaleString('es-MX')})`}
+                    {c.nombre} • Saldo: ${c.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })} (Base: ${c.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })})
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* ESTADO DE FONDO ACTUAL DE LA CAJA SELECCIONADA */}
+            <div className="p-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-zinc-500 font-medium block">Fondo Actual Disponible</span>
+                <span className="text-sm font-black text-zinc-900">
+                  ${selectedCaja.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="h-7 w-px bg-zinc-200" />
+              <div className="text-right">
+                <span className="text-[10px] text-zinc-500 font-medium block">Límite Base Asignado</span>
+                <span className="text-xs font-semibold text-zinc-700">
+                  {selectedCaja.tipoFondo === 'sin_fondo' ? 'Flujo Semanal' : `$${selectedCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+                </span>
+              </div>
+            </div>
+
+            {/* CAMPO DE MONTO - SOLO MONEDA (SIN FLECHITAS / SPIN BUTTONS) */}
             <div>
-              <label className="block text-zinc-600 font-medium mb-1">Monto de la Inyección ($) *</label>
-              <input
-                type="number"
-                step="0.01"
-                min="1"
-                required
-                placeholder="Ej: 10000.00"
-                value={montoAbono}
-                onChange={(e) => setMontoAbono(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-zinc-900 focus:outline-none focus:border-zinc-900"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-zinc-700 font-medium">Monto de la Inyección ($) *</label>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Solo Moneda (MXN)
+                </span>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500 font-bold text-sm">
+                  $
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  required
+                  placeholder="0.00"
+                  value={montoAbono}
+                  onChange={handleMontoChange}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-8 pr-14 py-2.5 text-sm font-bold text-zinc-900 placeholder:text-zinc-400 placeholder:font-normal focus:outline-none focus:border-zinc-900 focus:bg-white transition-all shadow-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-zinc-400 text-xs font-semibold">
+                  MXN
+                </div>
+              </div>
+
+              {/* PROYECCIÓN EN TIEMPO REAL DEL FONDO ACTUAL RESULTANTE */}
+              {numMontoAbono > 0 && (
+                <div className="mt-2.5 p-3 bg-emerald-50/80 border border-emerald-200/90 rounded-xl text-xs space-y-1.5 animate-fade-in">
+                  <div className="flex justify-between items-center text-zinc-600">
+                    <span>Fondo Actual Disponible:</span>
+                    <span className="font-semibold text-zinc-900">
+                      ${selectedCaja.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-emerald-700 font-medium">
+                    <span>+ Inyección solicitada:</span>
+                    <span className="font-bold">
+                      +${numMontoAbono.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-zinc-900 font-bold pt-1.5 border-t border-emerald-200 text-xs">
+                    <span className="text-emerald-950 font-bold">Nuevo Saldo del Fondo:</span>
+                    <span className="text-sm text-emerald-700 font-black">
+                      ${(selectedCaja.saldoActual + numMontoAbono).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -182,7 +271,7 @@ export const ContadorInyecciones: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs active:scale-[0.99]"
             >
               <Plus className="w-4 h-4" />
               <span>Abonar Directamente a la Caja</span>
@@ -203,37 +292,64 @@ export const ContadorInyecciones: React.FC = () => {
           <form onSubmit={handleUpdateFondoBase} className="space-y-4 text-xs">
             <div>
               <label className="block text-zinc-600 font-medium mb-1">Caja Seleccionada</label>
-              <input
-                type="text"
-                disabled
-                value={safeCaja.nombre}
-                className="w-full bg-zinc-100 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-700"
-              />
+              <select
+                value={cajaAjusteId}
+                onChange={(e) => {
+                  setCajaAjusteId(e.target.value);
+                  const c = cajas.find(item => item.id === e.target.value);
+                  if (c) setNuevoFondoBase(c.fondoBase.toString());
+                }}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-zinc-900 cursor-pointer"
+              >
+                {cajas.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div>
-              <label className="block text-zinc-600 font-medium mb-1">Límite de Fondo Base Actual</label>
-              <div className="text-xl font-bold text-zinc-900">
-                {safeCaja.tipoFondo === 'sin_fondo' ? 'Sin Fondo Fijo (Flujo Semanal)' : `$${safeCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+            <div className="p-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-xs flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-zinc-500 font-medium block">Límite Base Actual</span>
+                <span className="text-sm font-black text-zinc-900">
+                  {cajaAjuste.tipoFondo === 'sin_fondo' ? 'Sin Fondo Fijo' : `$${cajaAjuste.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+                </span>
+              </div>
+              <div className="h-7 w-px bg-zinc-200" />
+              <div className="text-right">
+                <span className="text-[10px] text-zinc-500 font-medium block">Saldo Disponible Actual</span>
+                <span className="text-xs font-semibold text-zinc-700">
+                  ${cajaAjuste.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
 
             <div>
               <label className="block text-zinc-600 font-medium mb-1">Nuevo Límite de Fondo Base ($) *</label>
-              <input
-                type="number"
-                step="500"
-                required
-                placeholder={safeCaja.fondoBase.toString()}
-                value={nuevoFondoBase}
-                onChange={(e) => setNuevoFondoBase(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-zinc-900"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500 font-bold text-sm">
+                  $
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  required
+                  placeholder={cajaAjuste.fondoBase.toString()}
+                  value={nuevoFondoBase}
+                  onChange={handleNuevoFondoBaseChange}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-8 pr-14 py-2.5 text-xs font-bold text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all shadow-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-zinc-400 text-xs font-semibold">
+                  MXN
+                </div>
+              </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs active:scale-[0.99]"
             >
               <span>Actualizar Límite de Fondo Base</span>
             </button>

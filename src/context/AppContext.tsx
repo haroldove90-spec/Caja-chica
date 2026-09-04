@@ -618,15 +618,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     recordSupabaseTelemetry('gastos', 'Registro de Gastos', 'insert', newGasto.nroOrden || newGasto.id, prevCount, prevCount + 1, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
 
     // recalculate caja saldo
+    let updatedCaja: CajaChica | undefined;
     setCajas(prev => prev.map(c => {
       if (c.id === gastoData.cajaId) {
-        return {
+        updatedCaja = {
           ...c,
-          saldoActual: Math.max(0, c.saldoActual - gastoData.importe)
+          saldoActual: Math.max(0, Number(((c.saldoActual || 0) - gastoData.importe).toFixed(2)))
         };
+        return updatedCaja;
       }
       return c;
     }));
+
+    if (updatedCaja) {
+      await insertSupabaseRecord('cajas_chicas', cajaToDb(updatedCaja));
+    }
 
     logAudit('CREAR_GASTO', 'Registro de Gastos', `Registró gasto ${newGasto.nroOrden} por $${newGasto.importe.toFixed(2)} (${newGasto.proveedor})`);
   };
@@ -654,15 +660,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     recordSupabaseTelemetry('gastos', 'Registro de Gastos', 'delete', target.nroOrden || id, prevCount, prevCount - 1, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
 
     // Restore balance
+    let updatedCaja: CajaChica | undefined;
     setCajas(prev => prev.map(c => {
       if (c.id === target.cajaId) {
-        return {
+        updatedCaja = {
           ...c,
-          saldoActual: c.saldoActual + target.importe
+          saldoActual: Number(((c.saldoActual || 0) + target.importe).toFixed(2))
         };
+        return updatedCaja;
       }
       return c;
     }));
+
+    if (updatedCaja) {
+      await insertSupabaseRecord('cajas_chicas', cajaToDb(updatedCaja));
+    }
 
     logAudit('ELIMINAR_GASTO', 'Registro de Gastos', `Eliminó gasto ${target.nroOrden} por $${target.importe.toFixed(2)}`);
   };
@@ -747,16 +759,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setGastos(prev => prev.map(g => g.reembolsoId === reembolsoId ? { ...g, estado: 'aprobado' } : g));
 
     // Reopen caja & restore balance to fondoBase
+    let updatedReembolsoCaja: CajaChica | undefined;
     setCajas(prev => prev.map(c => {
       if (c.id === rmb.cajaId) {
-        return {
+        updatedReembolsoCaja = {
           ...c,
           estado: 'Abierta',
           saldoActual: c.fondoBase
         };
+        return updatedReembolsoCaja;
       }
       return c;
     }));
+
+    if (updatedReembolsoCaja) {
+      await insertSupabaseRecord('cajas_chicas', cajaToDb(updatedReembolsoCaja));
+    }
 
     const res = await insertSupabaseRecord('reembolsos', reembolsoToDb(updatedRmb));
     recordSupabaseTelemetry('reembolsos', 'Auditoría', 'update', `Aprobado ${rmb.nroReembolso}`, reembolsos.length, reembolsos.length, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
@@ -796,14 +814,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     setAbonos(prev => [newAbono, ...prev]);
 
-    // Inject to caja balance
-    setCajas(prev => prev.map(c => c.id === abonoData.cajaId ? {
-      ...c,
-      saldoActual: c.saldoActual + abonoData.monto
-    } : c));
+    // Inject to caja balance and save to database
+    let updatedCaja: CajaChica | undefined;
+    setCajas(prev => prev.map(c => {
+      if (c.id === abonoData.cajaId) {
+        updatedCaja = {
+          ...c,
+          saldoActual: Number(((c.saldoActual || 0) + abonoData.monto).toFixed(2))
+        };
+        return updatedCaja;
+      }
+      return c;
+    }));
 
     const res = await insertSupabaseRecord('abonos', abonoToDb(newAbono));
     recordSupabaseTelemetry('abonos', 'Inyecciones de Fondo', 'insert', `$${newAbono.monto} - ${newAbono.concepto}`, prevCount, prevCount + 1, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
+
+    // Persist new saldo to Supabase
+    if (updatedCaja) {
+      await insertSupabaseRecord('cajas_chicas', cajaToDb(updatedCaja));
+    }
 
     logAudit('ABONAR_FONDO', 'Inyecciones de Fondo', `Abonó $${abonoData.monto.toFixed(2)} a caja ${abonoData.cajaId}`);
   };
@@ -823,6 +853,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAbonos(prev => prev.filter(a => a.id !== id));
     const res = await deleteSupabaseRecord('abonos', id);
     recordSupabaseTelemetry('abonos', 'Inyecciones de Fondo', 'delete', target.concepto || id, prevCount, prevCount - 1, res.latencyMs, res.ok ? 'success' : 'error', res.error?.message);
+
+    // Revert injected balance from caja
+    let updatedCaja: CajaChica | undefined;
+    setCajas(prev => prev.map(c => {
+      if (c.id === target.cajaId) {
+        updatedCaja = {
+          ...c,
+          saldoActual: Math.max(0, Number(((c.saldoActual || 0) - target.monto).toFixed(2)))
+        };
+        return updatedCaja;
+      }
+      return c;
+    }));
+
+    if (updatedCaja) {
+      await insertSupabaseRecord('cajas_chicas', cajaToDb(updatedCaja));
+    }
+
     logAudit('ELIMINAR_ABONO', 'Inyecciones de Fondo', `Eliminó abono de $${target.monto}`);
   };
 
