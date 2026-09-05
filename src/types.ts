@@ -116,6 +116,8 @@ export interface Empleado {
   nombre: string;
   puesto: string;
   departamento: string;
+  email?: string;
+  telefono?: string;
   activo: boolean;
 }
 

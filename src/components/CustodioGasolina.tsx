@@ -11,7 +11,7 @@ export const CustodioGasolina: React.FC = () => {
     addRegistroGasolina,
     updateRegistroGasolina,
     deleteRegistroGasolina,
-    toggleActivoGasolina,
+    toggleActivoRegistroGasolina: toggleActivoGasolina,
     setPreviewEvidencia,
     setPdfGasolinaModalData,
     activeCaja

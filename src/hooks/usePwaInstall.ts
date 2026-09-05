@@ -47,14 +47,23 @@ export function usePwaInstall() {
       // If native prompt is not available (e.g. iOS or already opened in browser), return instructions or status
       return false;
     }
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-      return true;
+    try {
+      if (typeof deferredPrompt.prompt === 'function') {
+        await deferredPrompt.prompt();
+      }
+      if (deferredPrompt.userChoice) {
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setIsInstallable(false);
+          setDeferredPrompt(null);
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      console.warn('PWA install prompt handled:', err);
+      return false;
     }
-    return false;
   };
 
   return {

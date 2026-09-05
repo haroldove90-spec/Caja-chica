@@ -88,17 +88,18 @@ export const CustodioCombustibleCliente: React.FC = () => {
 
           <button
             onClick={() => setPdfGasolinaModalData({
-              list: filteredRecords.map((r, i) => ({
+              list: filteredRecords.map((r) => ({
                 id: r.id,
                 cajaId: r.cajaId || 'caja-1',
-                vehiculoId: 'v-cliente',
                 fecha: r.fecha,
+                vehiculo: r.vehiculo || 'Vehículo Cliente',
                 formaPago: 'Efectivo',
                 descripcionUso: `Carga Combustible ${r.tipoCombustible} - Cliente ${r.clienteNombre} (${r.vehiculo})`,
-                nivelAntes: 2,
-                nivelDespues: 8,
+                nivelAntes: '1/4',
+                nivelDespues: 'F',
                 km: 0,
-                importe: r.importe
+                importe: r.importe,
+                registradoPor: r.clienteNombre || 'Cliente'
               })),
               vehiculo: 'COMPROBANTES COMBUSTIBLE CLIENTE'
             })}

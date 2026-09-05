@@ -188,14 +188,10 @@ export const AdminUsuarios: React.FC = () => {
       };
 
       const newId = `usr-${Date.now()}`;
-      addUsuario({
-        id: newId,
-        ...newUser
-      });
+      addUsuario(newUser);
 
       // Also register in empleados table
       addEmpleado({
-        id: `emp-${Date.now()}`,
         nombre: nombre.trim(),
         telefono: finalPhone,
         email: email.trim(),

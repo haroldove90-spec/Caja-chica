@@ -11,7 +11,7 @@ export const CustodioComprobantes: React.FC = () => {
     addComprobanteGastos,
     updateComprobanteGastos,
     deleteComprobanteGastos,
-    toggleActivoComprobante,
+    toggleActivoComprobanteGastos: toggleActivoComprobante,
     setPreviewEvidencia,
     setPdfComprobanteModalData,
     activeCaja

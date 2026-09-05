@@ -478,14 +478,15 @@ export const ClienteCombustible: React.FC = () => {
                   list: myRecords.map(r => ({
                     id: r.id,
                     cajaId: r.cajaId || 'caja-1',
-                    vehiculoId: 'v-cliente',
                     fecha: r.fecha,
+                    vehiculo: r.vehiculo || 'Vehículo Cliente',
                     formaPago: 'Efectivo',
                     descripcionUso: `Carga ${r.tipoCombustible} - ${r.vehiculo}`,
-                    nivelAntes: 2,
-                    nivelDespues: 8,
+                    nivelAntes: '1/4',
+                    nivelDespues: 'F',
                     km: 0,
-                    importe: r.importe
+                    importe: r.importe,
+                    registradoPor: r.clienteNombre || clienteProfile.nombre
                   })),
                   vehiculo: `CLIENTE ${clienteProfile.nombre.toUpperCase()}`
                 })}

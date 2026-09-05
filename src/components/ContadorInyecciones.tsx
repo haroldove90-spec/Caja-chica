@@ -28,7 +28,7 @@ export const ContadorInyecciones: React.FC = () => {
   const [conceptoAbono, setConceptoAbono] = useState<string>('');
   const [cajaDestinoId, setCajaDestinoId] = useState<string>(safeCaja.id);
   const [cajaAjusteId, setCajaAjusteId] = useState<string>(safeCaja.id);
-  const [nuevoFondoBase, setNuevoFondoBase] = useState<string>(safeCaja.fondoBase.toString());
+  const [nuevoFondoBase, setNuevoFondoBase] = useState<string>((safeCaja.fondoBase ?? 0).toString());
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   const selectedCaja = cajas.find(c => c.id === cajaDestinoId) || safeCaja;
@@ -40,18 +40,21 @@ export const ContadorInyecciones: React.FC = () => {
   const [filterCaja, setFilterCaja] = useState<string>('all');
   const [showPdfModal, setShowPdfModal] = useState<boolean>(false);
 
-  // Compute available months from abonos
+  // Compute available months from abonos safely
   const availableMonths: string[] = Array.from(new Set<string>(abonos.map(a => {
+    if (!a?.fecha) return '';
     const d = new Date(a.fecha.replace(' ', 'T'));
     if (isNaN(d.getTime())) return a.fecha.substring(0, 7);
     const month = String(d.getMonth() + 1).padStart(2, '0');
     return `${d.getFullYear()}-${month}`;
-  }))).sort().reverse();
+  }))).filter(Boolean).sort().reverse();
 
-  // Filtered Abonos for Report
+  // Filtered Abonos for Report safely
   const filteredAbonos = abonos.filter(a => {
+    if (!a) return false;
     if (filterCaja !== 'all' && a.cajaId !== filterCaja) return false;
     if (filterMonth !== 'all') {
+      if (!a.fecha) return false;
       const d = new Date(a.fecha.replace(' ', 'T'));
       const aMonth = isNaN(d.getTime()) ? a.fecha.substring(0, 7) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (aMonth !== filterMonth) return false;
@@ -59,7 +62,7 @@ export const ContadorInyecciones: React.FC = () => {
     return true;
   });
 
-  const totalInyectadoFiltrado = filteredAbonos.reduce((acc, curr) => acc + curr.monto, 0);
+  const totalInyectadoFiltrado = filteredAbonos.reduce((acc, curr) => acc + (curr?.monto || 0), 0);
 
   const getMonthName = (monthKey: string) => {
     if (monthKey === 'all') return 'Todos los Meses';
@@ -182,7 +185,7 @@ export const ContadorInyecciones: React.FC = () => {
               >
                 {cajas.map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.nombre} • Saldo: ${c.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })} (Base: ${c.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })})
+                    {c.nombre} • Saldo: ${(c.saldoActual ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} (Base: ${(c.fondoBase ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })})
                   </option>
                 ))}
               </select>
@@ -193,14 +196,14 @@ export const ContadorInyecciones: React.FC = () => {
               <div>
                 <span className="text-[10px] text-zinc-500 font-medium block">Fondo Actual Disponible</span>
                 <span className="text-sm font-black text-zinc-900">
-                  ${selectedCaja.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  ${(selectedCaja.saldoActual ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="h-7 w-px bg-zinc-200" />
               <div className="text-right">
                 <span className="text-[10px] text-zinc-500 font-medium block">Límite Base Asignado</span>
                 <span className="text-xs font-semibold text-zinc-700">
-                  {selectedCaja.tipoFondo === 'sin_fondo' ? 'Flujo Semanal' : `$${selectedCaja.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+                  {selectedCaja.tipoFondo === 'sin_fondo' ? 'Flujo Semanal' : `$${(selectedCaja.fondoBase ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
                 </span>
               </div>
             </div>
@@ -238,7 +241,7 @@ export const ContadorInyecciones: React.FC = () => {
                   <div className="flex justify-between items-center text-zinc-600">
                     <span>Fondo Actual Disponible:</span>
                     <span className="font-semibold text-zinc-900">
-                      ${selectedCaja.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      ${(selectedCaja.saldoActual ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-emerald-700 font-medium">
@@ -250,7 +253,7 @@ export const ContadorInyecciones: React.FC = () => {
                   <div className="flex justify-between items-center text-zinc-900 font-bold pt-1.5 border-t border-emerald-200 text-xs">
                     <span className="text-emerald-950 font-bold">Nuevo Saldo del Fondo:</span>
                     <span className="text-sm text-emerald-700 font-black">
-                      ${(selectedCaja.saldoActual + numMontoAbono).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      ${((selectedCaja.saldoActual ?? 0) + numMontoAbono).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
@@ -297,7 +300,7 @@ export const ContadorInyecciones: React.FC = () => {
                 onChange={(e) => {
                   setCajaAjusteId(e.target.value);
                   const c = cajas.find(item => item.id === e.target.value);
-                  if (c) setNuevoFondoBase(c.fondoBase.toString());
+                  if (c) setNuevoFondoBase((c.fondoBase ?? 0).toString());
                 }}
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-zinc-900 cursor-pointer"
               >
@@ -313,14 +316,14 @@ export const ContadorInyecciones: React.FC = () => {
               <div>
                 <span className="text-[10px] text-zinc-500 font-medium block">Límite Base Actual</span>
                 <span className="text-sm font-black text-zinc-900">
-                  {cajaAjuste.tipoFondo === 'sin_fondo' ? 'Sin Fondo Fijo' : `$${cajaAjuste.fondoBase.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
+                  {cajaAjuste.tipoFondo === 'sin_fondo' ? 'Sin Fondo Fijo' : `$${(cajaAjuste.fondoBase ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
                 </span>
               </div>
               <div className="h-7 w-px bg-zinc-200" />
               <div className="text-right">
                 <span className="text-[10px] text-zinc-500 font-medium block">Saldo Disponible Actual</span>
                 <span className="text-xs font-semibold text-zinc-700">
-                  ${cajaAjuste.saldoActual.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  ${(cajaAjuste.saldoActual ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -336,7 +339,7 @@ export const ContadorInyecciones: React.FC = () => {
                   inputMode="decimal"
                   autoComplete="off"
                   required
-                  placeholder={cajaAjuste.fondoBase.toString()}
+                  placeholder={(cajaAjuste.fondoBase ?? 0).toString()}
                   value={nuevoFondoBase}
                   onChange={handleNuevoFondoBaseChange}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl pl-8 pr-14 py-2.5 text-xs font-bold text-zinc-900 focus:outline-none focus:border-zinc-900 focus:bg-white transition-all shadow-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

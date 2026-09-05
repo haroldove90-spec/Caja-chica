@@ -48,9 +48,11 @@ CREATE TABLE IF NOT EXISTS public.cajas_chicas (
   saldo_actual NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   estado TEXT NOT NULL DEFAULT 'Abierta',
   ubicacion TEXT NOT NULL DEFAULT '',
+  tipo_fondo TEXT DEFAULT 'fijo',
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS tipo_fondo TEXT DEFAULT 'fijo';
 ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.giros (

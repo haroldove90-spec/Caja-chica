@@ -45,9 +45,11 @@ CREATE TABLE IF NOT EXISTS public.cajas_chicas (
   saldo_actual NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   estado TEXT NOT NULL DEFAULT 'Abierta',
   ubicacion TEXT NOT NULL DEFAULT '',
+  tipo_fondo TEXT DEFAULT 'fijo',
   activo BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS tipo_fondo TEXT DEFAULT 'fijo';
 ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.giros (
@@ -351,6 +353,31 @@ CREATE POLICY "Acceso total lectura/escritura perfil clientes" ON public.cliente
 CREATE POLICY "Acceso total lectura/escritura comprobantes combustible" ON public.comprobantes_combustible_cliente FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Acceso lectura/escritura logos" ON public.logos FOR ALL USING (true) WITH CHECK (true);
 
--- 5. PERMISOS Y ROLES PÚBLICOS
+-- 5. TRIGGER AUTOMÁTICO: SUMAR ABONOS/INYECCIONES AL SALDO ACTUAL DE LA CAJA CHICA
+CREATE OR REPLACE FUNCTION public.actualizar_saldo_caja_por_abono()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT') THEN
+    UPDATE public.cajas_chicas
+    SET saldo_actual = COALESCE(saldo_actual, 0) + NEW.monto
+    WHERE id = NEW.caja_id;
+    RETURN NEW;
+  ELSIF (TG_OP = 'DELETE') THEN
+    UPDATE public.cajas_chicas
+    SET saldo_actual = GREATEST(0, COALESCE(saldo_actual, 0) - OLD.monto)
+    WHERE id = OLD.caja_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_actualizar_saldo_abono ON public.abonos;
+CREATE TRIGGER trg_actualizar_saldo_abono
+AFTER INSERT OR DELETE ON public.abonos
+FOR EACH ROW
+EXECUTE FUNCTION public.actualizar_saldo_caja_por_abono();
+
+-- 6. PERMISOS Y ROLES PÚBLICOS
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, postgres;

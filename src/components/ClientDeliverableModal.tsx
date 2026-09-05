@@ -97,7 +97,7 @@ export const ClientDeliverableModal: React.FC<ClientDeliverableModalProps> = ({ 
           <div className="pt-2 border-t border-zinc-100">
             <LogoSelector
               selectedLogoId={selectedLogoId}
-              onSelectLogo={setSelectedLogoId}
+              onSelectLogo={(logo) => setSelectedLogoId(logo.id)}
             />
           </div>
         </div>

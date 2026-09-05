@@ -74,7 +74,7 @@ export const CustodioGastos: React.FC = () => {
     setNroOrden(gasto.nroOrden);
     setProveedor(gasto.proveedor);
     setConcepto(gasto.concepto);
-    setImporte(gasto.importe.toString());
+    setImporte((gasto.importe ?? 0).toString());
     setSolicitante(gasto.solicitante);
     setGiroId(gasto.giroId);
     setFacturado(gasto.facturado);

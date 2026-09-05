@@ -31,8 +31,8 @@ export const AdminMultiCajas: React.FC = () => {
     setIsAdding(true);
     setNombre(caja.nombre);
     setResponsable(caja.responsable);
-    setTipoFondo(caja.tipoFondo || (caja.fondoBase === 0 ? 'sin_fondo' : 'fijo'));
-    setFondoBase(caja.fondoBase.toString());
+    setTipoFondo(caja.tipoFondo || ((caja.fondoBase ?? 0) === 0 ? 'sin_fondo' : 'fijo'));
+    setFondoBase((caja.fondoBase ?? 0).toString());
     setUbicacion(caja.ubicacion);
   };
 
