@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Fuel, Camera, Upload, Send, CheckCircle2, History, Eye, Truck, AlertCircle, X, Printer } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ComprobanteCombustibleCliente } from '../types';
+import { compressImageFile } from '../utils/imageCompressor';
 
 export const ClienteCombustible: React.FC = () => {
   const {
@@ -85,17 +86,24 @@ export const ClienteCombustible: React.FC = () => {
     c => c.clienteId === clienteProfile.id || c.clienteNombre === clienteProfile.nombre
   );
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSubiendoFoto(true);
       setEvidenciaNombre(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEvidenciaUrl(reader.result as string);
+      try {
+        const compressed = await compressImageFile(file, { maxWidth: 1280, quality: 0.75 });
+        setEvidenciaUrl(compressed);
+      } catch (err) {
+        console.warn('Falla en compresión, usando fallback:', err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setEvidenciaUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      } finally {
         setSubiendoFoto(false);
-      };
-      reader.readAsDataURL(file);
+      }
     }
   };
 

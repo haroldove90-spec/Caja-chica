@@ -3,6 +3,7 @@ import { Upload, Trash2, Edit3, FileText, CheckCircle2, AlertCircle, Plus, X, Pr
 import { useApp } from '../context/AppContext';
 import { Gasto } from '../types';
 import { EvidenceGrid } from './EvidenceGrid';
+import { compressImageFile } from '../utils/imageCompressor';
 
 export const CustodioGastos: React.FC = () => {
   const {
@@ -37,16 +38,22 @@ export const CustodioGastos: React.FC = () => {
   const [evidenciaType, setEvidenciaType] = useState<'image' | 'pdf'>('image');
 
   // Handle File Upload
-  const processUploadedFile = (file: File) => {
+  const processUploadedFile = async (file: File) => {
     setEvidenciaNombre(file.name);
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     setEvidenciaType(isPdf ? 'pdf' : 'image');
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setEvidenciaUrl(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const optimizedUrl = await compressImageFile(file, { maxWidth: 1280, quality: 0.75 });
+      setEvidenciaUrl(optimizedUrl);
+    } catch (err) {
+      console.warn('Falla en compresión, usando lector estándar:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEvidenciaUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

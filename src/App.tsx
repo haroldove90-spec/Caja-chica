@@ -21,6 +21,7 @@ import { ContadorInyecciones } from './components/ContadorInyecciones';
 import { ContadorReportes } from './components/ContadorReportes';
 
 // Admin Components
+import { AdminControlRegistros } from './components/AdminControlRegistros';
 import { AdminMultiCajas } from './components/AdminMultiCajas';
 import { AdminCatalogos } from './components/AdminCatalogos';
 import { AdminUsuarios } from './components/AdminUsuarios';
@@ -62,6 +63,7 @@ function MainAppContent() {
         return <ContadorAuditoria />;
 
       case 'admin':
+        if (activeModule === 'registros') return <AdminControlRegistros />;
         if (activeModule === 'catalogos') return <AdminCatalogos />;
         if (activeModule === 'usuarios') return <AdminUsuarios />;
         return <AdminMultiCajas />;

@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { NivelTanque, RegistroGasolina } from '../types';
 import { FuelGaugeSVG } from './FuelGaugeSVG';
 import { EvidenceGrid } from './EvidenceGrid';
+import { compressImageFile } from '../utils/imageCompressor';
 
 export const CustodioGasolina: React.FC = () => {
   const {
@@ -32,13 +33,19 @@ export const CustodioGasolina: React.FC = () => {
 
   const niveles: NivelTanque[] = ['E', '1/4', '1/2', '3/4', 'F'];
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setEvidenciaNombre(file.name);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setEvidenciaUrl(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const optimizedUrl = await compressImageFile(file, { maxWidth: 1280, quality: 0.75 });
+      setEvidenciaUrl(optimizedUrl);
+    } catch (err) {
+      console.warn('Falla en compresión, usando lector estándar:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEvidenciaUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleResetForm = () => {

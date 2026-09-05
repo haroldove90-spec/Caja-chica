@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Building2, Plus, Edit3, Wallet, MapPin, CheckCircle2, Clock, ShieldCheck, RefreshCw, Zap } from 'lucide-react';
+import { Building2, Plus, Edit3, Wallet, MapPin, CheckCircle2, Clock, ShieldCheck, RefreshCw, Zap, Power, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CajaChica, TipoFondoCaja } from '../types';
 
 export const AdminMultiCajas: React.FC = () => {
-  const { cajas, gastos, addCaja, updateCaja, setActiveCajaId, activeCajaId } = useApp();
+  const { cajas, gastos, addCaja, updateCaja, deleteCaja, toggleActivoCaja, setActiveCajaId, activeCajaId } = useApp();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingCaja, setEditingCaja] = useState<CajaChica | null>(null);
@@ -122,6 +122,11 @@ export const AdminMultiCajas: React.FC = () => {
                       }`}>
                         {isSinFondo ? 'Flujo Semanal' : 'Fondo Fijo'}
                       </span>
+                      {caja.activo === false && (
+                        <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                          Suspendida
+                        </span>
+                      )}
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                           caja.estado === 'Abierta' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
@@ -194,6 +199,34 @@ export const AdminMultiCajas: React.FC = () => {
                     title="Editar Configuración"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`¿Seguro que deseas ${caja.activo === false ? 'reactivar' : 'suspender'} esta caja chica?`)) {
+                        toggleActivoCaja(caja.id);
+                      }
+                    }}
+                    className={`p-1.5 border rounded-xl bg-white cursor-pointer transition-colors ${
+                      caja.activo === false
+                        ? 'text-amber-600 border-amber-300 hover:bg-amber-50'
+                        : 'text-zinc-400 border-zinc-200 hover:text-amber-600 hover:border-amber-300'
+                    }`}
+                    title={caja.activo === false ? 'Reactivar Caja' : 'Suspender Caja'}
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`¿Estás seguro de eliminar permanentemente la caja "${caja.nombre}"? Esta acción no se puede deshacer.`)) {
+                        deleteCaja(caja.id);
+                      }
+                    }}
+                    className="p-1.5 text-zinc-400 hover:text-rose-600 border border-zinc-200 hover:border-rose-300 rounded-xl bg-white cursor-pointer transition-colors"
+                    title="Eliminar Caja"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

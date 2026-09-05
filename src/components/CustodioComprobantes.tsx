@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { ComprobanteGastos, ComprobanteGastosItem } from '../types';
 import { numeroALetras } from '../utils/numeroALetras';
 import { EvidenceGrid } from './EvidenceGrid';
+import { compressImageFile } from '../utils/imageCompressor';
 
 export const CustodioComprobantes: React.FC = () => {
   const {
@@ -43,16 +44,22 @@ export const CustodioComprobantes: React.FC = () => {
   const importeLetraAuto = numeroALetras(importeFinal);
   const [importeLetra, setImporteLetra] = useState('');
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setEvidenciaNombre(file.name);
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     setEvidenciaType(isPdf ? 'pdf' : 'image');
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setEvidenciaUrl(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const optimizedUrl = await compressImageFile(file, { maxWidth: 1280, quality: 0.75 });
+      setEvidenciaUrl(optimizedUrl);
+    } catch (err) {
+      console.warn('Falla en compresión, usando lector estándar:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setEvidenciaUrl(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleResetForm = () => {

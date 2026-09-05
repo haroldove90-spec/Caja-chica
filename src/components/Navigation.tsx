@@ -17,7 +17,8 @@ import {
   Camera,
   Database,
   ShieldCheck,
-  Shield
+  Shield,
+  ShieldAlert
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SupabaseSqlModal } from './SupabaseSqlModal';
@@ -69,6 +70,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
         ];
       case 'admin':
         return [
+          { id: 'registros', label: 'Control de Registros', icon: ShieldAlert },
           { id: 'usuarios', label: 'Personal y Roles', icon: Users },
           { id: 'multicajas', label: 'Multi-Cajas', icon: Building2 },
           { id: 'catalogos', label: 'Catálogos', icon: Tags },
@@ -85,14 +87,20 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
   };
 
   const navItems = getNavItems();
-  const isAdminUser = currentUser?.rol === 'admin';
+  const isSuperAdmin =
+    currentUser?.rol === 'admin' ||
+    currentUser?.email === 'haroldove90@gmail.com' ||
+    currentUser?.username === 'haroldo90' ||
+    currentUser?.nombre?.toLowerCase().includes('harold') ||
+    currentUser?.nombre?.toLowerCase().includes('super administrador');
+  const isAdminUser = isSuperAdmin || currentUser?.rol === 'admin';
 
   const handleRoleChange = (newRole: RoleType) => {
     if (!isAdminUser && newRole !== currentUser?.rol) {
       return; // Only admin can switch roles
     }
     setRole(newRole);
-    if (newRole === 'admin') setActiveModule('usuarios');
+    if (newRole === 'admin') setActiveModule('registros');
     else if (newRole === 'custodio') setActiveModule('gastos');
     else if (newRole === 'contador') setActiveModule('auditoria');
     else if (newRole === 'cliente') setActiveModule('comprobantes_combustible');
@@ -154,7 +162,7 @@ export const Navigation: React.FC<{ children: React.ReactNode }> = ({ children }
                   <button
                     onClick={() => {
                       setRole('admin');
-                      setActiveModule('usuarios');
+                      setActiveModule('registros');
                     }}
                     className="text-[10px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
                   >

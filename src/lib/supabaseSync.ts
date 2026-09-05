@@ -167,6 +167,8 @@ export async function runFullSupabaseDiagnostic(): Promise<DiagnosticResult> {
 }
 
 
+let hasReportedOfflineNotice = false;
+
 export async function fetchSupabaseTable<T>(tableName: string): Promise<T[] | null> {
   try {
     const { data, error } = await supabase
@@ -174,12 +176,31 @@ export async function fetchSupabaseTable<T>(tableName: string): Promise<T[] | nu
       .select('*');
 
     if (error) {
-      console.warn(`Supabase fetch notice [${tableName}]:`, error.message);
+      const msg = error.message || '';
+      const isNetworkIssue = msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('CORS') || msg.includes('fetch');
+      if (isNetworkIssue) {
+        if (!hasReportedOfflineNotice) {
+          hasReportedOfflineNotice = true;
+          console.info('Supabase: Modo sin conexión o servidor no disponible. Operando con caché local seguro.');
+        }
+      } else {
+        console.warn(`Supabase fetch notice [${tableName}]:`, msg);
+      }
       return null;
     }
+    hasReportedOfflineNotice = false;
     return data as T[];
-  } catch (err) {
-    console.warn(`Supabase connection offline or table missing [${tableName}]:`, err);
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    const isNetworkIssue = msg.includes('Failed to fetch') || msg.includes('NetworkError');
+    if (isNetworkIssue) {
+      if (!hasReportedOfflineNotice) {
+        hasReportedOfflineNotice = true;
+        console.info('Supabase: Modo sin conexión o servidor no disponible. Operando con caché local seguro.');
+      }
+    } else {
+      console.warn(`Supabase connection offline or table missing [${tableName}]:`, msg);
+    }
     return null;
   }
 }

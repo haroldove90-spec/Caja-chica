@@ -57,6 +57,13 @@ import {
   syncAllDataToSupabase
 } from '../lib/supabaseSync';
 
+import {
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+  saveToIndexedDb,
+  loadFromIndexedDb
+} from '../utils/storageManager';
+
 interface AppContextType {
   role: RoleType;
   currentUser: Usuario | null;
@@ -197,14 +204,14 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [role, setRoleState] = useState<RoleType>('home');
   const [currentUser, setCurrentUser] = useState<Usuario | null>(() => {
-    return safeJsonParse<Usuario | null>(localStorage.getItem(`${STORAGE_KEY}_currentUser`), null);
+    return safeLocalStorageGet<Usuario | null>(`${STORAGE_KEY}_currentUser`, null);
   });
   const [activeModule, setActiveModuleState] = useState<string>('movimientos');
   const [activeCajaId, setActiveCajaId] = useState<string>('caja-1');
 
   // State collections with safe defaults
   const [cajas, setCajas] = useState<CajaChica[]>(() => {
-    const saved = safeJsonParse<CajaChica[]>(localStorage.getItem(`${STORAGE_KEY}_cajas`), INITIAL_CAJAS);
+    const saved = safeLocalStorageGet<CajaChica[]>(`${STORAGE_KEY}_cajas`, INITIAL_CAJAS);
     if (Array.isArray(saved) && saved.length > 0) {
       return saved.map(c => ({
         ...c,
@@ -217,51 +224,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   const [giros, setGiros] = useState<Giro[]>(() => {
-    return safeJsonParse<Giro[]>(localStorage.getItem(`${STORAGE_KEY}_giros`), INITIAL_GIROS);
+    return safeLocalStorageGet<Giro[]>(`${STORAGE_KEY}_giros`, INITIAL_GIROS);
   });
 
   const [proveedores, setProveedores] = useState<Proveedor[]>(() => {
-    return safeJsonParse<Proveedor[]>(localStorage.getItem(`${STORAGE_KEY}_proveedores`), INITIAL_PROVEEDORES);
+    return safeLocalStorageGet<Proveedor[]>(`${STORAGE_KEY}_proveedores`, INITIAL_PROVEEDORES);
   });
 
   const [empleados, setEmpleados] = useState<Empleado[]>(() => {
-    return safeJsonParse<Empleado[]>(localStorage.getItem(`${STORAGE_KEY}_empleados`), INITIAL_EMPLEADOS);
+    return safeLocalStorageGet<Empleado[]>(`${STORAGE_KEY}_empleados`, INITIAL_EMPLEADOS);
   });
 
   const [usuarios, setUsuarios] = useState<Usuario[]>(() => {
-    return safeJsonParse<Usuario[]>(localStorage.getItem(`${STORAGE_KEY}_usuarios`), INITIAL_USUARIOS);
+    return safeLocalStorageGet<Usuario[]>(`${STORAGE_KEY}_usuarios`, INITIAL_USUARIOS);
   });
 
   const [gastos, setGastos] = useState<Gasto[]>(() => {
-    return safeJsonParse<Gasto[]>(localStorage.getItem(`${STORAGE_KEY}_gastos`), INITIAL_GASTOS);
+    return safeLocalStorageGet<Gasto[]>(`${STORAGE_KEY}_gastos`, INITIAL_GASTOS);
   });
 
   const [reembolsos, setReembolsos] = useState<ReembolsoRequest[]>(() => {
-    return safeJsonParse<ReembolsoRequest[]>(localStorage.getItem(`${STORAGE_KEY}_reembolsos`), INITIAL_REEMBOLSOS);
+    return safeLocalStorageGet<ReembolsoRequest[]>(`${STORAGE_KEY}_reembolsos`, INITIAL_REEMBOLSOS);
   });
 
   const [abonos, setAbonos] = useState<Abono[]>(() => {
-    return safeJsonParse<Abono[]>(localStorage.getItem(`${STORAGE_KEY}_abonos`), INITIAL_ABONOS);
+    return safeLocalStorageGet<Abono[]>(`${STORAGE_KEY}_abonos`, INITIAL_ABONOS);
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
-    return safeJsonParse<AuditLog[]>(localStorage.getItem(`${STORAGE_KEY}_auditLogs`), INITIAL_AUDIT_LOGS);
+    return safeLocalStorageGet<AuditLog[]>(`${STORAGE_KEY}_auditLogs`, INITIAL_AUDIT_LOGS);
   });
 
   const [gasolinaRecords, setGasolinaRecords] = useState<RegistroGasolina[]>(() => {
-    return safeJsonParse<RegistroGasolina[]>(localStorage.getItem(`${STORAGE_KEY}_gasolinaRecords`), INITIAL_GASOLINA);
+    return safeLocalStorageGet<RegistroGasolina[]>(`${STORAGE_KEY}_gasolinaRecords`, INITIAL_GASOLINA);
   });
 
   const [comprobantesGastos, setComprobantesGastos] = useState<ComprobanteGastos[]>(() => {
-    return safeJsonParse<ComprobanteGastos[]>(localStorage.getItem(`${STORAGE_KEY}_comprobantesGastos`), INITIAL_COMPROBANTES);
+    return safeLocalStorageGet<ComprobanteGastos[]>(`${STORAGE_KEY}_comprobantesGastos`, INITIAL_COMPROBANTES);
   });
 
   const [clienteProfile, setClienteProfile] = useState<ClienteProfile>(() => {
-    return safeJsonParse<ClienteProfile>(localStorage.getItem(`${STORAGE_KEY}_clienteProfile`), INITIAL_CLIENTE_PROFILE);
+    return safeLocalStorageGet<ClienteProfile>(`${STORAGE_KEY}_clienteProfile`, INITIAL_CLIENTE_PROFILE);
   });
 
   const [comprobantesCombustibleCliente, setComprobantesCombustibleCliente] = useState<ComprobanteCombustibleCliente[]>(() => {
-    return safeJsonParse<ComprobanteCombustibleCliente[]>(localStorage.getItem(`${STORAGE_KEY}_comprobantesCombustibleCliente`), INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE);
+    return safeLocalStorageGet<ComprobanteCombustibleCliente[]>(`${STORAGE_KEY}_comprobantesCombustibleCliente`, INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE);
   });
 
   // Modal preview state
@@ -273,6 +280,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Initial Fetch from Supabase & Periodic Sync for Multi-Browser / Realtime
   useEffect(() => {
     let isMounted = true;
+
+    // Hydrate any full evidence images from IndexedDB if localStorage quota trimmed them
+    loadFromIndexedDb<Gasto[]>(`${STORAGE_KEY}_gastos`).then(idbGastos => {
+      if (idbGastos && Array.isArray(idbGastos) && idbGastos.length > 0 && isMounted) {
+        setGastos(prev => {
+          return prev.map(p => {
+            const match = idbGastos.find(s => s.id === p.id);
+            if (match?.evidenciaUrl && p.evidenciaUrl === '[IMAGEN_EN_CACHE_INDEXEDDB]') {
+              return { ...p, evidenciaUrl: match.evidenciaUrl };
+            }
+            return p;
+          });
+        });
+      }
+    }).catch(() => {});
+
+    loadFromIndexedDb<ComprobanteCombustibleCliente[]>(`${STORAGE_KEY}_comprobantesCombustibleCliente`).then(idbComb => {
+      if (idbComb && Array.isArray(idbComb) && idbComb.length > 0 && isMounted) {
+        setComprobantesCombustibleCliente(prev => {
+          return prev.map(p => {
+            const match = idbComb.find(s => s.id === p.id);
+            if (match?.evidenciaUrl && p.evidenciaUrl === '[IMAGEN_EN_CACHE_INDEXEDDB]') {
+              return { ...p, evidenciaUrl: match.evidenciaUrl };
+            }
+            return p;
+          });
+        });
+      }
+    }).catch(() => {});
+
     async function loadFromSupabase() {
       if (!isMounted) return;
       try {
@@ -429,64 +466,81 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, []);
 
-  // Sync with LocalStorage
+  // Sync with LocalStorage & IndexedDB (Quota Safe)
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_cajas`, JSON.stringify(cajas));
+    safeLocalStorageSet(`${STORAGE_KEY}_cajas`, cajas);
+    saveToIndexedDb(`${STORAGE_KEY}_cajas`, cajas);
   }, [cajas]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_giros`, JSON.stringify(giros));
+    safeLocalStorageSet(`${STORAGE_KEY}_giros`, giros);
+    saveToIndexedDb(`${STORAGE_KEY}_giros`, giros);
   }, [giros]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_proveedores`, JSON.stringify(proveedores));
+    safeLocalStorageSet(`${STORAGE_KEY}_proveedores`, proveedores);
+    saveToIndexedDb(`${STORAGE_KEY}_proveedores`, proveedores);
   }, [proveedores]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_empleados`, JSON.stringify(empleados));
+    safeLocalStorageSet(`${STORAGE_KEY}_empleados`, empleados);
+    saveToIndexedDb(`${STORAGE_KEY}_empleados`, empleados);
   }, [empleados]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_usuarios`, JSON.stringify(usuarios));
+    safeLocalStorageSet(`${STORAGE_KEY}_usuarios`, usuarios);
+    saveToIndexedDb(`${STORAGE_KEY}_usuarios`, usuarios);
   }, [usuarios]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_gastos`, JSON.stringify(gastos));
+    safeLocalStorageSet(`${STORAGE_KEY}_gastos`, gastos);
+    saveToIndexedDb(`${STORAGE_KEY}_gastos`, gastos);
   }, [gastos]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_reembolsos`, JSON.stringify(reembolsos));
+    safeLocalStorageSet(`${STORAGE_KEY}_reembolsos`, reembolsos);
+    saveToIndexedDb(`${STORAGE_KEY}_reembolsos`, reembolsos);
   }, [reembolsos]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_abonos`, JSON.stringify(abonos));
+    safeLocalStorageSet(`${STORAGE_KEY}_abonos`, abonos);
+    saveToIndexedDb(`${STORAGE_KEY}_abonos`, abonos);
   }, [abonos]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_auditLogs`, JSON.stringify(auditLogs));
+    safeLocalStorageSet(`${STORAGE_KEY}_auditLogs`, auditLogs);
+    saveToIndexedDb(`${STORAGE_KEY}_auditLogs`, auditLogs);
   }, [auditLogs]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_gasolinaRecords`, JSON.stringify(gasolinaRecords));
+    safeLocalStorageSet(`${STORAGE_KEY}_gasolinaRecords`, gasolinaRecords);
+    saveToIndexedDb(`${STORAGE_KEY}_gasolinaRecords`, gasolinaRecords);
   }, [gasolinaRecords]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_comprobantesGastos`, JSON.stringify(comprobantesGastos));
+    safeLocalStorageSet(`${STORAGE_KEY}_comprobantesGastos`, comprobantesGastos);
+    saveToIndexedDb(`${STORAGE_KEY}_comprobantesGastos`, comprobantesGastos);
   }, [comprobantesGastos]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_clienteProfile`, JSON.stringify(clienteProfile));
+    safeLocalStorageSet(`${STORAGE_KEY}_clienteProfile`, clienteProfile);
+    saveToIndexedDb(`${STORAGE_KEY}_clienteProfile`, clienteProfile);
   }, [clienteProfile]);
 
   useEffect(() => {
-    localStorage.setItem(`${STORAGE_KEY}_comprobantesCombustibleCliente`, JSON.stringify(comprobantesCombustibleCliente));
+    safeLocalStorageSet(`${STORAGE_KEY}_comprobantesCombustibleCliente`, comprobantesCombustibleCliente);
+    saveToIndexedDb(`${STORAGE_KEY}_comprobantesCombustibleCliente`, comprobantesCombustibleCliente);
   }, [comprobantesCombustibleCliente]);
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem(`${STORAGE_KEY}_currentUser`, JSON.stringify(currentUser));
+      safeLocalStorageSet(`${STORAGE_KEY}_currentUser`, currentUser);
     } else {
-      localStorage.removeItem(`${STORAGE_KEY}_currentUser`);
+      try {
+        localStorage.removeItem(`${STORAGE_KEY}_currentUser`);
+      } catch (e) {
+        // Safe ignore
+      }
     }
   }, [currentUser]);
 
@@ -1327,7 +1381,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const resetData = () => {
-    localStorage.clear();
+    try {
+      localStorage.clear();
+    } catch (e) {
+      // Safe ignore
+    }
     setCajas(INITIAL_CAJAS);
     setGiros(INITIAL_GIROS);
     setProveedores(INITIAL_PROVEEDORES);
