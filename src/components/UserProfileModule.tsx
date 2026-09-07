@@ -11,7 +11,7 @@ export const UserProfileModule: React.FC = () => {
   // Active user object from context or fallback
   const user = currentUser || usuarios.find(u => u.rol === role) || {
     id: 'usr-default',
-    nombre: role === 'admin' ? 'Super Administrador' : role === 'custodio' ? 'Reyna Pino' : role === 'contador' ? 'CP. Alberto Vargas' : 'Cliente Registrado',
+    nombre: role === 'admin' ? 'Super Administrador' : role === 'custodio' ? 'Reyna Pino' : role === 'contador' ? 'Auditor / Contador' : 'Cliente Registrado',
     email: `${role}@empresa.com`,
     username: role,
     password: '123',

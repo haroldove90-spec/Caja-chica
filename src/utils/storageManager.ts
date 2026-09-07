@@ -221,3 +221,67 @@ export function safeLocalStorageSet(key: string, value: any): boolean {
     }
   }
 }
+
+/**
+ * REGISTRO PERMANENTE DE REGISTROS ELIMINADOS Y REGISTROS DE MUESTRA
+ * Garantiza que registros borrados por el admin o registros de muestra originales
+ * NUNCA vuelvan a reaparecer ni por sondeo de Supabase, ni por IndexedDB, ni por recarga.
+ */
+export const KNOWN_SAMPLE_RECORD_IDS = [
+  'emp-1', 'emp-2', 'emp-3', 'emp-4', 'emp-5',
+  'usr-1', 'usr-2', 'usr-3',
+  'caja-2', 'caja-3',
+  'gst-101', 'gst-102', 'gst-103', 'gst-104', 'gst-105', 'gst-201', 'gst-202',
+  'gas-101', 'gas-102', 'gas-103',
+  'cmp-101', 'cmp-102',
+  'abn-1', 'abn-2',
+  'aud-1', 'aud-2', 'aud-3',
+  'rmb-239',
+  'cc-001', 'cc-002', 'cli-001'
+];
+
+const DELETED_RECORDS_KEY = 'control_caja_app_v1_deleted_records_blacklist';
+
+let cachedDeletedIds: Set<string> | null = null;
+
+export function getDeletedRecordIds(): Set<string> {
+  if (cachedDeletedIds) return cachedDeletedIds;
+  const stored = safeLocalStorageGet<string[]>(DELETED_RECORDS_KEY, []);
+  // Combine stored with known sample demo IDs so samples are always suppressed
+  const combined = new Set<string>([...KNOWN_SAMPLE_RECORD_IDS, ...(Array.isArray(stored) ? stored : [])]);
+  cachedDeletedIds = combined;
+  return combined;
+}
+
+export function isRecordDeleted(id?: string | null): boolean {
+  if (!id) return false;
+  return getDeletedRecordIds().has(id);
+}
+
+export function markRecordAsDeleted(id: string): void {
+  if (!id) return;
+  const set = getDeletedRecordIds();
+  if (!set.has(id)) {
+    set.add(id);
+    const arr = Array.from(set);
+    safeLocalStorageSet(DELETED_RECORDS_KEY, arr);
+    saveToIndexedDb(DELETED_RECORDS_KEY, arr).catch(() => {});
+  }
+}
+
+export function markRecordsAsDeleted(ids: string[]): void {
+  if (!ids || ids.length === 0) return;
+  const set = getDeletedRecordIds();
+  let changed = false;
+  for (const id of ids) {
+    if (id && !set.has(id)) {
+      set.add(id);
+      changed = true;
+    }
+  }
+  if (changed) {
+    const arr = Array.from(set);
+    safeLocalStorageSet(DELETED_RECORDS_KEY, arr);
+    saveToIndexedDb(DELETED_RECORDS_KEY, arr).catch(() => {});
+  }
+}

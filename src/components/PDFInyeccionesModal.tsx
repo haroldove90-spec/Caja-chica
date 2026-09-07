@@ -192,21 +192,6 @@ export const PDFInyeccionesModal: React.FC<PDFInyeccionesModalProps> = ({
                 </table>
               </div>
             </div>
-
-            {/* Firmas de Autorización */}
-            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-zinc-200">
-              <div className="text-center">
-                <div className="border-b border-zinc-400 w-48 mx-auto mb-1 h-8"></div>
-                <p className="text-[11px] font-bold text-zinc-800">CP. Alberto Vargas</p>
-                <p className="text-[10px] text-zinc-500">Contador General / Auditor</p>
-              </div>
-
-              <div className="text-center">
-                <div className="border-b border-zinc-400 w-48 mx-auto mb-1 h-8"></div>
-                <p className="text-[11px] font-bold text-zinc-800">Dirección de Administración</p>
-                <p className="text-[10px] text-zinc-500">Autorización y Vo.Bo.</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

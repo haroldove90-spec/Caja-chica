@@ -61,7 +61,11 @@ import {
   safeLocalStorageGet,
   safeLocalStorageSet,
   saveToIndexedDb,
-  loadFromIndexedDb
+  loadFromIndexedDb,
+  isRecordDeleted,
+  markRecordAsDeleted,
+  markRecordsAsDeleted,
+  KNOWN_SAMPLE_RECORD_IDS
 } from '../utils/storageManager';
 
 interface AppContextType {
@@ -209,58 +213,70 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeModule, setActiveModuleState] = useState<string>('movimientos');
   const [activeCajaId, setActiveCajaId] = useState<string>('caja-1');
 
-  // State collections with safe defaults
+  // State collections with safe defaults and active blacklist filtering
   const [cajas, setCajas] = useState<CajaChica[]>(() => {
     const saved = safeLocalStorageGet<CajaChica[]>(`${STORAGE_KEY}_cajas`, INITIAL_CAJAS);
     if (Array.isArray(saved) && saved.length > 0) {
-      return saved.map(c => ({
-        ...c,
-        fondoBase: Number(c.fondoBase ?? 0),
-        saldoActual: Number(c.saldoActual ?? c.fondoBase ?? 0),
-        tipoFondo: c.tipoFondo || (Number(c.fondoBase ?? 0) === 0 ? 'sin_fondo' : 'fijo')
-      }));
+      return saved
+        .filter(c => !isRecordDeleted(c.id))
+        .map(c => ({
+          ...c,
+          fondoBase: Number(c.fondoBase ?? 0),
+          saldoActual: Number(c.saldoActual ?? c.fondoBase ?? 0),
+          tipoFondo: c.tipoFondo || (Number(c.fondoBase ?? 0) === 0 ? 'sin_fondo' : 'fijo')
+        }));
     }
-    return INITIAL_CAJAS;
+    return INITIAL_CAJAS.filter(c => !isRecordDeleted(c.id));
   });
 
   const [giros, setGiros] = useState<Giro[]>(() => {
-    return safeLocalStorageGet<Giro[]>(`${STORAGE_KEY}_giros`, INITIAL_GIROS);
+    const saved = safeLocalStorageGet<Giro[]>(`${STORAGE_KEY}_giros`, INITIAL_GIROS);
+    return (Array.isArray(saved) ? saved : INITIAL_GIROS).filter(g => !isRecordDeleted(g.id));
   });
 
   const [proveedores, setProveedores] = useState<Proveedor[]>(() => {
-    return safeLocalStorageGet<Proveedor[]>(`${STORAGE_KEY}_proveedores`, INITIAL_PROVEEDORES);
+    const saved = safeLocalStorageGet<Proveedor[]>(`${STORAGE_KEY}_proveedores`, INITIAL_PROVEEDORES);
+    return (Array.isArray(saved) ? saved : INITIAL_PROVEEDORES).filter(p => !isRecordDeleted(p.id));
   });
 
   const [empleados, setEmpleados] = useState<Empleado[]>(() => {
-    return safeLocalStorageGet<Empleado[]>(`${STORAGE_KEY}_empleados`, INITIAL_EMPLEADOS);
+    const saved = safeLocalStorageGet<Empleado[]>(`${STORAGE_KEY}_empleados`, INITIAL_EMPLEADOS);
+    return (Array.isArray(saved) ? saved : INITIAL_EMPLEADOS).filter(e => !isRecordDeleted(e.id));
   });
 
   const [usuarios, setUsuarios] = useState<Usuario[]>(() => {
-    return safeLocalStorageGet<Usuario[]>(`${STORAGE_KEY}_usuarios`, INITIAL_USUARIOS);
+    const saved = safeLocalStorageGet<Usuario[]>(`${STORAGE_KEY}_usuarios`, INITIAL_USUARIOS);
+    return (Array.isArray(saved) ? saved : INITIAL_USUARIOS).filter(u => !isRecordDeleted(u.id));
   });
 
   const [gastos, setGastos] = useState<Gasto[]>(() => {
-    return safeLocalStorageGet<Gasto[]>(`${STORAGE_KEY}_gastos`, INITIAL_GASTOS);
+    const saved = safeLocalStorageGet<Gasto[]>(`${STORAGE_KEY}_gastos`, INITIAL_GASTOS);
+    return (Array.isArray(saved) ? saved : INITIAL_GASTOS).filter(g => !isRecordDeleted(g.id));
   });
 
   const [reembolsos, setReembolsos] = useState<ReembolsoRequest[]>(() => {
-    return safeLocalStorageGet<ReembolsoRequest[]>(`${STORAGE_KEY}_reembolsos`, INITIAL_REEMBOLSOS);
+    const saved = safeLocalStorageGet<ReembolsoRequest[]>(`${STORAGE_KEY}_reembolsos`, INITIAL_REEMBOLSOS);
+    return (Array.isArray(saved) ? saved : INITIAL_REEMBOLSOS).filter(r => !isRecordDeleted(r.id));
   });
 
   const [abonos, setAbonos] = useState<Abono[]>(() => {
-    return safeLocalStorageGet<Abono[]>(`${STORAGE_KEY}_abonos`, INITIAL_ABONOS);
+    const saved = safeLocalStorageGet<Abono[]>(`${STORAGE_KEY}_abonos`, INITIAL_ABONOS);
+    return (Array.isArray(saved) ? saved : INITIAL_ABONOS).filter(a => !isRecordDeleted(a.id));
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
-    return safeLocalStorageGet<AuditLog[]>(`${STORAGE_KEY}_auditLogs`, INITIAL_AUDIT_LOGS);
+    const saved = safeLocalStorageGet<AuditLog[]>(`${STORAGE_KEY}_auditLogs`, INITIAL_AUDIT_LOGS);
+    return (Array.isArray(saved) ? saved : INITIAL_AUDIT_LOGS).filter(a => !isRecordDeleted(a.id));
   });
 
   const [gasolinaRecords, setGasolinaRecords] = useState<RegistroGasolina[]>(() => {
-    return safeLocalStorageGet<RegistroGasolina[]>(`${STORAGE_KEY}_gasolinaRecords`, INITIAL_GASOLINA);
+    const saved = safeLocalStorageGet<RegistroGasolina[]>(`${STORAGE_KEY}_gasolinaRecords`, INITIAL_GASOLINA);
+    return (Array.isArray(saved) ? saved : INITIAL_GASOLINA).filter(g => !isRecordDeleted(g.id));
   });
 
   const [comprobantesGastos, setComprobantesGastos] = useState<ComprobanteGastos[]>(() => {
-    return safeLocalStorageGet<ComprobanteGastos[]>(`${STORAGE_KEY}_comprobantesGastos`, INITIAL_COMPROBANTES);
+    const saved = safeLocalStorageGet<ComprobanteGastos[]>(`${STORAGE_KEY}_comprobantesGastos`, INITIAL_COMPROBANTES);
+    return (Array.isArray(saved) ? saved : INITIAL_COMPROBANTES).filter(c => !isRecordDeleted(c.id));
   });
 
   const [clienteProfile, setClienteProfile] = useState<ClienteProfile>(() => {
@@ -268,7 +284,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   const [comprobantesCombustibleCliente, setComprobantesCombustibleCliente] = useState<ComprobanteCombustibleCliente[]>(() => {
-    return safeLocalStorageGet<ComprobanteCombustibleCliente[]>(`${STORAGE_KEY}_comprobantesCombustibleCliente`, INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE);
+    const saved = safeLocalStorageGet<ComprobanteCombustibleCliente[]>(`${STORAGE_KEY}_comprobantesCombustibleCliente`, INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE);
+    return (Array.isArray(saved) ? saved : INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE).filter(c => !isRecordDeleted(c.id));
   });
 
   // Modal preview state
@@ -281,17 +298,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     let isMounted = true;
 
+    // Enforce permanent suppression of known sample demo records
+    markRecordsAsDeleted(KNOWN_SAMPLE_RECORD_IDS);
+
+    // Immediately purge any deleted/sample records from initial state
+    setGastos(prev => prev.filter(g => !isRecordDeleted(g.id)));
+    setGasolinaRecords(prev => prev.filter(g => !isRecordDeleted(g.id)));
+    setComprobantesGastos(prev => prev.filter(c => !isRecordDeleted(c.id)));
+    setComprobantesCombustibleCliente(prev => prev.filter(c => !isRecordDeleted(c.id)));
+    setCajas(prev => prev.filter(c => !isRecordDeleted(c.id)));
+    setGiros(prev => prev.filter(g => !isRecordDeleted(g.id)));
+    setProveedores(prev => prev.filter(p => !isRecordDeleted(p.id)));
+    setEmpleados(prev => prev.filter(e => !isRecordDeleted(e.id)));
+    setUsuarios(prev => prev.filter(u => !isRecordDeleted(u.id)));
+    setAbonos(prev => prev.filter(a => !isRecordDeleted(a.id)));
+    setReembolsos(prev => prev.filter(r => !isRecordDeleted(r.id)));
+    setAuditLogs(prev => prev.filter(a => !isRecordDeleted(a.id)));
+
     // Hydrate any full evidence images from IndexedDB if localStorage quota trimmed them
     loadFromIndexedDb<Gasto[]>(`${STORAGE_KEY}_gastos`).then(idbGastos => {
       if (idbGastos && Array.isArray(idbGastos) && idbGastos.length > 0 && isMounted) {
         setGastos(prev => {
-          return prev.map(p => {
-            const match = idbGastos.find(s => s.id === p.id);
-            if (match?.evidenciaUrl && p.evidenciaUrl === '[IMAGEN_EN_CACHE_INDEXEDDB]') {
-              return { ...p, evidenciaUrl: match.evidenciaUrl };
-            }
-            return p;
-          });
+          return prev
+            .filter(p => !isRecordDeleted(p.id))
+            .map(p => {
+              const match = idbGastos.find(s => s.id === p.id);
+              if (match?.evidenciaUrl && p.evidenciaUrl === '[IMAGEN_EN_CACHE_INDEXEDDB]') {
+                return { ...p, evidenciaUrl: match.evidenciaUrl };
+              }
+              return p;
+            });
         });
       }
     }).catch(() => {});
@@ -299,13 +335,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     loadFromIndexedDb<ComprobanteCombustibleCliente[]>(`${STORAGE_KEY}_comprobantesCombustibleCliente`).then(idbComb => {
       if (idbComb && Array.isArray(idbComb) && idbComb.length > 0 && isMounted) {
         setComprobantesCombustibleCliente(prev => {
-          return prev.map(p => {
-            const match = idbComb.find(s => s.id === p.id);
-            if (match?.evidenciaUrl && p.evidenciaUrl === '[IMAGEN_EN_CACHE_INDEXEDDB]') {
-              return { ...p, evidenciaUrl: match.evidenciaUrl };
-            }
-            return p;
-          });
+          return prev
+            .filter(p => !isRecordDeleted(p.id))
+            .map(p => {
+              const match = idbComb.find(s => s.id === p.id);
+              if (match?.evidenciaUrl && p.evidenciaUrl === '[IMAGEN_EN_CACHE_INDEXEDDB]') {
+                return { ...p, evidenciaUrl: match.evidenciaUrl };
+              }
+              return p;
+            });
         });
       }
     }).catch(() => {});
@@ -316,28 +354,61 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // Fetch gastos
         const dbGastos = await fetchSupabaseTable('gastos');
         if (dbGastos && isMounted) {
-          const mapped = dbGastos.map(dbToGasto);
+          const mapped = dbGastos
+            .map(dbToGasto)
+            .filter(g => {
+              if (isRecordDeleted(g.id)) {
+                deleteSupabaseRecord('gastos', g.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           setGastos(mapped);
         }
 
         // Fetch gasolina
         const dbGasolina = await fetchSupabaseTable('registros_gasolina');
         if (dbGasolina && isMounted) {
-          const mapped = dbGasolina.map(dbToGasolina);
+          const mapped = dbGasolina
+            .map(dbToGasolina)
+            .filter(g => {
+              if (isRecordDeleted(g.id)) {
+                deleteSupabaseRecord('registros_gasolina', g.id).catch(() => {});
+                deleteSupabaseRecord('registro_gasolina', g.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           setGasolinaRecords(mapped);
         }
 
         // Fetch comprobantes
         const dbComprobantes = await fetchSupabaseTable('comprobantes_gastos');
         if (dbComprobantes && isMounted) {
-          const mapped = dbComprobantes.map(dbToComprobante);
+          const mapped = dbComprobantes
+            .map(dbToComprobante)
+            .filter(c => {
+              if (isRecordDeleted(c.id)) {
+                deleteSupabaseRecord('comprobantes_gastos', c.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           setComprobantesGastos(mapped);
         }
 
         // Fetch comprobantes combustible cliente
         const dbClienteComb = await fetchSupabaseTable('comprobantes_combustible_cliente');
         if (dbClienteComb && isMounted) {
-          const mapped = dbClienteComb.map(dbToClienteCombustible);
+          const mapped = dbClienteComb
+            .map(dbToClienteCombustible)
+            .filter(c => {
+              if (isRecordDeleted(c.id)) {
+                deleteSupabaseRecord('comprobantes_combustible_cliente', c.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           mapped.sort((a, b) => {
             const timeA = a.fecha ? new Date(a.fecha).getTime() : 0;
             const timeB = b.fecha ? new Date(b.fecha).getTime() : 0;
@@ -349,56 +420,101 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // Fetch cajas
         const dbCajas = await fetchSupabaseTable('cajas_chicas');
         if (dbCajas && isMounted) {
-          if (dbCajas.length > 0) {
-            const mapped = dbCajas.map(dbToCaja).map(c => ({
+          const mapped = dbCajas
+            .map(dbToCaja)
+            .filter(c => {
+              if (isRecordDeleted(c.id)) {
+                deleteSupabaseRecord('cajas_chicas', c.id).catch(() => {});
+                return false;
+              }
+              return true;
+            })
+            .map(c => ({
               ...c,
               fondoBase: Number(c.fondoBase ?? 0),
               saldoActual: Number(c.saldoActual ?? c.fondoBase ?? 0),
               tipoFondo: c.tipoFondo || (Number(c.fondoBase ?? 0) === 0 ? 'sin_fondo' : 'fijo')
             }));
-            // Merge missing initial cajas so all standard company cajas are available
-            const missingDefaults = INITIAL_CAJAS.filter(ic => !mapped.some(m => m.id === ic.id));
-            setCajas([...mapped, ...missingDefaults]);
+
+          if (mapped.length > 0) {
+            setCajas(mapped);
           } else {
-            // If table exists but has 0 rows, use INITIAL_CAJAS as base so system is always functional
-            setCajas(INITIAL_CAJAS);
+            // Never re-add deleted sample cajas
+            setCajas(INITIAL_CAJAS.filter(c => !isRecordDeleted(c.id)));
           }
         }
 
         // Fetch giros
         const dbGiros = await fetchSupabaseTable<any>('giros');
         if (dbGiros && isMounted) {
-          if (dbGiros.length > 0) {
-            setGiros(dbGiros.map(db => ({
+          const mapped = dbGiros
+            .filter((db: any) => {
+              if (isRecordDeleted(db.id)) {
+                deleteSupabaseRecord('giros', db.id).catch(() => {});
+                return false;
+              }
+              return true;
+            })
+            .map((db: any) => ({
               id: db.id,
               nombre: db.nombre,
               codigo: db.codigo || '',
               color: db.color || '#024182',
               activo: db.activo ?? true
-            })));
+            }));
+
+          if (mapped.length > 0) {
+            setGiros(mapped);
           } else {
-            setGiros(prev => prev.length > 0 ? prev : INITIAL_GIROS);
+            setGiros(prev => {
+              const cleaned = prev.filter(g => !isRecordDeleted(g.id));
+              return cleaned.length > 0 ? cleaned : INITIAL_GIROS.filter(g => !isRecordDeleted(g.id));
+            });
           }
         }
 
         // Fetch abonos
         const dbAbonos = await fetchSupabaseTable('abonos');
         if (dbAbonos && isMounted) {
-          const mapped = dbAbonos.map(dbToAbono);
+          const mapped = dbAbonos
+            .map(dbToAbono)
+            .filter(a => {
+              if (isRecordDeleted(a.id)) {
+                deleteSupabaseRecord('abonos', a.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           setAbonos(mapped);
         }
 
         // Fetch reembolsos
         const dbReembolsos = await fetchSupabaseTable('reembolsos');
         if (dbReembolsos && isMounted) {
-          const mapped = dbReembolsos.map(dbToReembolso);
+          const mapped = dbReembolsos
+            .map(dbToReembolso)
+            .filter(r => {
+              if (isRecordDeleted(r.id)) {
+                deleteSupabaseRecord('reembolsos', r.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           setReembolsos(mapped);
         }
 
         // Fetch audit logs
         const dbAudit = await fetchSupabaseTable('audit_logs');
         if (dbAudit && isMounted) {
-          const mapped = dbAudit.map(dbToAudit);
+          const mapped = dbAudit
+            .map(dbToAudit)
+            .filter(a => {
+              if (isRecordDeleted(a.id)) {
+                deleteSupabaseRecord('audit_logs', a.id).catch(() => {});
+                return false;
+              }
+              return true;
+            });
           setAuditLogs(mapped);
         }
 
@@ -406,41 +522,69 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const dbUsuarios = await fetchSupabaseTable<any>('usuarios');
         if (dbUsuarios && isMounted) {
           setUsuarios(prev => {
-            return dbUsuarios.map(dbRow => {
-              const parsed = dbToUsuario(dbRow);
-              const localMatch = prev?.find(p => p.id === parsed.id || (p.email && parsed.email && p.email.toLowerCase() === parsed.email.toLowerCase()));
-              return {
-                ...parsed,
-                username: parsed.username || localMatch?.username,
-                password: parsed.password || localMatch?.password,
-                telefono: parsed.telefono || localMatch?.telefono,
-              };
-            });
+            return dbUsuarios
+              .filter((dbRow: any) => {
+                if (isRecordDeleted(dbRow.id)) {
+                  deleteSupabaseRecord('usuarios', dbRow.id).catch(() => {});
+                  return false;
+                }
+                return true;
+              })
+              .map((dbRow: any) => {
+                const parsed = dbToUsuario(dbRow);
+                const localMatch = prev?.find(p => p.id === parsed.id || (p.email && parsed.email && p.email.toLowerCase() === parsed.email.toLowerCase()));
+                return {
+                  ...parsed,
+                  username: parsed.username || localMatch?.username,
+                  password: parsed.password || localMatch?.password,
+                  telefono: parsed.telefono || localMatch?.telefono,
+                };
+              });
           });
         }
 
         // Fetch empleados
         const dbEmpleados = await fetchSupabaseTable<any>('empleados');
         if (dbEmpleados && isMounted) {
-          setEmpleados(dbEmpleados.map(db => ({
-            id: db.id,
-            nombre: db.nombre,
-            puesto: db.puesto,
-            departamento: db.departamento,
-            activo: db.activo ?? true
-          })));
+          setEmpleados(
+            dbEmpleados
+              .filter((db: any) => {
+                if (isRecordDeleted(db.id)) {
+                  deleteSupabaseRecord('empleados', db.id).catch(() => {});
+                  return false;
+                }
+                return true;
+              })
+              .map((db: any) => ({
+                id: db.id,
+                nombre: db.nombre,
+                puesto: db.puesto,
+                departamento: db.departamento,
+                activo: db.activo ?? true
+              }))
+          );
         }
 
         // Fetch proveedores
         const dbProveedores = await fetchSupabaseTable<any>('proveedores');
         if (dbProveedores && isMounted) {
-          setProveedores(dbProveedores.map(db => ({
-            id: db.id,
-            nombre: db.nombre,
-            rfc: db.rfc,
-            categoria: db.categoria,
-            activo: db.activo ?? true
-          })));
+          setProveedores(
+            dbProveedores
+              .filter((db: any) => {
+                if (isRecordDeleted(db.id)) {
+                  deleteSupabaseRecord('proveedores', db.id).catch(() => {});
+                  return false;
+                }
+                return true;
+              })
+              .map((db: any) => ({
+                id: db.id,
+                nombre: db.nombre,
+                rfc: db.rfc,
+                categoria: db.categoria,
+                activo: db.activo ?? true
+              }))
+          );
         }
       } catch (err) {
         console.warn('Supabase sync background notice:', err);
@@ -572,9 +716,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logAudit = (accion: string, modulo: string, detalles: string) => {
     const userDisplayName = currentUser?.nombre || (
-      role === 'custodio' ? 'Lic. Sofía Rodríguez' :
-      role === 'contador' ? 'CP. Alberto Vargas' :
-      role === 'cliente' ? 'Cliente Registrado' : 'Admin General'
+      role === 'custodio' ? 'Custodio de Caja' :
+      role === 'contador' ? 'Auditor Contable' :
+      role === 'cliente' ? 'Cliente Registrado' : 'Administrador'
     );
 
     const newLog: AuditLog = {
@@ -645,8 +789,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Helper fallback caja
   const defaultFallbackCaja: CajaChica = {
     id: 'caja-1',
-    nombre: 'Caja Chica - Matriz',
-    responsable: 'Lic. Sofía Rodríguez',
+    nombre: 'Caja Chica - Reina Pino (Matriz)',
+    responsable: 'Reyna Pino',
     fondoBase: 15000,
     saldoActual: 15000,
     estado: 'Abierta',
@@ -709,6 +853,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteGasto = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = gastos.find(g => g.id === id);
     if (!target) return;
     const prevCount = gastos.length;
@@ -806,7 +951,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...rmb,
       estado: 'aprobado',
       fechaAprobacion: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      aprobadoPor: 'CP. Alberto Vargas',
+      aprobadoPor: currentUser?.nombre || 'Contador / Auditor',
       firmaElectronica: firma
     };
 
@@ -906,6 +1051,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteAbono = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = abonos.find(a => a.id === id);
     if (!target) return;
     const prevCount = abonos.length;
@@ -980,6 +1126,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteCaja = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = cajas.find(c => c.id === id);
     if (!target) return;
     const prevCount = cajas.length;
@@ -1034,6 +1181,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteGiro = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = giros.find(g => g.id === id);
     const prevCount = giros.length;
     setGiros(prev => prev.filter(g => g.id !== id));
@@ -1093,6 +1241,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteProveedor = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = proveedores.find(p => p.id === id);
     const prevCount = proveedores.length;
     setProveedores(prev => prev.filter(p => p.id !== id));
@@ -1150,6 +1299,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteEmpleado = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = empleados.find(e => e.id === id);
     const prevCount = empleados.length;
     setEmpleados(prev => prev.filter(e => e.id !== id));
@@ -1195,6 +1345,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteUsuario = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = usuarios.find(u => u.id === id);
     const prevCount = usuarios.length;
     setUsuarios(prev => prev.filter(u => u.id !== id));
@@ -1241,6 +1392,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteRegistroGasolina = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = gasolinaRecords.find(g => g.id === id);
     const prevCount = gasolinaRecords.length;
     setGasolinaRecords(prev => prev.filter(g => g.id !== id));
@@ -1293,6 +1445,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteComprobanteGastos = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = comprobantesGastos.find(c => c.id === id);
     const prevCount = comprobantesGastos.length;
     setComprobantesGastos(prev => prev.filter(c => c.id !== id));
@@ -1363,6 +1516,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteComprobanteCombustibleCliente = async (id: string) => {
+    markRecordAsDeleted(id);
     const target = comprobantesCombustibleCliente.find(c => c.id === id);
     const prevCount = comprobantesCombustibleCliente.length;
     setComprobantesCombustibleCliente(prev => prev.filter(c => c.id !== id));
@@ -1386,19 +1540,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (e) {
       // Safe ignore
     }
-    setCajas(INITIAL_CAJAS);
-    setGiros(INITIAL_GIROS);
-    setProveedores(INITIAL_PROVEEDORES);
-    setEmpleados(INITIAL_EMPLEADOS);
-    setUsuarios(INITIAL_USUARIOS);
-    setGastos(INITIAL_GASTOS);
-    setReembolsos(INITIAL_REEMBOLSOS);
-    setAbonos(INITIAL_ABONOS);
-    setAuditLogs(INITIAL_AUDIT_LOGS);
-    setGasolinaRecords(INITIAL_GASOLINA);
-    setComprobantesGastos(INITIAL_COMPROBANTES);
+    markRecordsAsDeleted(KNOWN_SAMPLE_RECORD_IDS);
+    setCajas(INITIAL_CAJAS.filter(c => !isRecordDeleted(c.id)));
+    setGiros(INITIAL_GIROS.filter(g => !isRecordDeleted(g.id)));
+    setProveedores(INITIAL_PROVEEDORES.filter(p => !isRecordDeleted(p.id)));
+    setEmpleados(INITIAL_EMPLEADOS.filter(e => !isRecordDeleted(e.id)));
+    setUsuarios(INITIAL_USUARIOS.filter(u => !isRecordDeleted(u.id)));
+    setGastos([]);
+    setReembolsos([]);
+    setAbonos([]);
+    setAuditLogs([]);
+    setGasolinaRecords([]);
+    setComprobantesGastos([]);
     setClienteProfile(INITIAL_CLIENTE_PROFILE);
-    setComprobantesCombustibleCliente(INITIAL_COMPROBANTES_COMBUSTIBLE_CLIENTE);
+    setComprobantesCombustibleCliente([]);
     setRoleState('home');
   };
 

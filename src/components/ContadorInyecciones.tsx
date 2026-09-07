@@ -5,6 +5,7 @@ import { PDFInyeccionesModal } from './PDFInyeccionesModal';
 
 export const ContadorInyecciones: React.FC = () => {
   const {
+    currentUser,
     activeCaja,
     activeCajaId,
     cajas,
@@ -16,7 +17,7 @@ export const ContadorInyecciones: React.FC = () => {
   const safeCaja = activeCaja || {
     id: activeCajaId || 'caja-1',
     nombre: 'Caja Chica - Reina Pino (Matriz)',
-    responsable: 'Lic. Sofía Rodríguez',
+    responsable: 'Reyna Pino',
     fondoBase: 15000,
     saldoActual: 15000,
     estado: 'Abierta',
@@ -121,7 +122,7 @@ export const ContadorInyecciones: React.FC = () => {
       fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
       monto: val,
       concepto: conceptoAbono.trim(),
-      registradoPor: 'CP. Alberto Vargas'
+      registradoPor: currentUser?.nombre || 'Contador / Finanzas'
     });
 
     setFeedbackMsg(`¡Inyección de $${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })} aplicada con éxito! El fondo actual de "${targetCaja.nombre}" ahora es de $${nuevoSaldo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}.`);
@@ -265,7 +266,7 @@ export const ContadorInyecciones: React.FC = () => {
               <textarea
                 required
                 rows={2}
-                placeholder="Ej: CP. Alberto entregó $10,000.00 por transferencia SPEI para reposición de operativas..."
+                placeholder="Ej: Entrega de fondos por transferencia SPEI para reposición de caja..."
                 value={conceptoAbono}
                 onChange={(e) => setConceptoAbono(e.target.value)}
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 resize-none"

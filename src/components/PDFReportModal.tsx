@@ -265,30 +265,6 @@ export const PDFReportModal: React.FC = () => {
             </table>
           </div>
 
-          {/* Official Signature Lines */}
-          <div className="pt-12 grid grid-cols-3 gap-6 text-center text-[10px] text-zinc-600">
-            <div className="space-y-1">
-              <div className="border-t border-zinc-400 pt-1 font-semibold text-zinc-900">
-                {caja?.responsable || 'CUSTODIO DE CAJA'}
-              </div>
-              <p className="text-[9px] text-zinc-400">Entrega de Comprobantes</p>
-            </div>
-
-            <div className="space-y-1">
-              <div className="border-t border-zinc-400 pt-1 font-semibold text-zinc-900">
-                CP. ALBERTO VARGAS
-              </div>
-              <p className="text-[9px] text-zinc-400">Contador / Auditoria</p>
-            </div>
-
-            <div className="space-y-1">
-              <div className="border-t border-zinc-400 pt-1 font-semibold text-zinc-900">
-                DIRECCIÓN GENERAL
-              </div>
-              <p className="text-[9px] text-zinc-400">Autorización Final</p>
-            </div>
-          </div>
-
           {/* ANEXO DE EVIDENCIAS FOTOGRÁFICAS / TICKETS */}
           {incluirEvidencias && gastosConEvidencia.length > 0 && (
             <div className="pt-8 border-t-2 border-dashed border-zinc-300 space-y-4 page-break-before">

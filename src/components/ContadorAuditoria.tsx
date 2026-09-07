@@ -16,6 +16,7 @@ import { EvidenceGrid } from './EvidenceGrid';
 
 export const ContadorAuditoria: React.FC = () => {
   const {
+    currentUser,
     reembolsos,
     gastos,
     cajas,
@@ -31,7 +32,7 @@ export const ContadorAuditoria: React.FC = () => {
     reembolsos.find(r => r.estado === 'pendiente')?.id || reembolsos[0]?.id || null
   );
 
-  const [firmaInput, setFirmaInput] = useState<string>('CP. Alberto Vargas - KeyAuth-8841');
+  const [firmaInput, setFirmaInput] = useState<string>(currentUser?.nombre ? `${currentUser.nombre} - KeyAuth` : '');
   const [rejectingGastoId, setRejectingGastoId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
 

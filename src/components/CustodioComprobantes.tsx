@@ -23,8 +23,8 @@ export const CustodioComprobantes: React.FC = () => {
   const [fecha, setFecha] = useState(new Date().toISOString().substring(0, 10));
   const [concepto, setConcepto] = useState('');
   const [solicitadoA, setSolicitadoA] = useState('');
-  const [autorizadoPor, setAutorizadoPor] = useState('CP. ALBERTO VARGAS');
-  const [recibidoPor, setRecibidoPor] = useState('LIC. SOFÍA RODRÍGUEZ');
+  const [autorizadoPor, setAutorizadoPor] = useState('');
+  const [recibidoPor, setRecibidoPor] = useState('');
   const [evidenciaUrl, setEvidenciaUrl] = useState('');
   const [evidenciaNombre, setEvidenciaNombre] = useState<string | undefined>();
   const [evidenciaType, setEvidenciaType] = useState<'image' | 'pdf'>('image');
@@ -70,6 +70,8 @@ export const CustodioComprobantes: React.FC = () => {
     setSolicitadoA('');
     setImporteManual('');
     setImporteLetra('');
+    setAutorizadoPor('');
+    setRecibidoPor('');
     setEvidenciaUrl('');
     setEvidenciaNombre(undefined);
     setItems([
@@ -86,8 +88,8 @@ export const CustodioComprobantes: React.FC = () => {
     setSolicitadoA(comp.solicitadoA);
     setImporteManual(comp.importe);
     setImporteLetra(comp.importeLetra);
-    setAutorizadoPor(comp.autorizadoPor || 'CP. ALBERTO VARGAS');
-    setRecibidoPor(comp.recibidoPor || 'LIC. SOFÍA RODRÍGUEZ');
+    setAutorizadoPor(comp.autorizadoPor || '');
+    setRecibidoPor(comp.recibidoPor || '');
     setEvidenciaUrl(comp.evidenciaUrl || '');
     setEvidenciaNombre(comp.evidenciaNombre || `Evidencia_${comp.folio}`);
     setEvidenciaType(comp.evidenciaType || 'image');
@@ -262,7 +264,7 @@ export const CustodioComprobantes: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Lic. Sofía Rodríguez / Comercializadora Coteyuc"
+                  placeholder="Ej: Beneficiario o Empresa"
                   value={solicitadoA}
                   onChange={(e) => setSolicitadoA(e.target.value)}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900 font-medium"

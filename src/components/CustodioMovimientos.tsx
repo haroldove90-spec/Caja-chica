@@ -8,8 +8,8 @@ export const CustodioMovimientos: React.FC = () => {
 
   const safeCaja = activeCaja || {
     id: 'caja-1',
-    nombre: 'Caja Chica - Matriz',
-    responsable: 'Lic. Sofía Rodríguez',
+    nombre: 'Caja Chica - Reina Pino (Matriz)',
+    responsable: 'Reyna Pino',
     fondoBase: 15000,
     saldoActual: 15000,
     estado: 'Abierta',

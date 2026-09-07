@@ -268,7 +268,7 @@ export const AdminMultiCajas: React.FC = () => {
               <input
                 type="text"
                 required
-                placeholder="Ej: Lic. Sofía Rodríguez"
+                placeholder="Ej: Nombre del Custodio Responsable"
                 value={responsable}
                 onChange={(e) => setResponsable(e.target.value)}
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-zinc-900"

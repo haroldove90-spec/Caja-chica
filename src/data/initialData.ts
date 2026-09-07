@@ -11,31 +11,11 @@ export const INITIAL_CAJAS: CajaChica[] = [
   {
     id: 'caja-1',
     nombre: 'Caja Chica - Reina Pino (Matriz)',
-    responsable: 'Lic. Sofía Rodríguez',
+    responsable: 'Reyna Pino',
     fondoBase: 15000,
     saldoActual: 15000,
     estado: 'Abierta',
     ubicacion: 'Oficina Central',
-    tipoFondo: 'fijo'
-  },
-  {
-    id: 'caja-2',
-    nombre: 'Caja Chica - Taller Proyecta',
-    responsable: 'Ing. Carlos Mendoza',
-    fondoBase: 0,
-    saldoActual: 0,
-    estado: 'Abierta',
-    ubicacion: 'Sucursal Taller',
-    tipoFondo: 'sin_fondo'
-  },
-  {
-    id: 'caja-3',
-    nombre: 'Caja Chica - Coteyuc Sur',
-    responsable: 'Alejandro Torres',
-    fondoBase: 10000,
-    saldoActual: 10000,
-    estado: 'Abierta',
-    ubicacion: 'Planta Sur',
     tipoFondo: 'fijo'
   }
 ];
@@ -60,21 +40,13 @@ export const INITIAL_PROVEEDORES: Proveedor[] = [
 
 export const INITIAL_EMPLEADOS: Empleado[] = [
   { id: 'emp-reyna', nombre: 'Reyna Pino', puesto: 'Custodia de Caja Chica Matriz', departamento: 'Administración', activo: true },
-  { id: 'emp-harold', nombre: 'Harold Anguiano Morales', puesto: 'Super Administrador General', departamento: 'Dirección General', activo: true },
-  { id: 'emp-1', nombre: 'Lic. Sofía Rodríguez', puesto: 'Custodio de Caja Matriz', departamento: 'Administración', activo: true },
-  { id: 'emp-2', nombre: 'Ing. Carlos Mendoza', puesto: 'Jefe de Taller', departamento: 'Mantenimiento', activo: true },
-  { id: 'emp-3', nombre: 'CP. Alberto Vargas', puesto: 'Contador General', departamento: 'Finanzas', activo: true },
-  { id: 'emp-4', nombre: 'Alejandro Torres', puesto: 'Encargado de Compras', departamento: 'Operaciones', activo: true },
-  { id: 'emp-5', nombre: 'Beatriz Hernández', puesto: 'Auxiliar Administrativo', departamento: 'Administración', activo: true }
+  { id: 'emp-harold', nombre: 'Harold Anguiano Morales', puesto: 'Super Administrador General', departamento: 'Dirección General', activo: true }
 ];
 
 export const INITIAL_USUARIOS: Usuario[] = [
   { id: 'usr-harold', nombre: 'Harold Anguiano Morales', email: 'haroldove90@gmail.com', username: 'haroldo90', password: 'Chevropar#1970', rol: 'admin', telefono: '+52 999 123 4567', activo: true },
   { id: 'usr-reyna', nombre: 'Reyna Pino', email: 'reyna_pino@hotmail.com', username: 'reyna_pino', password: 'Reyna*Caja2026!', rol: 'custodio', cajaId: 'caja-1', telefono: '+52 999 234 5678', activo: true },
-  { id: 'usr-admin1', nombre: 'Super Administrador Principal', email: 'admin1@empresa.com', username: 'admin1', password: 'Admin_123', rol: 'admin', activo: true },
-  { id: 'usr-1', nombre: 'Sofía Rodríguez', email: 'sofia.rodriguez@empresa.com', username: 'custodio1', password: '123', rol: 'custodio', cajaId: 'caja-1', activo: true },
-  { id: 'usr-2', nombre: 'CP. Alberto Vargas', email: 'alberto.vargas@empresa.com', username: 'contador1', password: '123', rol: 'contador', activo: true },
-  { id: 'usr-3', nombre: 'Cliente Usuario', email: 'cliente@empresa.com', username: 'cliente1', password: '123', rol: 'cliente', activo: true }
+  { id: 'usr-admin1', nombre: 'Super Administrador Principal', email: 'admin1@empresa.com', username: 'admin1', password: 'Admin_123', rol: 'admin', activo: true }
 ];
 
 export const INITIAL_GASTOS: Gasto[] = [];
