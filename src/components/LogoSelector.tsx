@@ -28,7 +28,8 @@ export const LogoSelector: React.FC<LogoSelectorProps> = ({ selectedLogoId, onSe
               type="button"
               key={logo.id}
               onClick={() => onSelectLogo(logo)}
-              className={`relative flex flex-col items-center justify-center p-2 rounded-xl border transition-all cursor-pointer ${
+              title={logo.nombre}
+              className={`relative flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer ${
                 isSelected
                   ? 'bg-white border-[#024182] shadow-xs ring-2 ring-[#024182]/20'
                   : 'bg-white/60 border-zinc-200 hover:border-zinc-400 hover:bg-white'
@@ -38,24 +39,20 @@ export const LogoSelector: React.FC<LogoSelectorProps> = ({ selectedLogoId, onSe
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#024182] absolute top-1 right-1" />
               )}
 
-              <div className="h-8 w-full flex items-center justify-center my-1">
+              <div className="h-10 w-full flex items-center justify-center">
                 {logo.url ? (
                   <img
                     src={logo.url}
                     alt={logo.nombre}
-                    className="max-h-7 max-w-full object-contain"
+                    className="max-h-9 max-w-[85%] object-contain"
                   />
                 ) : (
-                  <div className="flex items-center gap-1 text-zinc-400 text-[10px]">
-                    <Ban className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-xs font-medium">
+                    <Ban className="w-4 h-4" />
                     <span>Sin Logo</span>
                   </div>
                 )}
               </div>
-
-              <span className={`text-[10px] font-medium truncate w-full text-center ${isSelected ? 'text-[#024182] font-bold' : 'text-zinc-600'}`}>
-                {logo.nombre}
-              </span>
             </button>
           );
         })}

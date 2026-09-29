@@ -122,15 +122,12 @@ export const PDFComprobanteReportModal: React.FC = () => {
           {/* Header Top Area with Optional Selected Logo & Dark Blue Banner */}
           <div className="space-y-3">
             {activeLogo?.url && (
-              <div className="flex items-center justify-between pb-2 border-b border-[#024182]/20">
+              <div className="flex items-center pb-2 border-b border-[#024182]/20">
                 <img
                   src={activeLogo.url}
                   alt={activeLogo.nombre}
                   className="h-12 sm:h-14 w-auto max-w-[200px] object-contain"
                 />
-                <span className="text-[10px] font-mono font-bold text-[#024182] uppercase">
-                  {activeLogo.nombre}
-                </span>
               </div>
             )}
 
