@@ -4,29 +4,29 @@ export interface LogoOption {
   url: string | null;
 }
 
-export const PROYECTA_LOGO_URL = 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyectalogo.png';
-export const PROYECTA_ICON_URL = 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyectaicono.png';
+export const PROYECTA_LOGO_URL = 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/proyectalogo.png';
+export const PROYECTA_ICON_URL = 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/proyectaicono.png';
 
 export const LOGOS_DISPONIBLES: LogoOption[] = [
   {
     id: 'proyecta',
     nombre: 'Proyecta Digital',
-    url: PROYECTA_LOGO_URL
+    url: 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/proyecta.jpeg'
   },
   {
     id: 'coteyuc',
     nombre: 'Coteyuc',
-    url: 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'
+    url: 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'
   },
   {
     id: 'jscontadores',
     nombre: 'JS Contadores',
-    url: 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/jscontadores.png'
+    url: 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/jscontadores.png'
   },
   {
     id: 'publicrea',
     nombre: 'Publicrea',
-    url: 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'
+    url: 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'
   },
   {
     id: 'sin_logo',

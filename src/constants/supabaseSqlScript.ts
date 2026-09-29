@@ -405,12 +405,12 @@ export const SEED_DATA_SQL_SCRIPT = `-- ========================================
 -- LOGOS
 INSERT INTO public.logos (id, nombre, url)
 VALUES 
-  ('coteyuc', 'Coteyuc', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'),
-  ('jscontadores', 'JS Contadores', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/jscontadores.png'),
-  ('proyecta', 'Proyecta Digital', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyectalogo.png'),
-  ('publicrea', 'Publicrea', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'),
+  ('coteyuc', 'Coteyuc', 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'),
+  ('jscontadores', 'JS Contadores', 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/jscontadores.png'),
+  ('proyecta', 'Proyecta Digital', 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/proyecta.jpeg'),
+  ('publicrea', 'Publicrea', 'https://kfhewlurkhxqzgjyelas.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'),
   ('sin_logo', 'Sin Logo', NULL)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET url = EXCLUDED.url, nombre = EXCLUDED.nombre;
 
 -- CAJAS CHICAS (Solo inserta si no existen; jamás sobreescribe saldos o nombres)
 INSERT INTO public.cajas_chicas (id, nombre, responsable, fondo_base, saldo_actual, estado, ubicacion)

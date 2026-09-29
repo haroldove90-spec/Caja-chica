@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Smartphone, Check, HelpCircle, X, Share2, PlusSquare } from 'lucide-react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
+import { PROYECTA_ICON_URL } from '../constants/logos';
 
 interface PwaInstallButtonProps {
   variant?: 'home' | 'nav' | 'compact';
@@ -127,9 +128,9 @@ export const PwaInstallButton: React.FC<PwaInstallButtonProps> = ({ variant = 'n
 
               <div className="flex items-center gap-3 pt-2">
                 <img
-                  src="https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyectaicono.png"
+                  src={PROYECTA_ICON_URL}
                   alt="Icono Proyecta Digital"
-                  className="w-12 h-12 rounded-xl border border-zinc-200 shadow-xs shrink-0"
+                  className="w-12 h-12 rounded-xl border border-zinc-200 shadow-xs shrink-0 object-contain bg-white"
                 />
                 <div className="text-[11px] leading-relaxed text-zinc-500">
                   Al instalarla disfrutarás de pantalla completa, carga instantánea y funcionamiento continuo incluso con conexión lenta.
