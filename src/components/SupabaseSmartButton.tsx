@@ -26,6 +26,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { pingSupabase, runFullSupabaseDiagnostic, DiagnosticResult } from '../lib/supabaseSync';
 import { FULL_SUPABASE_SQL_SCRIPT } from '../constants/supabaseSqlScript';
+import { activeSupabaseUrl, TARGET_SUPABASE_PROJECT_ID } from '../lib/supabase';
 
 interface SupabaseSmartButtonProps {
   compact?: boolean;
@@ -500,6 +501,36 @@ export const SupabaseSmartButton: React.FC<SupabaseSmartButtonProps> = ({ compac
             {/* TAB 2: DIAGNOSTICS & LIVE STATUS */}
             {activeTab === 'diagnostics' && (
               <div className="p-5 space-y-4 overflow-y-auto flex-1 bg-zinc-50/50">
+                {/* Active Project Banner */}
+                <div className="p-3 bg-white border border-zinc-200 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4 text-[#024182]" />
+                    <span className="font-bold text-zinc-800">Proyecto Vinculado:</span>
+                    <code className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-[#024182] font-mono rounded font-bold">
+                      {TARGET_SUPABASE_PROJECT_ID}
+                    </code>
+                    <span className="text-zinc-400 font-mono text-[11px] truncate max-w-[200px] sm:max-w-none">
+                      ({activeSupabaseUrl})
+                    </span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold w-fit ${
+                    isConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
+                    {isConnected ? 'ONLINE / SINCRONIZADO' : 'PENDIENTE DE CONEXIÓN'}
+                  </span>
+                </div>
+
+                {/* Friendly notice if there was an issue */}
+                {diagnostic?.friendlyExplanation && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-amber-950">Aviso del Sistema</p>
+                      <p className="mt-0.5 text-amber-900/90">{diagnostic.friendlyExplanation}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Live Status Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className={`p-4 rounded-xl border flex items-center gap-3 ${

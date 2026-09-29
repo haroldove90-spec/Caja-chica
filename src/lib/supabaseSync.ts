@@ -34,19 +34,34 @@ export function translatePostgreSQLError(error: any): { friendly: string; code?:
   const message = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
   const code = error.code || '';
 
-  if (code === '42P01' || message.includes('relation') || message.includes('does not exist')) {
+  if (
+    code === '42P01' ||
+    code === 'PGRST205' ||
+    message.includes('relation') ||
+    message.includes('does not exist') ||
+    message.includes('Could not find the table') ||
+    message.includes('schema cache')
+  ) {
     return {
-      code: '42P01 (relation_not_found)',
+      code: code || 'PGRST205 (missing_table)',
       friendly: 'Una o más tablas aún no han sido creadas en tu base de datos de Supabase.',
       action: 'Abre la pestaña "Script SQL", copia el código y ejecútalo en el SQL Editor de tu panel de Supabase.'
     };
   }
 
-  if (code === '42501' || message.includes('permission denied') || message.includes('policy') || message.includes('row-level security')) {
+  if (
+    code === '42501' ||
+    code === 'PGRST301' ||
+    message.includes('permission denied') ||
+    message.includes('policy') ||
+    message.includes('row-level security') ||
+    message.includes('Invalid API key') ||
+    message.includes('JWT')
+  ) {
     return {
-      code: '42501 (insufficient_privilege)',
-      friendly: 'Políticas de Seguridad por Fila (RLS) bloquean la lectura/escritura anónima.',
-      action: 'Ejecuta el bloque de Políticas RLS del script SQL para permitir el acceso a tu aplicación.'
+      code: code || '42501 (auth_error)',
+      friendly: 'Error de permisos o políticas RLS de Supabase.',
+      action: 'Verifica las claves API o ejecuta las políticas RLS en el SQL Editor de Supabase.'
     };
   }
 
@@ -76,12 +91,16 @@ export function translatePostgreSQLError(error: any): { friendly: string; code?:
 export async function pingSupabase(): Promise<{ ok: boolean; latencyMs: number; error?: any }> {
   const start = performance.now();
   try {
-    const { data, error } = await supabase.from('cajas_chicas').select('id').limit(1);
+    const queryPromise = supabase.from('cajas_chicas').select('id').limit(1);
+    const timeoutPromise = new Promise<{ data: null; error: any }>((_, reject) =>
+      setTimeout(() => reject(new Error('Supabase ping timeout (4000ms)')), 4000)
+    );
+
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
     const latency = Math.round(performance.now() - start);
 
     if (error) {
-      // If cajas_chicas is missing, try logos
-      if (error.code === '42P01') {
+      if (error.code === '42P01' || error.code === 'PGRST205' || error.message?.includes('schema cache')) {
         const { error: logoErr } = await supabase.from('logos').select('id').limit(1);
         const secondLatency = Math.round(performance.now() - start);
         if (!logoErr) {
@@ -121,29 +140,47 @@ export async function runFullSupabaseDiagnostic(): Promise<DiagnosticResult> {
   let totalErrors = 0;
   let primaryError: any = null;
 
-  for (const table of tablesToCheck) {
-    try {
-      const { data, error, count } = await supabase.from(table).select('*', { count: 'exact', head: false }).limit(10);
-      if (error) {
-        totalErrors++;
-        if (!primaryError) primaryError = error;
+  await Promise.all(
+    tablesToCheck.map(async (table) => {
+      try {
+        const queryPromise = supabase.from(table).select('*', { count: 'exact', head: false }).limit(10);
+        const timeoutPromise = new Promise<{ data: null; error: any; count: null }>((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout de consulta')), 3500)
+        );
 
-        if (error.code === '42P01' || error.message?.includes('does not exist')) {
-          tableHealth[table] = { ok: false, status: 'missing_table', message: 'Tabla inexistente en Supabase' };
-        } else if (error.code === '42501' || error.message?.includes('policy') || error.message?.includes('permission')) {
-          tableHealth[table] = { ok: false, status: 'rls_blocked', message: 'Bloqueado por políticas RLS' };
+        const { data, error } = (await Promise.race([queryPromise, timeoutPromise])) as any;
+
+        if (error) {
+          totalErrors++;
+          if (!primaryError) primaryError = error;
+
+          if (
+            error.code === '42P01' ||
+            error.code === 'PGRST205' ||
+            error.message?.includes('does not exist') ||
+            error.message?.includes('schema cache')
+          ) {
+            tableHealth[table] = { ok: false, status: 'missing_table', message: 'Tabla inexistente en Supabase' };
+          } else if (
+            error.code === '42501' ||
+            error.code === 'PGRST301' ||
+            error.message?.includes('policy') ||
+            error.message?.includes('permission')
+          ) {
+            tableHealth[table] = { ok: false, status: 'rls_blocked', message: 'Bloqueado por políticas RLS' };
+          } else {
+            tableHealth[table] = { ok: false, status: 'error', message: error.message };
+          }
         } else {
-          tableHealth[table] = { ok: false, status: 'error', message: error.message };
+          tableHealth[table] = { ok: true, status: 'ok', count: data?.length || 0 };
         }
-      } else {
-        tableHealth[table] = { ok: true, status: 'ok', count: data?.length || 0 };
+      } catch (err: any) {
+        totalErrors++;
+        if (!primaryError) primaryError = err;
+        tableHealth[table] = { ok: false, status: 'error', message: err?.message || 'Error de conexión' };
       }
-    } catch (err: any) {
-      totalErrors++;
-      if (!primaryError) primaryError = err;
-      tableHealth[table] = { ok: false, status: 'error', message: err?.message || 'Error de conexión' };
-    }
-  }
+    })
+  );
 
   const isConnected = ping.ok || totalErrors < tablesToCheck.length;
   const status: DiagnosticResult['status'] = !isConnected
