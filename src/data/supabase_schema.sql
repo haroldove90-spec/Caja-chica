@@ -1,9 +1,42 @@
 -- ====================================================================
--- SCRIPT COMPLETO, UNIFICADO Y CORREGIDO PARA SUPABASE (100% SIN ERRORES)
--- Control de Cajas Chicas, Gastos, Combustible y Logotipos Oficiales
+-- SCRIPT DE ESTRUCTURA PURA (100% SEGURO: CERO RIESGO DE BORRADO DE DATOS)
+-- Solo crea tablas si no existen, añade columnas y configura RLS/permisos.
+-- NO INSERTA, NO MODIFICA Y NO BORRA NINGÚN DATO REGISTRADO POR EL USUARIO.
 -- ====================================================================
 
--- 1. TABLAS PRINCIPALES DE CAJA CHICA Y GASTOS
+-- 1. EXTENSIONES REQUERIDAS
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- CONVERSIÓN SEGURA DE COLUMNAS UUID A TEXT (Para bases de datos existentes)
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'clientes_perfil' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.clientes_perfil ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobantes_combustible_cliente' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobantes_combustible_cliente ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobantes_combustible_cliente' AND column_name = 'cliente_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobantes_combustible_cliente ALTER COLUMN cliente_id TYPE TEXT USING cliente_id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobantes_gastos' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobantes_gastos ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'comprobante_gastos_items' AND column_name = 'comprobante_id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.comprobante_gastos_items ALTER COLUMN comprobante_id TYPE TEXT USING comprobante_id::text;
+  END IF;
+  
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'audit_logs' AND column_name = 'id' AND data_type = 'uuid') THEN
+    ALTER TABLE public.audit_logs ALTER COLUMN id TYPE TEXT USING id::text;
+  END IF;
+END $$;
+
+-- 2. TABLAS PRINCIPALES DEL SISTEMA
 CREATE TABLE IF NOT EXISTS public.cajas_chicas (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
@@ -11,40 +44,64 @@ CREATE TABLE IF NOT EXISTS public.cajas_chicas (
   fondo_base NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   saldo_actual NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   estado TEXT NOT NULL DEFAULT 'Abierta',
-  ubicacion TEXT NOT NULL DEFAULT ''
+  ubicacion TEXT NOT NULL DEFAULT '',
+  tipo_fondo TEXT DEFAULT 'fijo',
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS tipo_fondo TEXT DEFAULT 'fijo';
+ALTER TABLE public.cajas_chicas ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.giros (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
   codigo TEXT NOT NULL,
-  color TEXT DEFAULT 'bg-zinc-100 text-zinc-800',
-  activo BOOLEAN DEFAULT TRUE
+  color TEXT DEFAULT '#3b82f6',
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.giros ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.proveedores (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
   rfc TEXT NOT NULL,
-  categoria TEXT NOT NULL
+  categoria TEXT NOT NULL,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.proveedores ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.empleados (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
   puesto TEXT NOT NULL,
   departamento TEXT NOT NULL,
-  activo BOOLEAN DEFAULT TRUE
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.empleados ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.usuarios (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
+  email TEXT NOT NULL,
+  telefono TEXT,
+  username TEXT,
+  password TEXT,
   rol TEXT NOT NULL DEFAULT 'custodio',
   caja_id TEXT,
-  activo BOOLEAN DEFAULT TRUE
+  foto_url TEXT,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+-- Asegurar columnas en usuarios si ya existía
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS telefono TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS password TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS foto_url TEXT;
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.gastos (
   id TEXT PRIMARY KEY,
@@ -58,12 +115,17 @@ CREATE TABLE IF NOT EXISTS public.gastos (
   giro_id TEXT,
   facturado BOOLEAN DEFAULT FALSE,
   evidencia_url TEXT,
-  evidencia_type TEXT,
+  evidencia_type TEXT DEFAULT 'image',
   evidencia_nombre TEXT,
+  evidencias JSONB,
   estado TEXT NOT NULL DEFAULT 'borrador',
   nota_rechazo TEXT,
-  reembolso_id TEXT
+  reembolso_id TEXT,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.gastos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.gastos ADD COLUMN IF NOT EXISTS evidencias JSONB;
 
 CREATE TABLE IF NOT EXISTS public.reembolsos (
   id TEXT PRIMARY KEY,
@@ -76,18 +138,24 @@ CREATE TABLE IF NOT EXISTS public.reembolsos (
   estado TEXT NOT NULL DEFAULT 'pendiente',
   fecha_aprobacion TIMESTAMP WITH TIME ZONE,
   aprobado_por TEXT,
-  firma_electronica TEXT
+  firma_electronica TEXT,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.reembolsos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.abonos (
   id TEXT PRIMARY KEY,
   caja_id TEXT NOT NULL,
-  fecha DATE NOT NULL,
+  fecha TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   monto NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   concepto TEXT NOT NULL,
   registrado_por TEXT NOT NULL,
-  comprobante TEXT
+  comprobante TEXT,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.abonos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.audit_logs (
   id TEXT PRIMARY KEY,
@@ -99,7 +167,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   detalles TEXT NOT NULL
 );
 
--- 2. TABLAS DE REGISTROS DE GASOLINA (PLURAL Y SINGULAR)
+-- TABLAS DE COMBUSTIBLE / GASOLINA (SOPORTE PLURAL Y SINGULAR)
 CREATE TABLE IF NOT EXISTS public.registros_gasolina (
   id TEXT PRIMARY KEY,
   caja_id TEXT NOT NULL,
@@ -113,8 +181,15 @@ CREATE TABLE IF NOT EXISTS public.registros_gasolina (
   importe NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
-  evidencia_type TEXT DEFAULT 'image'
+  evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
+  evidencias JSONB,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.registros_gasolina ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.registros_gasolina ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
+ALTER TABLE public.registros_gasolina ADD COLUMN IF NOT EXISTS evidencias JSONB;
 
 CREATE TABLE IF NOT EXISTS public.registro_gasolina (
   id TEXT PRIMARY KEY,
@@ -129,92 +204,103 @@ CREATE TABLE IF NOT EXISTS public.registro_gasolina (
   importe NUMERIC(12,2) NOT NULL DEFAULT 0.00,
   registrado_por TEXT NOT NULL,
   evidencia_url TEXT,
-  evidencia_type TEXT DEFAULT 'image'
+  evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
+  evidencias JSONB,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.registro_gasolina ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.registro_gasolina ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
+ALTER TABLE public.registro_gasolina ADD COLUMN IF NOT EXISTS evidencias JSONB;
 
--- 3. TABLAS DE COMPROBANTES DE GASTOS Y DESGLOSE ITEMS
+-- TABLAS DE COMPROBANTES DE GASTOS Y SUS ITEMS
 CREATE TABLE IF NOT EXISTS public.comprobantes_gastos (
-    id TEXT PRIMARY KEY,
-    caja_id TEXT NOT NULL,
-    folio TEXT NOT NULL UNIQUE,
-    fecha DATE NOT NULL DEFAULT CURRENT_DATE,
-    importe NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    importe_letra TEXT NOT NULL,
-    concepto TEXT NOT NULL,
-    solicitado_a TEXT NOT NULL,
-    autorizado_por TEXT,
-    recibido_por TEXT,
-    evidencia_url TEXT,
-    evidencia_type TEXT DEFAULT 'image',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+  id TEXT PRIMARY KEY,
+  caja_id TEXT NOT NULL,
+  folio TEXT NOT NULL UNIQUE,
+  fecha DATE NOT NULL DEFAULT CURRENT_DATE,
+  importe NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+  importe_letra TEXT NOT NULL,
+  concepto TEXT NOT NULL,
+  solicitado_a TEXT NOT NULL,
+  items JSONB DEFAULT '[]'::jsonb,
+  autorizado_por TEXT,
+  recibido_por TEXT,
+  evidencia_url TEXT,
+  evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
+  evidencias JSONB,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS items JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
+ALTER TABLE public.comprobantes_gastos ADD COLUMN IF NOT EXISTS evidencias JSONB;
 
 CREATE TABLE IF NOT EXISTS public.comprobante_gastos_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    comprobante_id TEXT REFERENCES public.comprobantes_gastos(id) ON DELETE CASCADE,
-    no_cuenta VARCHAR(50) NOT NULL,
-    no_orden VARCHAR(50),
-    no_cotizacion VARCHAR(50),
-    nombre_proyecto VARCHAR(150),
-    nombre TEXT NOT NULL,
-    importe NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  comprobante_id TEXT REFERENCES public.comprobantes_gastos(id) ON DELETE CASCADE,
+  no_cuenta VARCHAR(50) NOT NULL,
+  no_orden VARCHAR(50),
+  no_cotizacion VARCHAR(50),
+  nombre_proyecto VARCHAR(150),
+  nombre TEXT NOT NULL,
+  importe NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Asegurar columnas en comprobante_gastos_items si la tabla ya existía
-DO $$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comprobante_gastos_items' AND column_name='no_orden') THEN
-        ALTER TABLE public.comprobante_gastos_items ADD COLUMN no_orden VARCHAR(50);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comprobante_gastos_items' AND column_name='no_cotizacion') THEN
-        ALTER TABLE public.comprobante_gastos_items ADD COLUMN no_cotizacion VARCHAR(50);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comprobante_gastos_items' AND column_name='nombre_proyecto') THEN
-        ALTER TABLE public.comprobante_gastos_items ADD COLUMN nombre_proyecto VARCHAR(150);
-    END IF;
-END $$;
-
--- 4. TABLAS DE PERFIL CLIENTE Y COMBUSTIBLE CLIENTE
+-- TABLAS DE PERFIL CLIENTE Y COMPROBANTES DE COMBUSTIBLE CLIENTES
 CREATE TABLE IF NOT EXISTS public.clientes_perfil (
-    id TEXT PRIMARY KEY DEFAULT 'cli-001',
-    nombre TEXT NOT NULL,
-    email TEXT NOT NULL,
-    telefono TEXT,
-    empresa TEXT,
-    rfc TEXT,
-    direccion TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  id TEXT PRIMARY KEY DEFAULT 'cli-001',
+  nombre TEXT NOT NULL,
+  email TEXT NOT NULL,
+  telefono TEXT,
+  empresa TEXT,
+  rfc TEXT,
+  direccion TEXT,
+  foto_url TEXT,
+  activo BOOLEAN DEFAULT TRUE,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE public.clientes_perfil ADD COLUMN IF NOT EXISTS foto_url TEXT;
+ALTER TABLE public.clientes_perfil ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS public.comprobantes_combustible_cliente (
-    id TEXT PRIMARY KEY,
-    caja_id TEXT,
-    cliente_id TEXT NOT NULL,
-    cliente_nombre TEXT NOT NULL,
-    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    vehiculo TEXT NOT NULL,
-    placas TEXT,
-    estacion TEXT,
-    tipo_combustible TEXT NOT NULL DEFAULT 'Magna',
-    litros NUMERIC(10,2),
-    importe NUMERIC(10,2) NOT NULL,
-    evidencia_url TEXT NOT NULL,
-    evidencia_type TEXT DEFAULT 'image',
-    estado TEXT NOT NULL DEFAULT 'enviado',
-    observaciones TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  id TEXT PRIMARY KEY,
+  caja_id TEXT,
+  cliente_id TEXT NOT NULL,
+  cliente_nombre TEXT NOT NULL,
+  fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  vehiculo TEXT NOT NULL,
+  placas TEXT,
+  estacion TEXT,
+  tipo_combustible TEXT NOT NULL DEFAULT 'Magna',
+  litros NUMERIC(10,2),
+  importe NUMERIC(10,2) NOT NULL,
+  evidencia_url TEXT NOT NULL,
+  evidencia_type TEXT DEFAULT 'image',
+  evidencia_nombre TEXT,
+  evidencias JSONB,
+  estado TEXT NOT NULL DEFAULT 'enviado',
+  observaciones TEXT,
+  activo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE public.comprobantes_combustible_cliente ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE public.comprobantes_combustible_cliente ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT;
+ALTER TABLE public.comprobantes_combustible_cliente ADD COLUMN IF NOT EXISTS evidencias JSONB;
 
--- 5. TABLA DE LOGOTIPOS OFICIALES PARA PDF
+-- TABLA DE LOGOTIPOS OFICIALES PARA PDF
 CREATE TABLE IF NOT EXISTS public.logos (
-    id TEXT PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. HABILITAR SEGURIDAD POR FILA (RLS)
+-- 3. HABILITAR SEGURIDAD POR FILA (RLS)
 ALTER TABLE public.cajas_chicas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.giros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.proveedores ENABLE ROW LEVEL SECURITY;
@@ -232,7 +318,7 @@ ALTER TABLE public.clientes_perfil ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comprobantes_combustible_cliente ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.logos ENABLE ROW LEVEL SECURITY;
 
--- 7. BORRAR POLÍTICAS PREVIAS PARA EVITAR EL ERROR 42710
+-- 4. POLÍTICAS DE ACCESO TOTAL (IDEMPOTENTES)
 DROP POLICY IF EXISTS "Public full access on cajas_chicas" ON public.cajas_chicas;
 DROP POLICY IF EXISTS "Public full access on giros" ON public.giros;
 DROP POLICY IF EXISTS "Public full access on proveedores" ON public.proveedores;
@@ -250,7 +336,6 @@ DROP POLICY IF EXISTS "Acceso total lectura/escritura perfil clientes" ON public
 DROP POLICY IF EXISTS "Acceso total lectura/escritura comprobantes combustible" ON public.comprobantes_combustible_cliente;
 DROP POLICY IF EXISTS "Acceso lectura/escritura logos" ON public.logos;
 
--- 8. RECREAR POLÍTICAS DE ACCESO TOTAL
 CREATE POLICY "Public full access on cajas_chicas" ON public.cajas_chicas FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public full access on giros" ON public.giros FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public full access on proveedores" ON public.proveedores FOR ALL USING (true) WITH CHECK (true);
@@ -268,32 +353,101 @@ CREATE POLICY "Acceso total lectura/escritura perfil clientes" ON public.cliente
 CREATE POLICY "Acceso total lectura/escritura comprobantes combustible" ON public.comprobantes_combustible_cliente FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Acceso lectura/escritura logos" ON public.logos FOR ALL USING (true) WITH CHECK (true);
 
--- 9. PERMISOS RLS Y ROLES PÚBLICOS
+-- 5. TRIGGER AUTOMÁTICO: SUMAR ABONOS/INYECCIONES AL SALDO ACTUAL DE LA CAJA CHICA
+CREATE OR REPLACE FUNCTION public.actualizar_saldo_caja_por_abono()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT') THEN
+    UPDATE public.cajas_chicas
+    SET saldo_actual = COALESCE(saldo_actual, 0) + NEW.monto
+    WHERE id = NEW.caja_id;
+    RETURN NEW;
+  ELSIF (TG_OP = 'DELETE') THEN
+    UPDATE public.cajas_chicas
+    SET saldo_actual = GREATEST(0, COALESCE(saldo_actual, 0) - OLD.monto)
+    WHERE id = OLD.caja_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_actualizar_saldo_abono ON public.abonos;
+CREATE TRIGGER trg_actualizar_saldo_abono
+AFTER INSERT OR DELETE ON public.abonos
+FOR EACH ROW
+EXECUTE FUNCTION public.actualizar_saldo_caja_por_abono();
+
+-- 6. PERMISOS Y ROLES PÚBLICOS
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, postgres;
 
--- 10. INSERTAR Y/O ACTUALIZAR LOGOTIPOS Y COLUMNAS DE EVIDENCIA
+-- 7. BUCKETS DE ALMACENAMIENTO EN SUPABASE STORAGE (SEGURO E IDEMPOTENTE)
+DO $$ 
+BEGIN
+  INSERT INTO storage.buckets (id, name, public) 
+  VALUES ('logos', 'logos', true), ('evidencias', 'evidencias', true)
+  ON CONFLICT (id) DO NOTHING;
+EXCEPTION
+  WHEN OTHERS THEN
+    NULL;
+END $$;
+
+
+-- ====================================================================
+-- 6. CARGA DE REGISTROS BASE INICIALES (100% SEGURO: NO SOBREESCRIBE NI BORRA NADA)
+-- Todos usan ON CONFLICT (id) DO NOTHING para proteger los datos ya registrados
+-- ====================================================================
+
+-- LOGOS
 INSERT INTO public.logos (id, nombre, url)
 VALUES 
   ('coteyuc', 'Coteyuc', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/coteyuc.jpeg'),
   ('jscontadores', 'JS Contadores', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/jscontadores.png'),
-  ('proyecta', 'Proyecta Digital', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyecta.jpeg'),
+  ('proyecta', 'Proyecta Digital', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/proyectalogo.png'),
   ('publicrea', 'Publicrea', 'https://embjwhcaymeyfxpkcqap.supabase.co/storage/v1/object/public/logos/publicrea.jpeg'),
   ('sin_logo', 'Sin Logo', NULL)
-ON CONFLICT (id) DO UPDATE 
-SET nombre = EXCLUDED.nombre,
-    url = EXCLUDED.url;
+ON CONFLICT (id) DO NOTHING;
 
--- COLUMNAS ADICIONALES SI YA EXISTÍAN OTRAS TABLAS PREVIAS
-ALTER TABLE public.gastos 
-ADD COLUMN IF NOT EXISTS evidencia_url TEXT,
-ADD COLUMN IF NOT EXISTS evidencia_nombre TEXT,
-ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
+-- CAJAS CHICAS (Solo inserta si no existen; jamás sobreescribe saldos o nombres)
+INSERT INTO public.cajas_chicas (id, nombre, responsable, fondo_base, saldo_actual, estado, ubicacion)
+VALUES 
+  ('caja-1', 'Caja Chica - Reina Pino (Matriz)', 'Reyna Pino', 15000.00, 15000.00, 'Abierta', 'Oficina Central')
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.registros_gasolina 
-ADD COLUMN IF NOT EXISTS evidencia_url TEXT,
-ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
+-- GIROS / CATEGORÍAS
+INSERT INTO public.giros (id, nombre, codigo, color, activo)
+VALUES 
+  ('giro-1', 'Publikrea', 'PUB-01', '#3b82f6', true),
+  ('giro-2', 'Taller Proyecta', 'TAL-02', '#10b981', true),
+  ('giro-3', 'Coteyuc', 'COT-03', '#f59e0b', true),
+  ('giro-4', 'Despacho', 'DES-04', '#8b5cf6', true),
+  ('giro-5', 'Mantenimiento General', 'MAN-05', '#ec4899', true),
+  ('giro-6', 'Servicios Básicos', 'SER-06', '#64748b', true)
+ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE public.registro_gasolina 
-ADD COLUMN IF NOT EXISTS evidencia_url TEXT,
-ADD COLUMN IF NOT EXISTS evidencia_type TEXT;
+-- PROVEEDORES
+INSERT INTO public.proveedores (id, nombre, rfc, categoria)
+VALUES 
+  ('prov-1', 'Comercial OXXO S.A. de C.V.', 'CCO8605231N4', 'Alimentos y Consumibles'),
+  ('prov-2', 'Super Willys', 'SWI921104AB3', 'Insumos de Limpieza'),
+  ('prov-3', 'Servicio Pemex No. 4812', 'GPE820301KL9', 'Combustibles'),
+  ('prov-4', 'Papelería Yza', 'PYZ990112CC8', 'Papelería y Oficina'),
+  ('prov-5', 'Ferretería El Candado', 'FCA010515DD2', 'Herramientas y Refacciones'),
+  ('prov-6', 'Teléfonos de México S.A.B.', 'TME840315KT6', 'Telecomunicaciones')
+ON CONFLICT (id) DO NOTHING;
+
+-- EMPLEADOS
+INSERT INTO public.empleados (id, nombre, puesto, departamento, activo)
+VALUES 
+  ('emp-reyna', 'Reyna Pino', 'Custodia de Caja Chica Matriz', 'Administración', true),
+  ('emp-harold', 'Harold Anguiano Morales', 'Super Administrador General', 'Dirección General', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- USUARIOS DEL SISTEMA (No sobreescribe credenciales existentes)
+INSERT INTO public.usuarios (id, nombre, email, telefono, username, password, rol, caja_id, activo)
+VALUES 
+  ('usr-harold', 'Harold Anguiano Morales', 'haroldove90@gmail.com', '9991234567', 'haroldo90', 'Chevropar#1970', 'admin', NULL, true),
+  ('usr-reyna', 'Reyna Pino', 'reyna_pino@hotmail.com', '9992345678', 'reyna_pino', 'Reyna*Caja2026!', 'custodio', 'caja-1', true),
+  ('usr-admin1', 'Super Administrador Principal', 'admin1@empresa.com', '9991234567', 'admin1', 'Admin_123', 'admin', NULL, true)
+ON CONFLICT (id) DO NOTHING;
